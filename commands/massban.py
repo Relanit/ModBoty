@@ -13,7 +13,7 @@ class MassBan(commands.Cog):
         self.bot = bot
         self.message_history = {}
         self.ban_phrases = {}
-        self.timeouts = {}
+        self.text = {}
         self.running = set()
         self.queue = {}
 
@@ -48,16 +48,13 @@ class MassBan(commands.Cog):
                     while message.channel.limited:
                         await asyncio.sleep(0.1)
                     if message.channel.name in self.ban_phrases:
-                        if message.channel.name in self.timeouts:
-                            await message.channel.send(f'/timeout {message.author.name} {self.timeouts[message.channel.name]} {reason}')
-                        else:
-                            await message.channel.send(f'/ban {message.author.name} {reason}')
+                        await message.channel.send(self.text[message.channel.name] % message.author.name)
 
     @commands.command(
         name='mb',
         aliases=['mt'],
         cooldown={'per': 0, 'gen': 5},
-        description='!mb value - массбан, !mt duration value - массмут. !stop для завершения.'
+        description='Отстраняет/банит пользователей, написавших сообщение с указанной фразой. Действует на 50 последних сообщений и все новые. !stop для остановки.'
     )
     async def mass_ban(self, ctx):
         if not ctx.channel.bot_is_mod:
@@ -86,11 +83,11 @@ class MassBan(commands.Cog):
                     await ctx.reply('Неверное значение таймаута')
                     return
                 ban_phrase = content_split[1]
-                self.timeouts[ctx.channel.name] = timeout
             except ValueError:
-                self.timeouts[ctx.channel.name] = 300
+                timeout = 300
+            self.text[ctx.channel.name] = f'/timeout %s {timeout} {reason}'
         else:
-            self.timeouts.pop(ctx.channel.name, None)
+            self.text[ctx.channel.name] = f'/ban %s {reason}'
 
         while ctx.limited:
             await asyncio.sleep(0.1)
@@ -106,10 +103,7 @@ class MassBan(commands.Cog):
                 while ctx.limited:
                     await asyncio.sleep(0.1)
                 if ctx.channel.name in self.ban_phrases:
-                    if ctx.channel.name in self.timeouts:
-                        await ctx.send(f'/timeout {message[0]} {self.timeouts[ctx.channel.name]} {reason}')
-                    else:
-                        await ctx.send(f'/ban {message[0]} {reason}')
+                    await ctx.send(self.text[ctx.channel.name] % message[0])
                     banned_users.append(message[0])
                     await asyncio.sleep(0.25)
                 else:
@@ -120,10 +114,7 @@ class MassBan(commands.Cog):
                 while ctx.limited:
                     await asyncio.sleep(0.1)
                 if ctx.channel.name in self.ban_phrases:
-                    if ctx.channel.name in self.timeouts:
-                        await ctx.send(f'/timeout {user} {self.timeouts[ctx.channel.name]} {reason}')
-                    else:
-                        await ctx.send(f'/ban {user} {reason}')
+                    await ctx.send(self.text[ctx.channel.name] % user)
                     banned_users.append(user)
                     await asyncio.sleep(0.25)
                 else:
@@ -135,7 +126,7 @@ class MassBan(commands.Cog):
     async def stop(self, message):
         if message.channel.name in self.ban_phrases:
             self.ban_phrases.pop(message.channel.name, None)
-            self.timeouts.pop(message.channel.name, None)
+            self.text.pop(message.channel.name, None)
             self.running.discard(message.channel.name)
             self.queue.pop(message.channel.name, None)
             ctx = await self.bot.get_context(message)

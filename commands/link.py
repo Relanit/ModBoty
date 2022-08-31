@@ -1,5 +1,6 @@
 import asyncio
 import time
+import traceback
 
 from twitchio.ext import commands, routines
 
@@ -22,7 +23,7 @@ class Link(commands.Cog):
             return
 
         content = message.content
-        if 'reply-parent-msg-id' in message.tags:
+        if message.content.startswith('@'):
             content = message.content.split(' ', 1)[1]
 
         if content.startswith(self.bot._prefix):
@@ -56,9 +57,11 @@ class Link(commands.Cog):
                             return
                         self.mod_cooldowns[message.channel.name][link] = time.time() + 2.5
 
+                    self.cooldowns[message.channel.name][link] = time.time() + 2.5
                     for i in range(num):
                         await message.channel.send(text)
                         await asyncio.sleep(0.1)
+
                 elif not private and time.time() > self.cooldowns[message.channel.name].get(link, 0):
                     ctx = await self.bot.get_context(message)
                     await ctx.reply(text)
@@ -75,166 +78,205 @@ class Link(commands.Cog):
             await ctx.reply('Боту необходима випка или модерка для работы этой команды')
             return
 
-        key = {'channel': ctx.channel.name}
-        if ctx.command_alias == 'links':
-            if self.links.get(ctx.channel.name, None):
-                message = f'Доступные ссылки: {self.bot._prefix}{str(" " + self.bot._prefix).join(self.links[ctx.channel.name])}'
-                await ctx.reply(message)
-            else:
-                await ctx.reply('На вашем канале ещё нет ссылок')
-            return
-        elif ctx.command_alias == 'public':
-            if (content := ctx.content.lower()) in ('on', 'off'):
-                values = {'$unset': {'links.$[].private': ''}}
-                if content == 'on':
-                    values['$set'] = {'private': False}
-                    message = 'Теперь ссылки могут быть вызваны любыми участниками чата'
-                else:
-                    values['$set'] = {'private': True}
-                    message = 'Теперь ссылки могут быть вызваны только модераторами'
-            else:
-                await ctx.reply('Напишите on или off, чтобы сделать ссылки публичными или приватными')
-                return
+        if ctx.command_alias == 'link':
+            await self.edit(ctx)
         elif ctx.command_alias == 'del':
-            content = ctx.content.split()
-            if not content:
-                await ctx.reply(f'Пустой ввод - {self.bot._prefix}help link')
-                return
-
-            link = content[0].lower()
-            if link in self.links.get(ctx.channel.name, []) or (link := self.links_aliases.get(ctx.channel.name, {}).get(link, '')):
-                values = {'$pull': {'links': {'name': link}}}
-                self.links[ctx.channel.name].remove(link)
-                if self.links_aliases.get(ctx.channel.name, {}):
-                    self.links_aliases[ctx.channel.name] = {alias: name for alias, name in self.links_aliases[ctx.channel.name].items() if name != link}
-                self.cooldowns.get(ctx.channel.name, {}).pop(link, None)
-
-                cog = self.bot.get_cog('Timer')
-                if link in cog.timers.get(ctx.channel.name, []):
-                    await db.timers.update_one(key, {'$pull': {'timers': {'link': link}}})
-                    message = f'Удалены ссылка и таймер {self.bot._prefix}{link}'
-                    del cog.timers[ctx.channel.name][link]
-                else:
-                    message = f'Удалено {self.bot._prefix}{link}'
-            else:
-                await ctx.reply('Ссылка не найдена')
-                return
+            await self.delete(ctx)
         elif ctx.command_alias == 'aliases':
-            content = ctx.content.lower().split()
-            if len(content) < 1:
-                await ctx.reply('Напишите элиасы к команде через пробел')
-                return
-
-            link = content[0].lower().lstrip(self.bot._prefix)
-            aliases = set()
-
-            if link in self.links.get(ctx.channel.name, []):
-                for alias in content[1:]:
-                    alias = alias.lstrip(self.bot._prefix)
-                    if self.bot.get_command_name(alias) or alias in ['public', 'private']:
-                        await ctx.reply(f'Нельзя создать ссылку с таким названием - {alias}')
-                        return
-                    elif alias in self.links.get(ctx.channel.name, []):
-                        await ctx.reply(f'Нельзя указывать названия ссылок в элиасах - {alias}')
-                        return
-                    elif self.links_aliases.get(ctx.channel.name, {}).get(alias, link) != link:
-                        await ctx.reply(f'Нельзя указывать элиасы существующих ссылок - {alias}')
-                        return
-                    elif len(alias) > 15:
-                        await ctx.reply(f'Нельзя создать элиас длиной более 15 символов - {alias}')
-                        return
-                    aliases.add(alias)
-            elif link := self.links_aliases.get(ctx.channel.name, {}).get(link, ''):
-                await ctx.reply(f'Ссылка не найдена, возможно вы имели в виду {self.bot._prefix}{link}')
-                return
-            else:
-                await ctx.reply('Ссылка не найдена')
-                return
-
-            key['links.name'] = link
-            if len(aliases) > 5:
-                await ctx.reply('Максимальное количество элиасов к ссылке - 5')
-                return
-
-            if aliases:
-                values = {'$set': {'links.$.aliases': list(aliases)}}
-                message = f'Обновлены элиасы {self.bot._prefix}{link}'
-                for alias in aliases:
-                    self.links_aliases[ctx.channel.name][alias] = link
-            else:
-                values = {'$unset': {'links.$.aliases': ''}}
-                message = f'Удалены элиасы {self.bot._prefix}{link}'
-                self.links_aliases[ctx.channel.name] = {alias: name for alias, name in self.links_aliases[ctx.channel.name].items() if name != link}
+            await self.aliases(ctx)
+        elif ctx.command_alias == 'public':
+            await self.public(ctx)
         else:
-            content = ctx.content.split()
-            if len(content) < 2:
-                await ctx.reply(f'Пустой ввод - {self.bot._prefix}help link')
-                return
-            elif len(self.links.get(ctx.channel.name, [])) == 40:
-                await ctx.reply('Достигнут лимит количества ссылок - 40')
-                return
+            await self.links_list(ctx)
 
-            link = content[0].lower().lstrip(self.bot._prefix)
+    async def edit(self, ctx):
+        content = ctx.content.split()
+        if len(content) < 2:
+            await ctx.reply(f'Пустой ввод - {self.bot._prefix}help link')
+            return
+        elif len(self.links.get(ctx.channel.name, [])) == 40:
+            await ctx.reply('Достигнут лимит количества ссылок - 40')
+            return
 
-            private = None
-            if content[1].lower() == 'private':
-                private = True
-            elif content[1].lower() == 'public':
-                private = False
+        link = content[0].lower().lstrip(self.bot._prefix)
 
-            if self.bot.get_command_name(link) or link in ['public', 'private']:
-                await ctx.reply(f'Нельзя создать ссылку с таким названием - {link}')
-                return
-            elif '.' in link or '$' in link:
-                await ctx.reply('Нельзя создать ссылку с точкой или $ в названии')
-                return
-            elif len(link) > 15:
-                await ctx.reply('Нельзя создать ссылку с названием длиной более 15 символов')
-                return
+        private = None
+        if content[1].lower() == 'private':
+            private = True
+        elif content[1].lower() == 'public':
+            private = False
 
-            offset = 0
-            if private is not None:
-                offset = 1
+        if self.bot.get_command_name(link) or link in ['public', 'private']:
+            await ctx.reply(f'Нельзя создать ссылку с таким названием - {link}')
+            return
+        elif '.' in link or '$' in link:
+            await ctx.reply('Нельзя создать ссылку с точкой или $ в названии')
+            return
+        elif len(link) > 15:
+            await ctx.reply('Нельзя создать ссылку с названием длиной более 15 символов')
+            return
 
-            text = None
-            if content[1 + offset:]:
-                announcements = ['announceblue', 'announcegreen', 'announceorange', 'announcepurple']
-                text = ' '.join(content[1 + offset:])
-                for announcement in announcements:
-                    text = text.replace(announcement, 'announce')
+        offset = 0
+        if private is not None:
+            offset = 1
 
-            if name := self.links_aliases.get(ctx.channel.name, {}).get(link, ''):
-                link = name
+        text = None
+        if content[1 + offset:]:
+            announcements = ['announceblue', 'announcegreen', 'announceorange', 'announcepurple']
+            text = ' '.join(content[1 + offset:])
+            for announcement in announcements:
+                text = text.replace(announcement, 'announce')
 
-            if not (text or link in self.links.get(ctx.channel.name, [])):
-                await ctx.reply(f'Пустой ввод - {self.bot._prefix}help link')
-                return
+        if name := self.links_aliases.get(ctx.channel.name, {}).get(link, ''):
+            link = name
 
-            if ctx.channel.name in self.links:
-                if link in self.links[ctx.channel.name]:
-                    message = f'Изменено {self.bot._prefix}{link}'
-                    key['links.name'] = link
-                    values = {'$set': {}}
-                    if private is not None:
-                        values['$set']['links.$.private'] = private
-                    if text:
-                        values['$set']['links.$.text'] = text
-                else:
-                    message = f'Добавлено {self.bot._prefix}{link}'
-                    self.links[ctx.channel.name].add(link)
-                    values = {'$addToSet': {'links': {'name': link, 'text': text}}}
-                    if private is not None:
-                        values['$addToSet']['links']['private'] = private
+        if not (text or link in self.links.get(ctx.channel.name, [])):
+            await ctx.reply(f'Пустой ввод - {self.bot._prefix}help link')
+            return
+
+        key = {'channel': ctx.channel.name}
+        if ctx.channel.name in self.links:
+            if link in self.links[ctx.channel.name]:
+                message = f'Изменено {self.bot._prefix}{link}'
+                key['links.name'] = link
+                values = {'$set': {}}
+                if private is not None:
+                    values['$set']['links.$.private'] = private
+                if text:
+                    values['$set']['links.$.text'] = text
             else:
                 message = f'Добавлено {self.bot._prefix}{link}'
-                self.links[ctx.channel.name] = {link}
-                values = {'$setOnInsert': {'channel': ctx.channel.name, 'private': True},
-                          '$addToSet': {'links': {'name': link, 'text': text}}}
+                self.links[ctx.channel.name].add(link)
+                values = {'$addToSet': {'links': {'name': link, 'text': text}}}
                 if private is not None:
                     values['$addToSet']['links']['private'] = private
+        else:
+            message = f'Добавлено {self.bot._prefix}{link}'
+            self.links[ctx.channel.name] = {link}
+            values = {'$setOnInsert': {'channel': ctx.channel.name, 'private': True},
+                      '$addToSet': {'links': {'name': link, 'text': text}}}
+            if private is not None:
+                values['$addToSet']['links']['private'] = private
 
         await db.links.update_one(key, values, upsert=True)
         await ctx.reply(message)
+
+    async def delete(self, ctx):
+        content = ctx.content.split()
+        if not content:
+            await ctx.reply(f'Пустой ввод - {self.bot._prefix}help link')
+            return
+
+        link = content[0].lower()
+        if link in self.links.get(ctx.channel.name, []) or (
+        link := self.links_aliases.get(ctx.channel.name, {}).get(link, '')):
+            values = {'$pull': {'links': {'name': link}}}
+            self.links[ctx.channel.name].remove(link)
+
+            if self.links_aliases.get(ctx.channel.name, {}):
+                self.links_aliases[ctx.channel.name] = {alias: name for alias, name in
+                                                        self.links_aliases[ctx.channel.name].items() if name != link}
+
+            self.cooldowns.get(ctx.channel.name, {}).pop(link, None)
+            cog = self.bot.get_cog('Timer')
+
+            if link in cog.timers.get(ctx.channel.name, []):
+                await db.timers.update_one({'channel': ctx.channel.name}, {'$pull': {'timers': {'link': link}}})
+                message = f'Удалены ссылка и таймер {self.bot._prefix}{link}'
+                del cog.timers[ctx.channel.name][link]
+            else:
+                message = f'Удалено {self.bot._prefix}{link}'
+        else:
+            await ctx.reply('Ссылка не найдена')
+            return
+
+        await db.links.update_one({'channel': ctx.channel.name}, values)
+        await ctx.reply(message)
+
+    async def aliases(self, ctx):
+        content = ctx.content.lower().split()
+        if len(content) < 1:
+            await ctx.reply('Напишите элиасы к команде через пробел')
+            return
+
+        link = content[0].lower().lstrip(self.bot._prefix)
+        aliases = set()
+
+        if link in self.links.get(ctx.channel.name, []):
+            for alias in content[1:]:
+                alias = alias.lstrip(self.bot._prefix)
+                if self.bot.get_command_name(alias) or alias in ['public', 'private']:
+                    await ctx.reply(f'Нельзя создать ссылку с таким названием - {alias}')
+                    return
+                elif alias in self.links.get(ctx.channel.name, []):
+                    await ctx.reply(f'Нельзя указывать названия ссылок в элиасах - {alias}')
+                    return
+                elif self.links_aliases.get(ctx.channel.name, {}).get(alias, link) != link:
+                    await ctx.reply(f'Нельзя указывать элиасы существующих ссылок - {alias}')
+                    return
+                elif len(alias) > 15:
+                    await ctx.reply(f'Нельзя создать элиас длиной более 15 символов - {alias}')
+                    return
+                aliases.add(alias)
+        elif link := self.links_aliases.get(ctx.channel.name, {}).get(link, ''):
+            await ctx.reply(f'Ссылка не найдена, возможно вы имели в виду {self.bot._prefix}{link}')
+            return
+        else:
+            await ctx.reply('Ссылка не найдена')
+            return
+
+        if len(aliases) > 5:
+            await ctx.reply('Максимальное количество элиасов к ссылке - 5')
+            return
+
+        if aliases:
+            values = {'$set': {'links.$.aliases': list(aliases)}}
+            message = f'Обновлены элиасы {self.bot._prefix}{link}'
+
+            if ctx.channel.name not in self.links_aliases:
+                self.links_aliases[ctx.channel.name] = {}
+
+            for alias in aliases:
+                self.links_aliases[ctx.channel.name][alias] = link
+        else:
+            values = {'$unset': {'links.$.aliases': ''}}
+            message = f'Удалены элиасы {self.bot._prefix}{link}'
+            self.links_aliases[ctx.channel.name] = {alias: name for alias, name in self.links_aliases[ctx.channel.name].items() if name != link}
+
+        await db.links.update_one({'channel': ctx.channel.name, 'links.name': link}, values)
+        await ctx.reply(message)
+
+    async def public(self, ctx):
+        if (content := ctx.content.lower()) in ('on', 'off'):
+            values = {'$unset': {'links.$[].private': ''}}
+            if content == 'on':
+                values['$set'] = {'private': False}
+                message = 'Теперь ссылки могут быть вызваны любыми участниками чата'
+            else:
+                values['$set'] = {'private': True}
+                message = 'Теперь ссылки могут быть вызваны только модераторами'
+        else:
+            await ctx.reply('Напишите on или off, чтобы сделать ссылки публичными или приватными')
+            return
+
+        await db.links.update_one({'channel': ctx.channel.name}, values, upsert=True)
+        await ctx.reply(message)
+
+    async def links_list(self, ctx):
+        if self.links.get(ctx.channel.name, None):
+            if ctx.content.lower() == 'public':
+                links = await db.links.find_one({'channel': ctx.channel.name}, {'links': 1, 'private': 1})
+                links = [link['name'] for link in links['links'] if not link.get('private', links['private'])]
+                message = f'Публичные ссылки: {self.bot._prefix}{str(" " + self.bot._prefix).join(links)}' if links else 'Публичные ссылки отсутствуют'
+            elif ctx.content.lower() == 'private':
+                links = await db.links.find_one({'channel': ctx.channel.name}, {'links': 1, 'private': 1})
+                links = [link['name'] for link in links['links'] if link.get('private', links['private'])]
+                message = f'Приватные ссылки: {self.bot._prefix}{str(" " + self.bot._prefix).join(links)}' if links else 'Приватные ссылки отсутствуют'
+            else:
+                message = f'Доступные ссылки: {self.bot._prefix}{str(" " + self.bot._prefix).join(self.links[ctx.channel.name])}'
+            await ctx.reply(message)
+        else:
+            await ctx.reply('На вашем канале ещё нет ссылок')
 
     @routines.routine(iterations=1)
     async def get_links(self):

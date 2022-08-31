@@ -24,30 +24,61 @@ class Help(commands.Cog):
 
         command = self.bot.get_command_name(content.split()[0])
         if not command:
-            await ctx.reply('Несуществующая команда')
-            return
+            link = content.split()[0]
+            cog = self.bot.get_cog('Link')
 
-        data = self.bot.get_command(command)
-        if 'admin' in data.flags:
-            await ctx.reply('Несуществующая команда')
-            return
+            if not (link in cog.links.get(ctx.channel.name, []) or link in cog.links_aliases.get(ctx.channel.name, []).keys()):
+                await ctx.reply('Несуществующая команда')
+                return
+            elif link in cog.links_aliases.get(ctx.channel.name, []):
+                link = cog.links_aliases[ctx.channel.name][link]
 
-        aliases = ''
-        if data.aliases:
-            aliases = f'({self.bot._prefix}{str(", " + self.bot._prefix).join(data.aliases)})'
+            data = await db.links.find_one({'channel': ctx.channel.name},
+                                           {'links': {'$elemMatch': {'name': link}}, 'private': 1})
 
-        per = data.cooldown['per']
-        gen = data.cooldown['gen']
-        if per and gen:
-            cooldown = f'личный {per}с, общий {gen}с.'
-        elif per:
-            cooldown = f'личный {per}с.'
+            aliases = data['links'][0]['aliases'] if 'aliases' in data['links'][0] else []
+
+            if aliases:
+                aliases = f'({self.bot._prefix}{str(", " + self.bot._prefix).join(aliases)})'
+
+            if 'private' in data['links'][0]:
+                private = data['links'][0]['private']
+            else:
+                private = data['private']
+
+            timer = ''
+            cog = self.bot.get_cog('Timer')
+
+            if link in cog.timers.get(ctx.channel.name, []):
+                timer = cog.timers[ctx.channel.name][link]
+                timer = f'Установлен {"активный" if timer.get("active", True) else "неактивный"} таймер: {timer["number"]} сообщений раз в {timer["interval"]}м' \
+                        f'{", с announce." if timer.get("announce", False) in timer else "."}'
+
+            message = f'{self.bot._prefix}{link}{"." if not aliases else " " + aliases + "."} ' \
+                      f'Доступ: {"приватный" if private else "публичный"}. ' \
+                      f'Кд 2.5с. {timer}'
         else:
-            cooldown = f'общий {gen}с.'
+            data = self.bot.get_command(command)
+            if 'admin' in data.flags:
+                await ctx.reply('Несуществующая команда')
+                return
 
-        message = f'{self.bot._prefix}{command}{":" if not aliases else " " + aliases + ":"} ' \
-                  f'{data.description.format(prefix=self.bot._prefix)} ' \
-                  f'Кд: {cooldown}'
+            aliases = ''
+            if data.aliases:
+                aliases = f'({self.bot._prefix}{str(", " + self.bot._prefix).join(data.aliases)})'
+
+            per = data.cooldown['per']
+            gen = data.cooldown['gen']
+            if per and gen:
+                cooldown = f'личный {per}с, общий {gen}с.'
+            elif per:
+                cooldown = f'личный {per}с.'
+            else:
+                cooldown = f'общий {gen}с.'
+
+            message = f'{self.bot._prefix}{command}{":" if not aliases else " " + aliases + ":"} ' \
+                      f'{data.description.format(prefix=self.bot._prefix)} ' \
+                      f'Кд: {cooldown}'
 
         await ctx.reply(message)
 

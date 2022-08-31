@@ -25,7 +25,8 @@ class ModBoty(commands.Bot, Cooldown):
             return
 
         content = message.content
-        if 'reply-parent-msg-id' in message.tags:
+
+        if message.content.startswith('@'):
             content = message.content.split(' ', 1)[1]
 
         if content.startswith(self._prefix):

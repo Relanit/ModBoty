@@ -1,9 +1,9 @@
 import os
 from pathlib import Path
 
-from twitchio.ext import commands
+from twitchio.ext import commands, routines
 
-from config import CHANNELS
+from config import CHANNELS, db
 from cooldown import Cooldown
 
 
@@ -11,10 +11,12 @@ class ModBoty(commands.Bot, Cooldown):
     def __init__(self):
         super().__init__(token=os.getenv('TOKEN'), prefix='!', initial_channels=CHANNELS)
         self.admins = ['relanit']
+        self.streams = set()
 
         for command in [path.stem for path in Path('commands').glob('*py')]:
             self.load_module(f'commands.{command}')
 
+        self.check_streams.start(stop_on_error=False)
         Cooldown.__init__(self, CHANNELS)
 
     async def event_ready(self):
@@ -48,6 +50,32 @@ class ModBoty(commands.Bot, Cooldown):
     async def event_command_error(self, ctx, error):
         if type(error).__name__ == 'CommandNotFound':
             return
+
+    @routines.routine(minutes=1.0, iterations=0)
+    async def check_streams(self):
+        channels = self.channels_names or CHANNELS
+        streams = await self.fetch_streams(user_logins=channels)
+
+        for channel in channels:
+            stream = None
+
+            for s in streams:
+                if s.user.name.lower() == channel:
+                    stream = s
+                    break
+
+            if stream:
+                if channel not in self.streams:
+                    self.streams.add(channel)
+
+                    if (data := await db.inspects.find_one({'channel': channel})) and data['active']:
+                        await self.cogs['Inspect'].set(channel)
+            else:
+                if channel in self.streams:
+                    self.streams.remove(channel)
+
+                    if (data := await db.inspects.find_one({'channel': channel})) and data['active']:
+                        self.cogs['Inspect'].unset(channel)
 
 
 bot = ModBoty()

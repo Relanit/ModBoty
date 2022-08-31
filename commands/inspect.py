@@ -62,8 +62,8 @@ class Inspect(commands.Cog):
                 self.warned_users[message.channel.name][message.author.name] = 0
 
                 ctx = await self.bot.get_context(message)
-                await ctx.reply('Без спамчика :)')
-                await ctx.send(f'/timeout {message.author.name} 10 spam (by SvinBot)')
+                await ctx.reply('Без спамчика :|')
+                await ctx.send(f'/timeout {message.author.name} 10 spam (by ModBoty)')
             elif not handle:
                 i = self.warned_users[message.channel.name][message.author.name]
                 timeout = self.timeouts[message.channel.name][i]
@@ -71,7 +71,7 @@ class Inspect(commands.Cog):
                 if len(self.timeouts[message.channel.name]) > self.warned_users[message.channel.name][message.author.name] + 1:
                     self.warned_users[message.channel.name][message.author.name] += 1
 
-                await message.channel.send(f'/timeout {message.author.name} {timeout} spam (by SvinBot)')
+                await message.channel.send(f'/timeout {message.author.name} {timeout} spam (by ModBoty)')
 
     @commands.command(
         name='inspect',

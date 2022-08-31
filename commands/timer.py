@@ -60,16 +60,20 @@ class Timer(commands.Cog):
 
     async def edit(self, ctx, link):
         key = {'channel': ctx.channel.name}
-        content = ctx.content.split()
+        content = ctx.content.lower().split()
         interval = None
         number = None
         timer = {}
 
         for value in content[1:]:
-            if 'noa' in value:
-                timer.update({'announce': False})
-            elif 'a' in value or 'а' in value:
+            if value == 'online':
+                timer.update({'offline': False})
+            elif value == 'always':
+                timer.update({'offline': True})
+            elif value == 'a' or value == 'а':
                 timer.update({'announce': True})
+            elif value == 'noa':
+                timer.update({'announce': False})
             elif 'on' in value:
                 timer.update({'active': True})
             elif 'off' in value:
@@ -82,7 +86,8 @@ class Timer(commands.Cog):
                         return
                     timer.update({'interval': interval})
                 except ValueError:
-                    pass
+                    await ctx.reply('Ошибка ввода')
+                    return
             else:
                 try:
                     number = int(value)
@@ -91,7 +96,8 @@ class Timer(commands.Cog):
                         return
                     timer.update({'number': number})
                 except ValueError:
-                    pass
+                    await ctx.reply('Ошибка ввода')
+                    return
 
         if link not in self.timers.get(ctx.channel.name, []) and not (interval or number):
             await ctx.reply('Не указан интервал (в минутах) или количество сообщений')
@@ -134,6 +140,8 @@ class Timer(commands.Cog):
 
             for timer in timers:
                 if self.timers[channel][timer].get('active', True):
+                    if channel not in self.bot.streams and not self.timers[channel][timer].get('offline', True):
+                        return
                     if time.time() > self.timers[channel][timer]['cooldown'] and self.messages_from_timer[channel] >= 5:
                         data = await db.links.find_one({'channel': channel, 'links.name': timer}, {'links.$': 1})
                         text = data['links'][0]['text']

@@ -52,7 +52,8 @@ class Help(commands.Cog):
             if link in cog.timers.get(ctx.channel.name, []):
                 timer = cog.timers[ctx.channel.name][link]
                 timer = f'Установлен {"активный" if timer.get("active", True) else "неактивный"} таймер: {timer["number"]} сообщений раз в {timer["interval"]}м' \
-                        f'{", с announce." if timer.get("announce", False) in timer else "."}'
+                        f'{", с announce" if timer.get("announce", False) in timer else ""}' \
+                        f'{"." if timer.get("offline", True) else ", только на стриме."}'
 
             message = f'{self.bot._prefix}{link}{"." if not aliases else " " + aliases + "."} ' \
                       f'Доступ: {"приватный" if private else "публичный"}. ' \

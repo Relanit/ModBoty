@@ -12,6 +12,7 @@ class Inspect(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
         self.limits = {}
+        self.second_limits = {}
         self.timeouts = {}
         self.warned_users = {}
         self.message_log = {}
@@ -49,8 +50,27 @@ class Inspect(commands.Cog):
             handle = True
 
             if count > self.limits[message.channel.name]['messages']:
-                if count > len(chatters) / 100 * self.limits[message.channel.name]['percent_limit']:
+                handle = False
+                if 'percent_limit' in self.limits[message.channel.name] and not (
+                        count > len(chatters) / 100 * self.limits[message.channel.name]['percent_limit']):
+                    handle = True
+
+            if message.channel.name in self.second_limits and handle:
+                test = self.message_log[message.channel.name].copy()
+                for msg in test.copy():
+                    if now - msg['time'] > self.second_limits[message.channel.name]['time_unit']:
+                        del test[0]
+                    else:
+                        break
+
+                chatters = [msg['author'] for msg in test]
+                count = chatters.count(message.author.name)
+
+                if count > self.second_limits[message.channel.name]['messages']:
                     handle = False
+                    if 'percent_limit' in self.limits[message.channel.name] and not (
+                            count > len(chatters) / 100 * self.limits[message.channel.name]['percent_limit']):
+                        handle = True
 
             if not handle:
                 new = []
@@ -66,7 +86,9 @@ class Inspect(commands.Cog):
                 ctx = await self.bot.get_context(message)
                 await ctx.reply('Без спамчика :|')
                 await ctx.send(f'/timeout {message.author.name} 10 {reason}')
-                await db.update_one({'channel': message.channel.name}, {'$inc': {'stats': message.author.name}})
+                if message.channel.name in self.bot.streams:
+                    await db.inspect.update_one({'channel': message.channel.name},
+                                                {'$inc': {'stats': message.author.name}})
             elif not handle:
                 i = self.warned_users[message.channel.name][message.author.name]
                 timeout = self.timeouts[message.channel.name][i]
@@ -75,7 +97,9 @@ class Inspect(commands.Cog):
                     self.warned_users[message.channel.name][message.author.name] += 1
 
                 await message.channel.send(f'/timeout {message.author.name} {timeout} {reason}')
-                await db.update_one({'channel': message.channel.name}, {'$inc': {'stats': message.author.name}})
+                if message.channel.name in self.bot.streams:
+                    await db.inspect.update_one({'channel': message.channel.name},
+                                                {'$inc': {'stats': message.author.name}})
 
     @commands.command(
         name='inspect',
@@ -90,22 +114,29 @@ class Inspect(commands.Cog):
         content = ctx.content.lower()
         if not content:
             data = await db.inspects.find_one({'channel': ctx.channel.name})
+            second_limit = data['second_limit'] if 'second_limit' in data else False
+            percent_limit = f'Лимит от всех сообщений в чате:  {data["percent_limit"]}%.' if 'percent_limit' in data else False
 
-            if data:
-                message = f'Статус: {"включено" if data["active"] else "выключено"}. ' \
-                          f'Лимит: {data["messages"]} сообщений в {data["time_unit"] if data["time_unit"] % 1 != 0 else int(data["time_unit"])} секунд. ' \
-                          f'Лимит от всех сообщений в чате:  {data["percent_limit"]}%. ' \
-                          f'Таймауты: {", ".join(map(str, data["timeouts"]))}.'
-                await ctx.reply(message)
-            else:
+            if second_limit:
+                second_limit = f', {second_limit["messages"]}//{second_limit["time_unit"] if second_limit["time_unit"] % 1 != 0 else int(second_limit["time_unit"])}'
+
+            if not data:
                 await ctx.reply(f'Сначала настройте наблюдение, {self.bot._prefix}help inspect')
+                return
+
+            message = f'Статус: {"включено" if data["active"] else "выключено"}. ' \
+                      f'Лимиты: {data["messages"]}/{data["time_unit"] if data["time_unit"] % 1 != 0 else int(data["time_unit"])}' \
+                      f'{second_limit if second_limit else "."} ' \
+                      f'{percent_limit if percent_limit else ""} ' \
+                      f'Таймауты: {", ".join(map(str, data["timeouts"]))}.'
+            await ctx.reply(message)
         elif content == 'on':
             data = await db.inspects.find_one({'channel': ctx.channel.name})
 
             if data:
-                if ctx.channel.name not in self.limits and ctx.channel.name in self.bot.streams:
-                    await self.set(ctx.channel.name)
-
+                if ctx.channel.name not in self.limits:
+                    if ctx.channel.name in self.bot.streams or data['offline']:
+                        await self.set(ctx.channel.name)
                 await db.inspects.update_one({'channel': ctx.channel.name}, {'$set': {'active': True}})
                 await ctx.reply('✅ Включено')
             else:
@@ -123,7 +154,7 @@ class Inspect(commands.Cog):
         elif content == 'stats':
             data = await db.inspects.find_one({'channel': ctx.channel.name})
 
-            if not data.get('stats'):
+            if not data or not data.get('stats'):
                 await ctx.reply('Статистика не найдена')
                 return
 
@@ -138,6 +169,10 @@ class Inspect(commands.Cog):
             await ctx.reply(f'Топ спамеров за стрим: {", ".join(top)}')
         elif content.startswith('stats'):
             data = await db.inspects.find_one({'channel': ctx.channel.name})
+
+            if not data.get('stats'):
+                await ctx.reply('Статистика не найдена')
+                return
 
             user = content.split()[1]
             if user not in data['stats']:
@@ -157,9 +192,31 @@ class Inspect(commands.Cog):
         else:
             content = content.split()
 
+            remove_second_limit = False
             values = {}
             for value in content:
-                if '/' in value:
+                if value == '//':
+                    remove_second_limit = True
+                elif '//' in value:
+                    try:
+                        messages, time_unit = value.replace(',', '.').split('//')
+                        messages = int(messages)
+                        time_unit = round(float(time_unit), 1)
+                    except ValueError:
+                        await ctx.reply('Неверная запись времени или количества сообщений')
+                        return
+
+                    if not 1 <= time_unit <= 4:
+                        await ctx.reply('Время не должно быть меньше 1 или больше 4 секунд')
+                        return
+                    if not 1 <= messages <= 10:
+                        await ctx.reply('Количество сообщений не должно быть меньше 1 или больше 10.')
+                        return
+
+                    values['second_limit'] = {}
+                    values['second_limit']['messages'] = messages
+                    values['second_limit']['time_unit'] = time_unit
+                elif '/' in value:
                     try:
                         messages, time_unit = value.replace(',', '.').split('/')
                         messages = int(messages)
@@ -169,7 +226,7 @@ class Inspect(commands.Cog):
                         return
 
                     if not 1 <= time_unit <= 15:
-                        await ctx.reply('Время не должно быть меньше 1 или больше 15 секунд')
+                        await ctx.reply('Время не должно быть меньше 5 или больше 15 секунд')
                         return
                     if not 1 <= messages <= time_unit:
                         await ctx.reply('Количество сообщений не должно быть меньше 1 или больше указанного времени.')
@@ -220,7 +277,11 @@ class Inspect(commands.Cog):
                     '$setOnInsert': {'channel': ctx.channel.name, 'active': False, 'offline': False},
                     '$set': values}, upsert=True)
             else:
-                await db.inspects.update_one({'channel': ctx.channel.name}, {'$set': values})
+                values = {'$set': values}
+                if remove_second_limit:
+                    values['$unset'] = {'second_limit': 1}
+
+                await db.inspects.update_one({'channel': ctx.channel.name}, values)
 
             if ctx.channel.name in self.limits:
                 await self.set(ctx.channel.name)
@@ -230,15 +291,21 @@ class Inspect(commands.Cog):
     async def set(self, channel):
         data = await db.inspects.find_one({'channel': channel})
         self.warned_users[channel] = {}
-        self.limits[channel] = {'messages': data['messages'], 'time_unit': data['time_unit'], 'percent_limit': data['percent_limit']}
+        self.limits[channel] = {'messages': data['messages'], 'time_unit': data['time_unit']}
+        if 'percent_limit' in data:
+            self.limits['percent_limit'] = data['percent_limit']
         self.timeouts[channel] = data['timeouts']
         self.message_log[channel] = []
+        if 'second_limit' in data:
+            second_limit = data['second_limit']
+            self.second_limits[channel] = {'messages': second_limit['messages'], 'time_unit': second_limit['time_unit']}
 
     def unset(self, channel):
         del self.limits[channel]
         del self.timeouts[channel]
         del self.warned_users[channel]
         del self.message_log[channel]
+        self.second_limits.pop(channel)
 
 
 def prepare(bot):

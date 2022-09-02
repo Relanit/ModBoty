@@ -4,6 +4,8 @@ from twitchio.ext import commands
 
 from config import db
 
+reason = 'spam (by ModBoty)'
+
 
 class Inspect(commands.Cog):
 
@@ -63,7 +65,8 @@ class Inspect(commands.Cog):
 
                 ctx = await self.bot.get_context(message)
                 await ctx.reply('Без спамчика :|')
-                await ctx.send(f'/timeout {message.author.name} 10 spam (by ModBoty)')
+                await ctx.send(f'/timeout {message.author.name} 10 {reason}')
+                await db.update_one({'channel': message.channel.name}, {'$inc': {'stats': message.author.name}})
             elif not handle:
                 i = self.warned_users[message.channel.name][message.author.name]
                 timeout = self.timeouts[message.channel.name][i]
@@ -71,7 +74,8 @@ class Inspect(commands.Cog):
                 if len(self.timeouts[message.channel.name]) > self.warned_users[message.channel.name][message.author.name] + 1:
                     self.warned_users[message.channel.name][message.author.name] += 1
 
-                await message.channel.send(f'/timeout {message.author.name} {timeout} spam (by ModBoty)')
+                await message.channel.send(f'/timeout {message.author.name} {timeout} {reason}')
+                await db.update_one({'channel': message.channel.name}, {'$inc': {'stats': message.author.name}})
 
     @commands.command(
         name='inspect',
@@ -116,13 +120,44 @@ class Inspect(commands.Cog):
                 await ctx.reply('❌ Выключено')
             else:
                 await ctx.reply(f'Сначала настройте наблюдение, {self.bot._prefix}help inspect')
+        elif content == 'stats':
+            data = await db.inspects.find_one({'channel': ctx.channel.name})
+
+            if not data.get('stats'):
+                await ctx.reply('Статистика не найдена')
+                return
+
+            items = data['stats'].items()
+            sorted_users = sorted(items, key=lambda x: x[1], reverse=True)
+
+            top = []
+            for place, user in enumerate(sorted_users[:5], start=1):
+                name = user[0][:1] + u'\U000E0000' + user[0][1:]
+                top.append(f'{place}. {name} - {user[1]}{" сообщений" if place == 1 else ""}')
+
+            await ctx.reply(f'Топ спамеров за стрим: {", ".join(top)}')
+        elif content.startswith('stats'):
+            data = await db.inspects.find_one({'channel': ctx.channel.name})
+
+            user = content.split()[1]
+            if user not in data['stats']:
+                await ctx.reply('У пользователя 0 отстранений')
+                return
+
+            items = data['stats'].items()
+            sorted_users = sorted(items, key=lambda x: x[1], reverse=True)
+
+            for pos in range(len(sorted_users)):
+                if ctx.author.name in sorted_users[pos]:
+                    place = pos + 1
+                    timeouts = sorted_users[pos][1]
+                    break
+
+            await ctx.reply(f'{place} место ({timeouts} отстранений)')
         else:
             content = content.split()
 
-            messages = 0
-            time_unit = 0
-            percent_limit = 0
-            timeouts = []
+            values = {}
             for value in content:
                 if '/' in value:
                     try:
@@ -139,6 +174,9 @@ class Inspect(commands.Cog):
                     if not 1 <= messages <= time_unit:
                         await ctx.reply('Количество сообщений не должно быть меньше 1 или больше указанного времени.')
                         return
+
+                    values['messages'] = messages
+                    values['time_unit'] = time_unit
                 elif value.endswith('%'):
                     try:
                         percent_limit = int(value.strip('%'))
@@ -149,10 +187,18 @@ class Inspect(commands.Cog):
                     if not 0 <= percent_limit < 100:
                         await ctx.reply('Неверная запись лимита в процентах')
                         return
+
+                    values['percent_limit'] = percent_limit
+                elif value == 'online':
+                    values['offline'] = False
+                elif value == 'always':
+                    values['offline'] = True
                 else:
                     try:
                         timeout = int(value)
-                        timeouts.append(timeout)
+
+                        values['timeouts'] = [] if 'timeouts' not in values else values['timeouts']
+                        values['timeouts'].append(timeout)
                     except ValueError:
                         await ctx.reply('Неверная запись таймаутов или команды')
                         return
@@ -163,24 +209,17 @@ class Inspect(commands.Cog):
 
             data = await db.inspects.find_one({'channel': ctx.channel.name})
             if not data:
-                if not messages:
+                if 'messages' not in values:
                     await ctx.reply('Для начала установите сообщения и время')
                     return
 
-                if not timeouts:
-                    timeouts.append(600)
+                if 'timeouts' not in values:
+                    values['timeouts'] = [600]
 
                 await db.inspects.update_one({'channel': ctx.channel.name}, {
-                    '$setOnInsert': {'channel': ctx.channel.name, 'active': False},
-                    '$set': {'messages': messages, 'time_unit': time_unit, 'percent_limit': percent_limit, 'timeouts': timeouts}}, upsert=True)
+                    '$setOnInsert': {'channel': ctx.channel.name, 'active': False, 'offline': False},
+                    '$set': values}, upsert=True)
             else:
-                values = {}
-                if messages:
-                    values.update({'messages': messages, 'time_unit': time_unit})
-                if percent_limit:
-                    values.update({'percent_limit': percent_limit})
-                if timeouts:
-                    values.update({'timeouts': timeouts})
                 await db.inspects.update_one({'channel': ctx.channel.name}, {'$set': values})
 
             if ctx.channel.name in self.limits:

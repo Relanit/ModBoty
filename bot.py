@@ -1,4 +1,5 @@
 import os
+import time
 from pathlib import Path
 
 from twitchio.ext import commands, routines
@@ -69,6 +70,7 @@ class ModBoty(commands.Bot, Cooldown):
                     self.streams.add(channel)
 
                     if (data := await db.inspects.find_one({'channel': channel})) and data['active']:
+                        await db.inspects.update_one({'channel': channel}, {'$unset': {'stats': 1}})
                         await self.cogs['Inspect'].set(channel)
             else:
                 if channel in self.streams:
@@ -76,6 +78,13 @@ class ModBoty(commands.Bot, Cooldown):
 
                     if (data := await db.inspects.find_one({'channel': channel})) and data['active']:
                         self.cogs['Inspect'].unset(channel)
+                    elif data and data['active'] and data['offline']:
+                        await self.cogs['Inspect'].set(channel)
+                elif channel not in self.cogs['Inspect'].limits or time.time() % 36000 < 60:
+                    data = await db.inspects.find_one({'channel': channel})
+
+                    if data and data['active'] and data['offline']:
+                        await self.cogs['Inspect'].set(channel)
 
 
 bot = ModBoty()

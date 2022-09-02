@@ -52,10 +52,10 @@ class Link(commands.Cog):
                         except ValueError:
                             num = 1
 
-                    if num > 1:
-                        if time.time() < self.mod_cooldowns[message.channel.name].get(link, 0):
+                    if num > 2:
+                        if time.time() < self.mod_cooldowns[message.channel.name]:
                             return
-                        self.mod_cooldowns[message.channel.name][link] = time.time() + 2.5
+                        self.mod_cooldowns[message.channel.name] = time.time() + 2.5
 
                     self.cooldowns[message.channel.name][link] = time.time() + 2.5
                     for i in range(num):
@@ -284,7 +284,7 @@ class Link(commands.Cog):
             self.links[document['channel']] = {link['name'] for link in document['links']}
             self.links_aliases[document['channel']] = {alias: link['name'] for link in document['links'] if 'aliases' in link for alias in link['aliases']}
             self.cooldowns[document['channel']] = {}
-            self.mod_cooldowns[document['channel']] = {}
+            self.mod_cooldowns[document['channel']] = 0
 
 
 def prepare(bot):

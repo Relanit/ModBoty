@@ -21,6 +21,7 @@ class JoinChannel(commands.Cog):
                 await ctx.reply('❌ Несуществующий логин')
                 return
 
+            self.bot.cooldowns[channel] = {}
             cog = self.bot.get_cog('MassBan')
             cog.message_history[channel] = []
             await db.channels.update_one({'_id': 1}, {'$addToSet': {'channels': channel}})

@@ -81,7 +81,7 @@ class Inspect(commands.Cog):
 
                 await ctx.send(f'/timeout {message.author.name} 10 {reason}')
                 if message.channel.name in self.bot.streams:
-                    await db.inspect.update_one({'channel': message.channel.name},
+                    await db.inspects.update_one({'channel': message.channel.name},
                                                 {'$inc': {f'stats.{message.author.name}': 1}})
             elif not handle:
                 i = self.warned_users[message.channel.name][message.author.name]
@@ -95,7 +95,7 @@ class Inspect(commands.Cog):
 
                 await message.channel.send(f'/timeout {message.author.name} {timeout} {reason}')
                 if message.channel.name in self.bot.streams:
-                    await db.inspect.update_one({'channel': message.channel.name},
+                    await db.inspects.update_one({'channel': message.channel.name},
                                                 {'$inc': {f'stats.{message.author.name}': 1}})
 
     @commands.command(

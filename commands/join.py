@@ -15,7 +15,7 @@ class JoinChannel(commands.Cog):
     )
     async def join_channel(self, ctx):
         channel = ctx.content.lower()
-        if ctx.command_alias == 'join':
+        if ctx.command_alias == 'mjoin':
             user = await self.bot.fetch_users(names=[channel])
             if not user:
                 await ctx.reply('❌ Несуществующий логин')

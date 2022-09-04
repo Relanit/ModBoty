@@ -105,7 +105,7 @@ class MassBan(commands.Cog):
                 if ctx.channel.name in self.ban_phrases:
                     await ctx.send(self.text[ctx.channel.name] % message[0])
                     banned_users.append(message[0])
-                    await asyncio.sleep(0.25)
+                    await asyncio.sleep(0.3)
                 else:
                     return
 
@@ -116,7 +116,7 @@ class MassBan(commands.Cog):
                 if ctx.channel.name in self.ban_phrases:
                     await ctx.send(self.text[ctx.channel.name] % user)
                     banned_users.append(user)
-                    await asyncio.sleep(0.25)
+                    await asyncio.sleep(0.3)
                 else:
                     return
 

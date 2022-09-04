@@ -70,8 +70,8 @@ class Link(commands.Cog):
     @commands.command(
         name='link',
         aliases=['links', 'del', 'public', 'aliases'],
-        cooldown={'per': 0, 'gen': 3},
-        description='Создание кастомных команд-ссылок.'
+        cooldown={'per': 0, 'gen': 5},
+        description='Создание кастомных команд-ссылок. Полное описание: https://i.imgur.com/NIGcSuo.png '
     )
     async def link(self, ctx):
         if not (ctx.channel.bot_is_vip or ctx.channel.bot_is_mod):
@@ -251,10 +251,13 @@ class Link(commands.Cog):
             values = {'$unset': {'links.$[].private': ''}}
             if content == 'on':
                 values['$set'] = {'private': False}
-                message = 'Теперь ссылки могут быть вызваны любыми участниками чата'
-            else:
+                message = 'Теперь ссылки могут быть вызваны любыми участниками чата, настройки приватности у всех ссылок сброшены'
+            elif content == 'off':
                 values['$set'] = {'private': True}
-                message = 'Теперь ссылки могут быть вызваны только модераторами'
+                message = 'Теперь ссылки могут быть вызваны только модераторами, настройки приватности у всех ссылок сброшены'
+            else:
+                await ctx.reply('Ошибка')
+                return
         else:
             await ctx.reply('Напишите on или off, чтобы сделать ссылки публичными или приватными')
             return

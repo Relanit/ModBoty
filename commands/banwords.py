@@ -1,3 +1,5 @@
+import asyncio
+
 from twitchio.ext import commands, routines
 
 from config import db
@@ -33,29 +35,29 @@ class Banwords(commands.Cog):
                 await message.channel.send(f'/timeout {message.author.name} {timeout} {reason}')
 
     @commands.command(
-        name='addb',
-        aliases=['delb', 'addm', 'delm', 'bw', 'mw'],
+        name='bword',
+        aliases=['mword', 'delb', 'delm', 'bwords', 'mwords'],
         cooldown={'per': 0, 'gen': 5},
-        description='Pong.'
+        description='Запрещённые слова, за отправку которых пользователь получает бан/мут. Полное описание: https://i.imgur.com/6qvUgfN.png '
     )
     async def command(self, ctx):
         if not ctx.channel.bot_is_mod:
             await ctx.reply('Боту необходима модерка для работы этой команды')
             return
 
-        if not ctx.content and ctx.command_alias not in ('bw', 'mw'):
+        if not ctx.content and ctx.command_alias not in ('banwords', 'mutewords'):
             await ctx.reply('Пустой ввод')
             return
 
-        if ctx.command_alias == 'addb':
+        if ctx.command_alias == 'bword':
             await self.add_banword(ctx)
         elif ctx.command_alias == 'delb':
             await self.delete_banword(ctx)
-        elif ctx.command_alias == 'addm':
+        elif ctx.command_alias == 'mword':
             await self.add_muteword(ctx)
         elif ctx.command_alias == 'delm':
             await self.delete_muteword(ctx)
-        elif ctx.command_alias == 'bw':
+        elif ctx.command_alias == 'bwords':
             await self.list_banwords(ctx)
         else:
             await self.list_mutewords(ctx)
@@ -69,6 +71,10 @@ class Banwords(commands.Cog):
 
         if banword in self.banwords.get(ctx.channel.name, []):
             await ctx.reply('Банворд уже добавлен')
+            return
+
+        if len(banword) > 20:
+            await ctx.reply('Длина банворда не должна превышать 20 символов')
             return
 
         if ctx.channel.name not in self.banwords:
@@ -106,7 +112,15 @@ class Banwords(commands.Cog):
             await ctx.reply(f'Укажите время мута в секундах')
             return
 
+        if not 1 <= timeout <= 1209600:
+            await ctx.reply('Неверное значение таймаута')
+            return
+
         muteword = ' '.join(content[1:])
+
+        if len(muteword) > 20:
+            await ctx.reply('Длина мутворда не должна превышать 20 символов')
+            return
 
         found = False
         for item in self.mutewords.get(ctx.channel.name, []):
@@ -143,17 +157,48 @@ class Banwords(commands.Cog):
 
     async def list_banwords(self, ctx):
         if not self.banwords.get(ctx.channel.name):
-            message = 'На вашем канале ещё нет банвордов'
+            await ctx.reply('На вашем канале ещё нет банвордов')
         else:
-            message = 'Банворды канала: ' + ' | '.join(self.banwords[ctx.channel.name])
-        await ctx.reply(message)
+            message = f'Банворды канала {ctx.channel.name}: ' + ' | '.join(self.banwords[ctx.channel.name])
+            message2 = ''
+
+            if len(message) > 500:
+                message = f'Банворды канала {ctx.channel.name}: '
+
+                for banword in self.banwords[ctx.channel.name]:
+                    banword = banword + ' | ' if banword != self.banwords[ctx.channel.name][-1] else banword
+                    if len(message + banword) < 500:
+                        message += banword
+                    else:
+                        message2 += banword
+
+            await ctx.reply(message)
+            if message2:
+                await asyncio.sleep(1)
+                await ctx.reply(message2)
 
     async def list_mutewords(self, ctx):
         if not self.mutewords.get(ctx.channel.name):
-            message = 'На вашем канале ещё нет мутвордов'
+            await ctx.reply('На вашем канале ещё нет мутвордов')
         else:
-            message = 'Мутворды канала: ' + ' | '.join([muteword['muteword'] for muteword in self.mutewords[ctx.channel.name]])
-        await ctx.reply(message)
+            message = f'Мутворды канала {ctx.channel.name}: ' + ' | '.join([muteword['muteword'] + ' ' + str(muteword['timeout']) for muteword in self.mutewords[ctx.channel.name]])
+            message2 = ''
+
+            if len(message) > 500:
+                message = f'Мутворды канала {ctx.channel.name}: '
+
+                for muteword in self.mutewords[ctx.channel.name]:
+                    muteword = muteword['muteword'] + ' ' + str(muteword['timeout']) + ' | ' if muteword != self.mutewords[ctx.channel.name][-1] else muteword['muteword'] + ' ' + str(muteword['timeout'])
+
+                    if len(message + muteword) < 500:
+                        message += muteword
+                    else:
+                        message2 += muteword
+
+            await ctx.reply(message)
+            if message2:
+                await asyncio.sleep(1)
+                await ctx.reply(message2)
 
     @routines.routine(iterations=1)
     async def get_banwords(self):
@@ -162,6 +207,11 @@ class Banwords(commands.Cog):
                 self.banwords[document['channel']] = document['banwords']
             if 'mutewords' in document:
                 self.mutewords[document['channel']] = document['mutewords']
+
+        import random
+        import string
+        letters = string.ascii_lowercase
+        self.mutewords['nelanit'] = [{'muteword': ''.join(random.choice(letters) for i in range(15)), 'timeout': 3600} for i in range(30)]
 
 
 def prepare(bot):

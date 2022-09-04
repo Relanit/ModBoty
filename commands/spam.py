@@ -10,9 +10,8 @@ class Spam(commands.Cog):
 
     @commands.command(
         name='spam',
-        aliases=['send'],
-        cooldown={'per': 0, 'gen': 5},
-        description='Отправляет текст указанное количество раз (до 15).',
+        cooldown={'per': 0, 'gen': 10},
+        description='Спам текстом указанное количество раз (до 15).',
     )
     async def send(self, ctx):
         if not (ctx.channel.bot_is_vip or ctx.channel.bot_is_mod):

@@ -1,3 +1,4 @@
+import asyncio
 import time
 
 from twitchio.ext import commands
@@ -16,17 +17,6 @@ class Inspect(commands.Cog):
         self.timeouts = {}
         self.warned_users = {}
         self.message_log = {}
-
-    """
-    * - необязательно
-
-    inspect [параметры]
-
-    Параметры:
-    * сообщения/время
-    * лимитсообщений% - позволяет нарушать лимит сообщения/время, если сообщения пользователя занимают в чате меньше указанного процента
-    * таймауты через пробел
-    """
 
     @commands.Cog.event()
     async def event_message(self, message):
@@ -85,6 +75,10 @@ class Inspect(commands.Cog):
 
                 ctx = await self.bot.get_context(message)
                 await ctx.reply('Без спамчика :|')
+
+                while ctx.limited:
+                    await asyncio.sleep(0.1)
+
                 await ctx.send(f'/timeout {message.author.name} 10 {reason}')
                 if message.channel.name in self.bot.streams:
                     await db.inspect.update_one({'channel': message.channel.name},
@@ -96,6 +90,9 @@ class Inspect(commands.Cog):
                 if len(self.timeouts[message.channel.name]) > self.warned_users[message.channel.name][message.author.name] + 1:
                     self.warned_users[message.channel.name][message.author.name] += 1
 
+                while message.channel.limited:
+                    await asyncio.sleep(0.1)
+
                 await message.channel.send(f'/timeout {message.author.name} {timeout} {reason}')
                 if message.channel.name in self.bot.streams:
                     await db.inspect.update_one({'channel': message.channel.name},
@@ -104,7 +101,7 @@ class Inspect(commands.Cog):
     @commands.command(
         name='inspect',
         cooldown={'per': 0, 'gen': 5},
-        description='Установка лимита сообщений на стриме. Полное описание: https://i.imgur.com/3F7nZLJ.png',
+        description='Ограничения на количество отправленных сообщений. Полное описание: https://i.imgur.com/kTCeDVf.png ',
     )
     async def inspect(self, ctx):
         if not ctx.channel.bot_is_mod:
@@ -128,7 +125,8 @@ class Inspect(commands.Cog):
                       f'Лимиты: {data["messages"]}/{data["time_unit"] if data["time_unit"] % 1 != 0 else int(data["time_unit"])}' \
                       f'{second_limit if second_limit else "."} ' \
                       f'{percent_limit if percent_limit else ""} ' \
-                      f'Таймауты: {", ".join(map(str, data["timeouts"]))}.'
+                      f'Таймауты: {", ".join(map(str, data["timeouts"]))}. ' \
+                      f'{"Только на стриме." if not data["offline"] else ""}'
             await ctx.reply(message)
         elif content == 'on':
             data = await db.inspects.find_one({'channel': ctx.channel.name})
@@ -193,6 +191,8 @@ class Inspect(commands.Cog):
             content = content.split()
 
             remove_second_limit = False
+            remove_percent_limit = False
+
             values = {}
             for value in content:
                 if value == '//':
@@ -245,7 +245,10 @@ class Inspect(commands.Cog):
                         await ctx.reply('Неверная запись лимита в процентах')
                         return
 
-                    values['percent_limit'] = percent_limit
+                    if not percent_limit:
+                        remove_percent_limit = True
+                    else:
+                        values['percent_limit'] = percent_limit
                 elif value == 'online':
                     values['offline'] = False
                 elif value == 'always':
@@ -281,6 +284,9 @@ class Inspect(commands.Cog):
                 if remove_second_limit:
                     values['$unset'] = {'second_limit': 1}
 
+                if remove_percent_limit:
+                    values['$unset'] = {'percent_limit': 1}
+
                 await db.inspects.update_one({'channel': ctx.channel.name}, values)
 
             if ctx.channel.name in self.limits:
@@ -292,10 +298,12 @@ class Inspect(commands.Cog):
         data = await db.inspects.find_one({'channel': channel})
         self.warned_users[channel] = {}
         self.limits[channel] = {'messages': data['messages'], 'time_unit': data['time_unit']}
-        if 'percent_limit' in data:
-            self.limits['percent_limit'] = data['percent_limit']
         self.timeouts[channel] = data['timeouts']
         self.message_log[channel] = []
+
+        if 'percent_limit' in data:
+            self.limits['percent_limit'] = data['percent_limit']
+
         if 'second_limit' in data:
             second_limit = data['second_limit']
             self.second_limits[channel] = {'messages': second_limit['messages'], 'time_unit': second_limit['time_unit']}

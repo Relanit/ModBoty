@@ -34,6 +34,9 @@ class Link(commands.Cog):
             link = content.split(maxsplit=1)[0].lower()
 
             if link in self.links.get(message.channel.name, []) or (link := self.links_aliases.get(message.channel.name, {}).get(link, '')):
+                if not message.author.is_mod and time.time() < self.cooldowns[message.channel.name].get(link, 0):
+                    return
+
                 data = await db.links.find_one({'channel': message.channel.name, 'links.name': link}, {'private': 1, 'links.$': 1})
                 private = data['private'] if 'private' not in data['links'][0] else data['links'][0]['private']
                 text = data['links'][0]['text']

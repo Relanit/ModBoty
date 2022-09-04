@@ -158,13 +158,14 @@ class Inspect(commands.Cog):
 
             items = data['stats'].items()
             sorted_users = sorted(items, key=lambda x: x[1], reverse=True)
+            number = len(sorted_users)
 
             top = []
             for place, user in enumerate(sorted_users[:5], start=1):
                 name = user[0][:1] + u'\U000E0000' + user[0][1:]
                 top.append(f'{place}. {name} - {user[1]}{" сообщений" if place == 1 else ""}')
 
-            await ctx.reply(f'Топ спамеров за стрим: {", ".join(top)}')
+            await ctx.reply(f'Всего отстранено: {number}. Топ спамеров за стрим: {", ".join(top)}')
         elif content.startswith('stats'):
             data = await db.inspects.find_one({'channel': ctx.channel.name})
 

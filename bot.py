@@ -69,7 +69,7 @@ class ModBoty(commands.Bot, Cooldown):
                     self.streams.add(channel)
 
                     if (data := await db.inspects.find_one({'channel': channel})) and data['active']:
-                        await db.inspects.update_one({'channel': channel}, {'$unset': {'stats': 1}})
+                        await db.inspects.update_one({'channel': channel}, {'$set': {'stats': []}})
                         await self.cogs['Inspect'].set(channel)
             else:
                 if channel in self.streams:

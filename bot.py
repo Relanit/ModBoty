@@ -10,7 +10,7 @@ from cooldown import Cooldown
 
 class ModBoty(commands.Bot, Cooldown):
     def __init__(self):
-        super().__init__(token=os.getenv('TOKEN'), prefix='!', initial_channels=CHANNELS)
+        super().__init__(token=os.getenv('TOKEN'), prefix="!", initial_channels=CHANNELS)
         self.admins = ['relanit']
         self.streams = set()
 

@@ -71,13 +71,13 @@ class Timer(commands.Cog):
                 timer['offline'] = False
             elif value == 'always':
                 timer['offline'] = True
-            elif value == 'a' or value == 'а':
+            elif value in ('a', 'а'):
                 timer['announce'] = True
             elif value == 'noa':
                 timer['announce'] = False
-            elif 'on' in value:
+            elif value == 'on':
                 timer['active'] = True
-            elif 'off' in value:
+            elif value == 'off':
                 timer['active'] = False
             elif not interval:
                 try:
@@ -106,32 +106,32 @@ class Timer(commands.Cog):
         elif interval and not number:
             await ctx.reply('Не указано количество сообщений')
             return
-        elif interval < 5:
+        elif interval < 3:
             if number > 3:
-                await ctx.reply('Таймеры с периодом меньше 5 минут могут отправлять не больше трёх сообщений')
+                await ctx.reply('Таймеры с периодом меньше трёх минут могут отправлять не более трёх сообщений')
                 return
 
             num = 0
             for l, t in self.timers.get(ctx.channel.name, {}).items():
-                if t['interval'] < 5 and t.get('active', True) and l != link:
+                if t['interval'] < 3 and t.get('active', True) and l != link:
                     num += 1
                 if num == 2:
-                    await ctx.reply('На канале может быть не более двух активных таймеров с периодом менее 5 минут')
+                    await ctx.reply('На канале может быть не более двух активных таймеров с периодом менее трёх минут')
                     return
 
         if timer.get('active') and self.timers[ctx.channel.name].get(link):
             num = 0
             t = self.timers[ctx.channel.name][link]
-            if t['interval'] < 5 and t['number'] > 3:
-                await ctx.reply('Таймеры с периодом меньше 5 минут могут отправлять не больше трёх сообщений')
+            if t['interval'] < 3 and t['number'] > 3:
+                await ctx.reply('Таймеры с периодом меньше трёх минут могут отправлять не более трёх сообщений')
                 return
-            if t['interval'] < 5 and not t.get('active', True):
+            if t['interval'] < 3 and not t.get('active', True):
                 num = 1
             for l, t in self.timers.get(ctx.channel.name, {}).items():
-                if t['interval'] < 5 and t.get('active', True) and l != link:
+                if t['interval'] < 3 and t.get('active', True) and l != link:
                     num += 1
                 if num == 3:
-                    await ctx.reply('На канале может быть не более двух активных таймеров с периодом менее 5 минут')
+                    await ctx.reply('На канале может быть не более двух активных таймеров с периодом менее трёх минут')
                     return
 
         if ctx.channel.name not in self.timers:
@@ -184,7 +184,8 @@ class Timer(commands.Cog):
                 if self.timers[channel][timer].get('active', True):
                     if channel not in self.bot.streams and not self.timers[channel][timer].get('offline', self.offline[channel]):
                         return
-                    if time.time() > self.timers[channel][timer]['cooldown'] and self.messages_from_timer[channel] >= 5:
+                    if time.time() > self.timers[channel][timer]['cooldown'] and \
+                            self.messages_from_timer[channel] >= self.timers[channel][timer]['number'] + 5:
                         data = await db.links.find_one({'channel': channel, 'links.name': timer}, {'links.$': 1})
                         text = data['links'][0]['text']
 

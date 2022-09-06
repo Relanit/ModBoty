@@ -174,7 +174,7 @@ class Timer(commands.Cog):
             message = 'Неверный ввод'
         await ctx.reply(message)
 
-    @routines.routine(seconds=10, iterations=0)
+    @routines.routine(seconds=11, iterations=0)
     async def check_timers(self):
         for channel in self.timers:
             timers = list(self.timers[channel])

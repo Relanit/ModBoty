@@ -46,14 +46,24 @@ class Inspect(commands.Cog):
                     handle = True
 
             if message.channel.name in self.second_limits and handle:
-                test = self.message_log[message.channel.name].copy()
-                for msg in test.copy():
-                    if now - msg['time'] > self.second_limits[message.channel.name]['time_unit']:
-                        del test[0]
-                    else:
-                        break
+                if self.limits[message.channel.name]['time_unit'] < self.second_limits[message.channel.name]['time_unit'] * 2:
+                    message_log = self.message_log[message.channel.name].copy()
+                    for msg in message_log.copy():
+                        if now - msg['time'] > self.second_limits[message.channel.name]['time_unit']:
+                            del message_log[0]
+                        else:
+                            break
+                else:
+                    index = 0
+                    message_log = self.message_log[message.channel.name][::-1]
+                    for msg in message_log.copy():
+                        if now - msg['time'] > self.second_limits[message.channel.name]['time_unit']:
+                            message_log = message_log[:index]
+                            break
+                        else:
+                            index += 1
 
-                chatters = [msg['author'] for msg in test]
+                chatters = [msg['author'] for msg in message_log]
                 count = chatters.count(message.author.name)
 
                 if count > self.second_limits[message.channel.name]['messages']:
@@ -226,8 +236,8 @@ class Inspect(commands.Cog):
                         await ctx.reply('Неверная запись времени или количества сообщений')
                         return
 
-                    if not 1 <= time_unit <= 15:
-                        await ctx.reply('Время не должно быть меньше 5 или больше 15 секунд')
+                    if not 5 <= time_unit <= 60:
+                        await ctx.reply('Время не должно быть меньше 5 или больше 60 секунд')
                         return
                     if not 1 <= messages <= time_unit:
                         await ctx.reply('Количество сообщений не должно быть меньше 1 или больше указанного времени.')

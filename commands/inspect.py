@@ -58,17 +58,15 @@ class Inspect(commands.Cog):
                             del message_log[0]
                         else:
                             break
+                    chatters = [msg['author'] for msg in message_log]
                 else:
-                    index = 0
-                    message_log = self.message_log[message.channel.name][::-1]
-                    for msg in message_log.copy():
+                    chatters = []
+                    for msg in self.message_log[message.channel.name][::-1]:
                         if now - msg['time'] > secondary_limit['time_unit']:
-                            message_log = message_log[:index]
                             break
                         else:
-                            index += 1
+                            chatters.append(msg['author'])
 
-                chatters = [msg['author'] for msg in message_log]
                 count = chatters.count(message.author.name)
 
                 if count > secondary_limit['messages']:
@@ -209,12 +207,12 @@ class Inspect(commands.Cog):
         else:
             content = content.split()
             values = {'$set': {}, '$unset': {}}
+            inspect = await db.inspects.find_one({'channel': ctx.channel.name}) or {}
 
             for value in content:
                 if '/' in value:
                     split, limit = ('//', 'second_limit') if '//' in value else ('/', 'first_limit')
 
-                    inspect = await db.inspects.find_one({'channel': ctx.channel.name}) or {}
                     if value.replace('/', ''):
                         try:
                             messages, time_unit = value.replace(',', '.').split(split)
@@ -231,18 +229,12 @@ class Inspect(commands.Cog):
                             await ctx.reply('Количество сообщений не должно быть меньше 1 или больше 60.')
                             return
 
-                        if 'first' in limit and time_unit == values['$set'].get('second_limit', inspect.get('second_limit', {})).get('time_unit', 0):
-                            await ctx.reply('Не должно быть двух лимитов с одинаковым временем')
-                            return
-                        elif 'second' in limit and time_unit == values['$set'].get('first_limit', inspect.get('first_limit', {})).get('time_unit', 0):
-                            await ctx.reply('Не должно быть двух лимитов с одинаковым временем')
-                            return
                         values['$set'][limit] = {'messages': messages, 'time_unit': time_unit}
                     elif inspect and 'first_limit' in inspect \
                             and 'second_limit' in inspect and not ('first_limit' in values['$unset'] or 'second_limit' in values['$unset']):
                         values['$unset'][limit] = 1
                     else:
-                        await ctx.reply('Чтобы сбросить лимит, должен быть установлен другой')
+                        await ctx.reply('Чтобы удалить лимит, должен быть установлен другой')
                         return
                 elif value.endswith('%'):
                     percent_limit = value.strip('%')
@@ -279,7 +271,15 @@ class Inspect(commands.Cog):
                         await ctx.reply('Неверное значение таймаута')
                         return
 
-            inspect = await db.inspects.find_one({'channel': ctx.channel.name}) or {}
+            first_unit = values['$set'].get('first_limit', inspect.get('first_limit', {})).get('time_unit', 0)
+            second_unit = values['$set'].get('second_limit', inspect.get('second_limit', {})).get('time_unit', 0)
+            if first_unit and first_unit == second_unit:
+                await ctx.reply('Не должно быть двух лимитов с одинаковым временем')
+                return
+            elif first_unit > 15 and second_unit > 15:
+                await ctx.reply('Не должно быть больше одного лимита с временем более 15 секунд')
+                return
+
             on_insert = {'channel': ctx.channel.name, 'active': False}
             if not inspect:
                 if not ('first_limit' in values['$set'] or 'second_limit' in values['$set']):

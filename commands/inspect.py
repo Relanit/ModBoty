@@ -36,8 +36,8 @@ class Inspect(commands.Cog):
                 else:
                     break
 
-            # if message.author.is_mod:
-            #     return
+            if message.author.is_mod:
+                return
 
             percent_limit = self.limits[message.channel.name].get('percent_limit', 0)
 

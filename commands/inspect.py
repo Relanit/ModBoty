@@ -124,7 +124,7 @@ class Inspect(commands.Cog):
 
         content = ctx.content.lower()
         if not content:
-            data = await db.inspects.find_one({'channel': "t2x2"})
+            data = await db.inspects.find_one({'channel': ctx.channel.name})
 
             if not data:
                 await ctx.reply(f'Сначала настройте наблюдение, {self.bot._prefix}help inspect')
@@ -147,28 +147,28 @@ class Inspect(commands.Cog):
                       f'{"Только на стриме." if not data["offline"] else ""}'
             await ctx.reply(message)
         elif content == 'on':
-            data = await db.inspects.find_one({'channel': "t2x2"})
+            data = await db.inspects.find_one({'channel': ctx.channel.name})
 
             if data:
-                if "t2x2" not in self.limits:
-                    if "t2x2" in self.bot.streams or data['offline']:
-                        await self.set("t2x2")
-                await db.inspects.update_one({'channel': "t2x2"}, {'$set': {'active': True}})
+                if ctx.channel.name not in self.limits:
+                    if ctx.channel.name in self.bot.streams or data['offline']:
+                        await self.set(ctx.channel.name)
+                await db.inspects.update_one({'channel': ctx.channel.name}, {'$set': {'active': True}})
                 await ctx.reply('✅ Включено')
             else:
                 await ctx.reply(f'Сначала настройте наблюдение, {self.bot._prefix}help inspect')
         elif content == 'off':
-            data = await db.inspects.find_one({'channel': "t2x2"})
+            data = await db.inspects.find_one({'channel': ctx.channel.name})
 
             if data:
-                if "t2x2" in self.limits:
-                    self.unset("t2x2")
-                await db.inspects.update_one({'channel': "t2x2"}, {'$set': {'active': False}})
+                if ctx.channel.name in self.limits:
+                    self.unset(ctx.channel.name)
+                await db.inspects.update_one({'channel': ctx.channel.name}, {'$set': {'active': False}})
                 await ctx.reply('❌ Выключено')
             else:
                 await ctx.reply(f'Сначала настройте наблюдение, {self.bot._prefix}help inspect')
         elif content == 'stats':
-            data = await db.inspects.find_one({'channel': "t2x2"})
+            data = await db.inspects.find_one({'channel': ctx.channel.name})
 
             if not data or not data.get('stats'):
                 await ctx.reply('Статистика не найдена')
@@ -185,7 +185,7 @@ class Inspect(commands.Cog):
 
             await ctx.reply(f'Всего отстранено: {number}. Топ спамеров за стрим: {", ".join(top)}')
         elif content.startswith('stats'):
-            data = await db.inspects.find_one({'channel': "t2x2"})
+            data = await db.inspects.find_one({'channel': ctx.channel.name})
 
             if not data.get('stats'):
                 await ctx.reply('Статистика не найдена')
@@ -214,7 +214,7 @@ class Inspect(commands.Cog):
                 if '/' in value:
                     split, limit = ('//', 'second_limit') if '//' in value else ('/', 'first_limit')
 
-                    inspect = await db.inspects.find_one({'channel': "t2x2"}) or {}
+                    inspect = await db.inspects.find_one({'channel': ctx.channel.name}) or {}
                     if value.replace('/', ''):
                         try:
                             messages, time_unit = value.replace(',', '.').split(split)
@@ -279,8 +279,8 @@ class Inspect(commands.Cog):
                         await ctx.reply('Неверное значение таймаута')
                         return
 
-            inspect = await db.inspects.find_one({'channel': "t2x2"}) or {}
-            on_insert = {'channel': "t2x2", 'active': False}
+            inspect = await db.inspects.find_one({'channel': ctx.channel.name}) or {}
+            on_insert = {'channel': ctx.channel.name, 'active': False}
             if not inspect:
                 if not ('first_limit' in values['$set'] or 'second_limit' in values['$set']):
                     await ctx.reply('Для начала установите сообщения и время')
@@ -290,15 +290,15 @@ class Inspect(commands.Cog):
                     values['$set']['timeouts'] = [60, 300, 600]
                 if 'offline' not in values['$set']:
                     on_insert['offline'] = False
-            await db.inspects.update_one({'channel': "t2x2"}, {'$setOnInsert': on_insert, **values}, upsert=True)
+            await db.inspects.update_one({'channel': ctx.channel.name}, {'$setOnInsert': on_insert, **values}, upsert=True)
 
-            if "t2x2" not in self.bot.streams:
+            if ctx.channel.name not in self.bot.streams:
                 if values['$set'].get('offline', inspect.get('offline')) and inspect.get('active'):
-                    await self.set("t2x2")
-                elif "t2x2" in self.limits:
-                    self.unset("t2x2")
-            elif "t2x2" in self.limits:
-                await self.set("t2x2")
+                    await self.set(ctx.channel.name)
+                elif ctx.channel.name in self.limits:
+                    self.unset(ctx.channel.name)
+            elif ctx.channel.name in self.limits:
+                await self.set(ctx.channel.name)
 
             await ctx.reply('Готово.')
 

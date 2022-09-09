@@ -4,7 +4,7 @@ from twitchio.ext import commands, routines
 
 from config import db
 
-reason = 'Запрещённая фраза (by ModBoty)'
+reason = 'Сообщение, содержащее запрещённую фразу (by ModBoty)'
 
 
 class Banwords(commands.Cog):

@@ -24,7 +24,7 @@ class Link(commands.Cog):
 
         content = message.content
         if message.content.startswith('@'):
-            content = message.content.split(' ', 1)[1]
+            content = message.content.split(' ', 1)[1] if len(message.content.split(' ', 1)) > 1 else message.content
 
         if content.startswith(self.bot._prefix):
             content = content.lstrip(self.bot._prefix)

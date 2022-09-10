@@ -113,7 +113,7 @@ class Inspect(commands.Cog):
     @commands.command(
         name='inspect',
         cooldown={'per': 0, 'gen': 5},
-        description='Ограничения на количество отправленных сообщений. Полное описание: https://i.imgur.com/kTCeDVf.png ',
+        description='Ограничения на количество отправленных сообщений. Полное описание: https://i.imgur.com/fX5L0Vk.png ',
     )
     async def inspect(self, ctx):
         if not ctx.channel.bot_is_mod:

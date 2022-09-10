@@ -28,7 +28,7 @@ class Timer(commands.Cog):
         name='timer',
         aliases=['delt', 'timers'],
         cooldown={'per': 0, 'gen': 5},
-        description='Автоматическая отправка ссылок с определённым интервалом. Полное описание: https://i.imgur.com/hq2H3Qv.png '
+        description='Автоматическая отправка ссылок с определённым интервалом. Полное описание: https://i.imgur.com/mzYIUkF.png '
     )
     async def timer(self, ctx):
         if not (ctx.channel.bot_is_vip or ctx.channel.bot_is_mod):

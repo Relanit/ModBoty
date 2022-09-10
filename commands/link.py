@@ -55,12 +55,14 @@ class Link(commands.Cog):
                         except ValueError:
                             num = 1
 
+                    self.cooldowns[message.channel.name][link] = time.time() + 2.5
                     if num > 2:
                         if time.time() < self.mod_cooldowns[message.channel.name]:
                             return
-                        self.mod_cooldowns[message.channel.name] = time.time() + 2.5
 
-                    self.cooldowns[message.channel.name][link] = time.time() + 2.5
+                        self.mod_cooldowns[message.channel.name] = time.time() + 2.5
+                        self.cooldowns[message.channel.name][link] = time.time() + 5
+
                     for i in range(num):
                         await message.channel.send(text)
                         await asyncio.sleep(0.1)

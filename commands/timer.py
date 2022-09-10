@@ -186,6 +186,13 @@ class Timer(commands.Cog):
                         return
                     if time.time() > self.timers[channel][timer]['cooldown'] and \
                             self.messages_from_timer[channel] >= self.timers[channel][timer]['number'] + 5:
+                        cog = self.bot.get_cog('Link')
+
+                        if self.timers[channel][timer]['number'] > 2 and time.time() - cog.mod_cooldowns < 2.5:
+                            return
+                        elif self.timers[channel][timer]['number'] < 3 and time.time() - cog.cooldowns.get(timer, 0) < 5:
+                            return
+
                         data = await db.links.find_one({'channel': channel, 'links.name': timer}, {'links.$': 1})
                         text = data['links'][0]['text']
 
@@ -199,11 +206,12 @@ class Timer(commands.Cog):
                             await messageable.send(text)
                             await asyncio.sleep(0.1)
 
+                        cog.cooldowns[channel][timer] = time.time() + 2.5
                         if self.timers[channel][timer]['number'] > 2:
                             cog.mod_cooldowns[channel] = time.time() + 2.5
+                            cog.cooldowns[channel][timer] = time.time() + 5
 
                         self.messages_from_timer[channel] = 0
-                        cog.cooldowns[channel][timer] = time.time() + 2.5
                         self.timers[channel][timer]['cooldown'] = time.time() + self.timers[channel][timer]['interval'] * 60
 
     @routines.routine(iterations=1)

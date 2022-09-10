@@ -185,7 +185,7 @@ class Timer(commands.Cog):
                     if channel not in self.bot.streams and not self.timers[channel][timer].get('offline', self.offline[channel]):
                         return
                     if time.time() > self.timers[channel][timer]['cooldown'] and \
-                            self.messages_from_timer[channel] >= self.timers[channel][timer]['number'] + 5:
+                            self.messages_from_timer[channel] >= self.timers[channel][timer]['number'] + 7:
                         cog = self.bot.get_cog('Link')
 
                         if self.timers[channel][timer]['number'] > 2 and time.time() - cog.mod_cooldowns < 2.5:

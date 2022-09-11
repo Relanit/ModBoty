@@ -76,7 +76,7 @@ class Link(commands.Cog):
         name='link',
         aliases=['links', 'del', 'public', 'aliases'],
         cooldown={'per': 0, 'gen': 5},
-        description='Создание кастомных команд-ссылок. Полное описание: https://i.imgur.com/NIGcSuo.png '
+        description='Создание кастомных команд-ссылок. Полное описание: https://i.imgur.com/0Ewn3vR.png '
     )
     async def link(self, ctx):
         if not (ctx.channel.bot_is_vip or ctx.channel.bot_is_mod):

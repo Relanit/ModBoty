@@ -6,7 +6,6 @@ from twitchio.ext import commands, routines
 
 from config import CHANNELS, db
 from cooldown import Cooldown
-import requests
 
 
 class ModBoty(commands.Bot, Cooldown):
@@ -27,7 +26,7 @@ class ModBoty(commands.Bot, Cooldown):
         #     channels.append(broadcaster['login'])
         #
         # print(channels)
-        super().__init__(token=os.getenv('TOKEN'), prefix='!', initial_channels=CHANNELS)
+        super().__init__(token=os.getenv('TOKEN'), prefix="!", initial_channels=CHANNELS)
         for command in [path.stem for path in Path('commands').glob('*py')]:
             self.load_module(f'commands.{command}')
         self.check_streams.start(stop_on_error=False)

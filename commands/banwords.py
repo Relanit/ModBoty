@@ -147,7 +147,7 @@ class Banwords(commands.Cog):
         for item in self.mutewords.get(ctx.channel.name, []):
             if item['muteword'] == muteword:
                 found = True
-                self.banwords[ctx.channel.name].remove(item)
+                self.mutewords[ctx.channel.name].remove(item)
                 break
 
         if not found:

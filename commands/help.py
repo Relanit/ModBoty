@@ -34,7 +34,7 @@ class Help(commands.Cog):
                 link = cog.links_aliases[ctx.channel.name][link]
 
             data = await db.links.find_one({'channel': ctx.channel.name},
-                                           {'links': {'$elemMatch': {'name': link}}, 'private': 1})
+                                           {'links': {'$elemMatch': {'name': link}}, 'private': 1, 'offline': 1})
 
             aliases = data['links'][0]['aliases'] if 'aliases' in data['links'][0] else []
 
@@ -53,7 +53,7 @@ class Help(commands.Cog):
                 timer = cog.timers[ctx.channel.name][link]
                 timer = f'Установлен {"активный" if timer.get("active", True) else "неактивный"} таймер: {timer["number"]} сообщений раз в {timer["interval"]}м' \
                         f'{", с announce" if timer.get("announce", False) in timer else ""}' \
-                        f'{"." if timer.get("offline", True) else ", только на стриме."}'
+                        f'{"." if timer.get("offline", data["offline"]) else ", только на стриме."}'
 
             message = f'{self.bot._prefix}{link}{"." if not aliases else " " + aliases + "."} ' \
                       f'Доступ: {"приватный" if private else "публичный"}. ' \

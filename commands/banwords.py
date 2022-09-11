@@ -45,7 +45,7 @@ class Banwords(commands.Cog):
             await ctx.reply('Боту необходима модерка для работы этой команды')
             return
 
-        if not ctx.content and ctx.command_alias not in ('banwords', 'mutewords'):
+        if not ctx.content and ctx.command_alias not in ('bwords', 'mwords'):
             await ctx.reply('Пустой ввод')
             return
 

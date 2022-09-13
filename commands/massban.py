@@ -1,4 +1,5 @@
 import asyncio
+import time
 
 from twitchio.ext import commands
 
@@ -13,8 +14,6 @@ class MassBan(commands.Cog):
         self.bot = bot
         self.message_history = {}
         self.ban_phrases = {}
-        self.text = {}
-        self.running = set()
         self.queue = {}
 
         for channel in CHANNELS:
@@ -25,7 +24,7 @@ class MassBan(commands.Cog):
         if message.echo:
             return
 
-        if message.author.is_mod:
+        if message.channel.name in self.ban_phrases and message.author.is_mod:
             if message.content.startswith(self.bot._prefix):
                 content = message.content.lstrip(self.bot._prefix)
                 if not content:
@@ -33,7 +32,12 @@ class MassBan(commands.Cog):
 
                 command = content.split(maxsplit=1)[0].lower()
                 if command == 'stop':
-                    await self.stop(message)
+                    self.ban_phrases.pop(message.channel.name, None)
+                    self.queue.pop(message.channel.name, None)
+                    ctx = await self.bot.get_context(message)
+                    while ctx.limited:
+                        await asyncio.sleep(0.1)
+                    await ctx.reply('Остановлено')
             return
 
         self.message_history[message.channel.name].append((message.author.name, message.content))
@@ -42,18 +46,12 @@ class MassBan(commands.Cog):
 
         if message.channel.name in self.ban_phrases:
             if self.ban_phrases[message.channel.name] in message.content.lower():
-                if message.channel.name in self.running:
-                    self.queue[message.channel.name].append(message.author.name)
-                else:
-                    while message.channel.limited:
-                        await asyncio.sleep(0.1)
-                    if message.channel.name in self.ban_phrases:
-                        await message.channel.send(self.text[message.channel.name] % message.author.name)
+                self.queue[message.channel.name].append(message.author.name)
 
     @commands.command(
         name='mb',
         aliases=['mt'],
-        cooldown={'per': 0, 'gen': 5},
+        cooldown={'per': 0, 'gen': 60},
         description='Отстраняет/банит пользователей, написавших сообщение с указанной фразой. Действует на 50 последних сообщений и все новые. !stop для остановки.'
     )
     async def mass_ban(self, ctx):
@@ -85,15 +83,15 @@ class MassBan(commands.Cog):
                 ban_phrase = content_split[1]
             except ValueError:
                 timeout = 300
-            self.text[ctx.channel.name] = f'/timeout %s {timeout} {reason}'
+            text = f'/timeout %s {timeout} {reason}'
         else:
-            self.text[ctx.channel.name] = f'/ban %s {reason}'
+            text = f'/ban %s {reason}'
 
         while ctx.limited:
             await asyncio.sleep(0.1)
         await ctx.reply('Запущено')
 
-        self.running.add(ctx.channel.name)
+        start = time.time()
         self.ban_phrases[ctx.channel.name] = ban_phrase
         self.queue[ctx.channel.name] = []
         banned_users = []
@@ -103,36 +101,32 @@ class MassBan(commands.Cog):
                 while ctx.limited:
                     await asyncio.sleep(0.1)
                 if ctx.channel.name in self.ban_phrases:
-                    await ctx.send(self.text[ctx.channel.name] % message[0])
+                    await ctx.send(text % message[0])
                     banned_users.append(message[0])
                     await asyncio.sleep(0.3)
                 else:
                     return
 
-        for user in self.queue[ctx.channel.name]:
-            if user not in banned_users:
-                while ctx.limited:
-                    await asyncio.sleep(0.1)
-                if ctx.channel.name in self.ban_phrases:
-                    await ctx.send(self.text[ctx.channel.name] % user)
-                    banned_users.append(user)
-                    await asyncio.sleep(0.3)
-                else:
-                    return
+        while ctx.channel.name in self.ban_phrases:
+            for user in self.queue[ctx.channel.name]:
+                if user not in banned_users:
+                    while ctx.limited:
+                        await asyncio.sleep(0.1)
+                    if ctx.channel.name in self.ban_phrases:
+                        await ctx.send(text % user)
+                        banned_users.append(user)
+                        await asyncio.sleep(0.3)
+                    else:
+                        return
 
-        self.running.remove(ctx.channel.name)
-        self.queue.pop(ctx.channel.name)
+            if time.time() - start > 300:
+                self.ban_phrases.pop(ctx.channel.name, None)
+                self.queue.pop(ctx.channel.name, None)
+                return
 
-    async def stop(self, message):
-        if message.channel.name in self.ban_phrases:
-            self.ban_phrases.pop(message.channel.name, None)
-            self.text.pop(message.channel.name, None)
-            self.running.discard(message.channel.name)
-            self.queue.pop(message.channel.name, None)
-            ctx = await self.bot.get_context(message)
-            while ctx.limited:
-                await asyncio.sleep(0.1)
-            await ctx.reply('Остановлено')
+            banned_users.clear()
+            self.queue.get(ctx.channel.name, []).clear()
+            await asyncio.sleep(0.1)
 
 
 def prepare(bot):

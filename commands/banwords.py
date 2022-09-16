@@ -116,7 +116,7 @@ class Banwords(commands.Cog):
             await ctx.reply('Неверное значение таймаута')
             return
 
-        muteword = ' '.join(content[1:])
+        muteword = ' '.join(content[1:]).lower()
 
         if len(muteword) > 20:
             await ctx.reply('Длина мутворда не должна превышать 20 символов')

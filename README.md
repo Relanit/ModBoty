@@ -1,16 +1,16 @@
 # ModBoty
-Chat-bot with moderator functions
+Чат-бот с модераторскими функциями
 
-List of teams:
+Список команд:
 
-• bword - Creating banned words, for the use of which the user gets a ban/mute
+• bword - создание запрещённых слов, за использование которых пользователь получает бан/мут
 
-• inspect - Set a limit on the number of messages sent
+• inspect - установка лимита на количество отправок сообщений
 
-• link - Create custom link commands
+• link - создание каcтомных команд-ссылок
 
-• mb - ban/mute users who wrote the above text
+• mb - бан/мут пользователей, написавших указанный текст
 
-• timer - sending commands-links at specific intervals
+• timer - отправка команд-ссылок в определённые интервалы времени
 
-• spam - spam text a specified number of times
+• spam - спам текстом указанное количество раз

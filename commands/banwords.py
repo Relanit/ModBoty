@@ -25,6 +25,7 @@ class Banwords(commands.Cog):
             for banword in self.banwords[message.channel.name]:
                 if banword in content:
                     await message.channel.send(f'/ban {message.author.name} {reason}')
+                    return
         if message.channel.name in self.mutewords:
             content = message.content.lower()
             timeout = 0

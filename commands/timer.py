@@ -149,6 +149,11 @@ class Timer(commands.Cog):
             message = f'Добавлен таймер {self.bot._prefix}{link}'
             self.offline[ctx.channel.name] = False
 
+        if 'active' in timer and timer['active']:
+            message = f'Включён таймер {self.bot._prefix}{link}'
+        elif 'active' in timer:
+            message = f'Выключён таймер {self.bot._prefix}{link}'
+
         await db.timers.update_one(key, values, upsert=True)
         await ctx.reply(message)
 

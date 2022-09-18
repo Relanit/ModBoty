@@ -50,7 +50,7 @@ class MassBan(commands.Cog):
 
     @commands.command(
         name='mb',
-        aliases=['mt'],
+        aliases=['mt', 'm'],
         cooldown={'per': 0, 'gen': 60},
         description='Отстраняет/банит пользователей, написавших сообщение с указанной фразой. Действует на 50 последних сообщений и все новые. !stop для остановки.'
     )

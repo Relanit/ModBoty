@@ -11,7 +11,7 @@ class Help(commands.Cog):
     @commands.command(
         name='help',
         aliases=['commands'],
-        cooldown={'per': 5, 'gen': 0},
+        cooldown={'per': 3, 'gen': 0},
         description='Эта команда.'
     )
     async def help(self, ctx):

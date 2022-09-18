@@ -241,6 +241,8 @@ class Link(commands.Cog):
             if ctx.channel.name not in self.links_aliases:
                 self.links_aliases[ctx.channel.name] = {}
 
+            self.links_aliases[ctx.channel.name] = {alias: name for alias, name in self.links_aliases[ctx.channel.name].items() if name != link}
+
             for alias in aliases:
                 self.links_aliases[ctx.channel.name][alias] = link
         else:

@@ -239,7 +239,9 @@ class Timer(commands.Cog):
                         text = data['links'][0]['text']
 
                         if self.timers[channel][timer].get('announce', False):
-                            text = f'/announce {text.split(maxsplit=1)[1]}' if 'announce' in text else f'/announce {text}'
+                            text = f'/announce {text.split(maxsplit=1)[1]}' if 'announce ' in text else f'/announce {text}'
+                        elif self.timers[channel][timer].get('announce') is not None:
+                            text = text.split(maxsplit=1)[1] if 'announce ' in text else text
 
                         cog = self.bot.get_cog('Link')
                         messageable = self.bot.get_channel(channel)

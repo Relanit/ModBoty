@@ -84,7 +84,7 @@ class Banwords(commands.Cog):
         self.banwords[ctx.channel.name].append(banword)
         await db.banwords.update_one({'channel': ctx.channel.name}, {'$setOnInsert': {'channel': ctx.channel.name},
                                                                      '$addToSet': {'banwords': banword}}, upsert=True)
-        await ctx.reply(f'Добавлен банворд {banword}')
+        await ctx.reply('Добавлено')
 
     async def delete_banword(self, ctx):
         banword = ctx.content.lower()
@@ -95,7 +95,7 @@ class Banwords(commands.Cog):
 
         self.banwords[ctx.channel.name].remove(banword)
         await db.banwords.update_one({'channel': ctx.channel.name}, {'$pull': {'banwords': banword}})
-        await ctx.reply(f'Удалён банворд {ctx.content.lower()}')
+        await ctx.reply('Удалено')
 
     async def add_muteword(self, ctx):
         if len(self.banwords.get(ctx.channel.name, [])) + len(self.mutewords.get(ctx.channel.name, [])) == 30:
@@ -128,10 +128,10 @@ class Banwords(commands.Cog):
             if item['muteword'] == muteword:
                 found = True
 
-        message = f'Добавлен мутворд {muteword}'
+        message = 'Добавлено'
         if found:
             await db.banwords.update_one({'channel': ctx.channel.name}, {'$pull': {'mutewords': {'muteword': muteword}}})
-            message = f'Изменено время таймаута {muteword}'
+            message = f'Изменено'
 
         if ctx.channel.name not in self.mutewords:
             self.mutewords[ctx.channel.name] = []
@@ -156,7 +156,7 @@ class Banwords(commands.Cog):
             return
 
         await db.banwords.update_one({'channel': ctx.channel.name}, {'$pull': {'mutewords': {'muteword': muteword}}})
-        await ctx.reply(f'Удалён мутворд {ctx.content.lower()}')
+        await ctx.reply(f'Удалено')
 
     async def list_banwords(self, ctx):
         if not self.banwords.get(ctx.channel.name):

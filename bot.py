@@ -75,6 +75,10 @@ class ModBoty(commands.Bot, Cooldown):
                 if channel in self.streams:
                     self.streams.remove(channel)
 
+                    if channel == 't2x2':
+                        channel = self.get_channel(channel)
+                        await channel.send('@Relanit запись стрима dinkDonk')
+
                     if (data := await db.inspects.find_one({'channel': channel})) and data['active']:
                         self.cogs['Inspect'].unset(channel)
                     elif data and data['active'] and data['offline']:

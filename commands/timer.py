@@ -230,7 +230,7 @@ class Timer(commands.Cog):
                             self.messages_from_timer[channel] >= self.timers[channel][timer]['number'] + 7:
                         cog = self.bot.get_cog('Link')
 
-                        if self.timers[channel][timer]['number'] > 2 and time.time() - cog.mod_cooldowns.get(timer, 0) < 2.5:
+                        if self.timers[channel][timer]['number'] > 2 and time.time() - cog.mod_cooldowns.get(channel, 0) < 2.5:
                             return
                         elif self.timers[channel][timer]['number'] < 3 and time.time() - cog.cooldowns.get(timer, 0) < 5:
                             return

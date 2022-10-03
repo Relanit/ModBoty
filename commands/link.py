@@ -48,7 +48,7 @@ class Link(commands.Cog):
 
                     if 'a' in content or 'а' in content:
                         content = content.replace('a', ' ').replace('а', ' ').strip(' ')
-                        announce = data['announce']
+                        announce = data['links'][0].get('announce') or data['announce']
 
                     if content:
                         try:
@@ -85,7 +85,7 @@ class Link(commands.Cog):
         name='link',
         aliases=['links', 'del', 'aliases', 'public', 'announce'],
         cooldown={'per': 0, 'gen': 5},
-        description='Создание кастомных команд-ссылок. Полное описание: https://i.imgur.com/uEmfHdD.png '
+        description='Создание кастомных команд-ссылок. Полное описание: https://i.imgur.com/KzAYDCX.png '
     )
     async def link(self, ctx):
         if not (ctx.channel.bot_is_vip or ctx.channel.bot_is_mod):
@@ -116,6 +116,9 @@ class Link(commands.Cog):
 
         link = content[0].lower().lstrip(self.bot._prefix)
 
+        if name := self.links_aliases.get(ctx.channel.name, {}).get(link, ''):
+            link = name
+
         private = None
         if content[1].lower() == 'private':
             private = True
@@ -139,9 +142,6 @@ class Link(commands.Cog):
         text = None
         if content[1 + offset:]:
             text = ' '.join(content[1 + offset:])
-
-        if name := self.links_aliases.get(ctx.channel.name, {}).get(link, ''):
-            link = name
 
         if not (text or link in self.links.get(ctx.channel.name, [])):
             await ctx.reply(f'Пустой ввод - {self.bot._prefix}help link')
@@ -303,12 +303,37 @@ class Link(commands.Cog):
             await ctx.reply('На вашем канале ещё нет ссылок')
             return
 
-        if ctx.content.lower() not in ['blue', 'green', 'orange', 'purple', 'primary']:
-            await ctx.reply('Неверный цвет, досупные цвета: blue, green, orange, purple, primary')
+        if not ctx.content:
+            await ctx.reply(f'Пустой ввод - {self.bot._prefix}help link')
             return
 
-        await db.links.update_one({'channel': ctx.channel.name}, {'$set': {'announce': ctx.content.lower()}})
-        await ctx.reply('Изменён цвет announce')
+        content_split = ctx.content.lower().split()
+        link = content_split[0]
+
+        values = {}
+        key = {'channel': ctx.channel.name}
+
+        if link in self.links[ctx.channel.name] or (link := self.links_aliases.get(ctx.channel.name, {}).get(link, '')):
+            if len(content_split) == 2:
+                color = content_split[1]
+                if color not in ['blue', 'green', 'orange', 'purple', 'primary']:
+                    await ctx.reply('Неверный цвет, доступные цвета: blue, green, orange, purple, primary')
+                    return
+                values['$set'] = {'links.$.announce': color}
+                message = f'Изменён цвет announce для {self.bot._prefix}{link}'
+            else:
+                message = f'Сброшен цвет announce для {self.bot._prefix}{link}'
+                values['$unset'] = {'links.$.announce': 1}
+            key['links.name'] = link
+        elif content_split[0] in ['blue', 'green', 'orange', 'purple', 'primary']:
+            values['$set'] = {'announce': content_split[0]}
+            message = f'Изменён цвет announce'
+        else:
+            await ctx.reply('Неверный цвет или название ссылки, доступные цвета: blue, green, orange, purple, primary')
+            return
+
+        await db.links.update_one(key, values)
+        await ctx.reply(message)
 
     @routines.routine(iterations=1)
     async def get_links(self):

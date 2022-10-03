@@ -240,7 +240,7 @@ class Timer(commands.Cog):
                         announce = ''
 
                         if self.timers[channel][timer].get('announce'):
-                            announce = data['announce']
+                            announce = data['links'][0].get('announce') or data['announce']
 
                         cog = self.bot.get_cog('Link')
                         messageable = self.bot.get_channel(channel)

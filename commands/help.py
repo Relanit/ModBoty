@@ -59,7 +59,7 @@ class Help(commands.Cog):
 
             message = f'{self.bot._prefix}{link}{"." if not aliases else " " + aliases + "."} ' \
                       f'Доступ: {"приватный" if private else "публичный"}. ' \
-                      f'Кд 2.5с. {timer}'
+                      f'Кд 3с. {timer}'
         else:
             data = self.bot.get_command(command)
             if 'admin' in data.flags:

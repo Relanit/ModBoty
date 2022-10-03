@@ -225,38 +225,41 @@ class Timer(commands.Cog):
             for timer in timers:
                 if self.timers[channel][timer].get('active', True):
                     if channel not in self.bot.streams and not self.timers[channel][timer].get('offline', self.offline[channel]):
-                        return
+                        continue
                     if time.time() > self.timers[channel][timer]['cooldown'] and \
                             self.messages_from_timer[channel] >= self.timers[channel][timer]['number'] + 7:
                         cog = self.bot.get_cog('Link')
 
-                        if self.timers[channel][timer]['number'] > 2 and time.time() - cog.mod_cooldowns.get(channel, 0) < 2.5:
-                            return
+                        if self.timers[channel][timer]['number'] > 2 and time.time() - cog.mod_cooldowns.get(channel, 0) < 3:
+                            continue
                         elif self.timers[channel][timer]['number'] < 3 and time.time() - cog.cooldowns.get(timer, 0) < 5:
-                            return
+                            continue
 
-                        data = await db.links.find_one({'channel': channel, 'links.name': timer}, {'links.$': 1})
+                        data = await db.links.find_one({'channel': channel, 'links.name': timer}, {'announce': 1, 'links.$': 1})
                         text = data['links'][0]['text']
+                        announce = ''
 
-                        if self.timers[channel][timer].get('announce', False):
-                            text = f'/announce {text.split(maxsplit=1)[1]}' if 'announce ' in text else f'/announce {text}'
-                        elif self.timers[channel][timer].get('announce') is not None:
-                            text = text.split(maxsplit=1)[1] if 'announce ' in text else text
+                        if self.timers[channel][timer].get('announce'):
+                            announce = data['announce']
 
                         cog = self.bot.get_cog('Link')
                         messageable = self.bot.get_channel(channel)
 
-                        for i in range(self.timers[channel][timer]['number']):
-                            await messageable.send(text)
-                            await asyncio.sleep(0.1)
-
-                        cog.cooldowns[channel][timer] = time.time() + 2.5
+                        cog.cooldowns[channel][timer] = time.time() + 3
                         if self.timers[channel][timer]['number'] > 2:
-                            cog.mod_cooldowns[channel] = time.time() + 2.5
+                            cog.mod_cooldowns[channel] = time.time() + 3
                             cog.cooldowns[channel][timer] = time.time() + 5
 
-                        self.messages_from_timer[channel] = 0
                         self.timers[channel][timer]['cooldown'] = time.time() + self.timers[channel][timer]['interval'] * 60
+
+                        if not (announce or text.startswith('/announce') or text.startswith('.announce')):
+                            for i in range(self.timers[channel][timer]['number']):
+                                await messageable.send(text)
+                                await asyncio.sleep(0.1)
+                        else:
+                            await self.bot.announce(messageable, text, announce, self.timers[channel][timer]['number'])
+
+                        self.messages_from_timer[channel] = 0
 
     @routines.routine(iterations=1)
     async def get_timers(self):

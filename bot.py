@@ -1,3 +1,4 @@
+import asyncio
 import os
 import time
 from pathlib import Path
@@ -10,7 +11,11 @@ from cooldown import Cooldown
 
 class ModBoty(commands.Bot, Cooldown):
     def __init__(self):
-        super().__init__(token=os.getenv('TOKEN'), prefix='!', initial_channels=CHANNELS)
+        super().__init__(
+            token=os.getenv('TOKEN'),
+            initial_channels=CHANNELS,
+            prefix='!',
+        )
         self.admins = ['relanit']
         self.streams = set()
 

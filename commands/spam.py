@@ -33,9 +33,14 @@ class Spam(commands.Cog):
             num = 1
             message = ' '.join(content_split)
 
-        for i in range(num):
-            await ctx.send(message)
-            await asyncio.sleep(0.1)
+        if not (message.startswith('/a') or message.startswith('.a')):
+            for i in range(num):
+                await ctx.send(message)
+                await asyncio.sleep(0.1)
+        elif ctx.channel.bot_is_mod:
+            await self.bot.announce(ctx.channel, message, number=num)
+        else:
+            await ctx.send('Боту необходима модерка для работы announce')
 
 
 def prepare(bot):

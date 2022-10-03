@@ -37,17 +37,18 @@ class Link(commands.Cog):
                 if not message.author.is_mod and time.time() < self.cooldowns[message.channel.name].get(link, 0):
                     return
 
-                data = await db.links.find_one({'channel': message.channel.name, 'links.name': link}, {'private': 1, 'links.$': 1})
+                data = await db.links.find_one({'channel': message.channel.name, 'links.name': link}, {'private': 1, 'announce': 1, 'links.$': 1})
                 private = data['private'] if 'private' not in data['links'][0] else data['links'][0]['private']
                 text = data['links'][0]['text']
 
                 if message.author.is_mod:
                     content = ' '.join(content.split()[1:3])
                     num = 1
+                    announce = ''
 
                     if 'a' in content or 'а' in content:
                         content = content.replace('a', ' ').replace('а', ' ').strip(' ')
-                        text = f'/announce {text.split(maxsplit=1)[1]}' if 'announce' in text else f'/announce {text}'
+                        announce = data['announce']
 
                     if content:
                         try:
@@ -55,28 +56,36 @@ class Link(commands.Cog):
                         except ValueError:
                             num = 1
 
-                    self.cooldowns[message.channel.name][link] = time.time() + 2.5
                     if num > 2:
                         if time.time() < self.mod_cooldowns[message.channel.name]:
                             return
 
-                        self.mod_cooldowns[message.channel.name] = time.time() + 2.5
+                        self.mod_cooldowns[message.channel.name] = time.time() + 3
                         self.cooldowns[message.channel.name][link] = time.time() + 5
+                    else:
+                        self.cooldowns[message.channel.name][link] = time.time() + 3
 
-                    for i in range(num):
-                        await message.channel.send(text)
-                        await asyncio.sleep(0.1)
+                    if not (announce or text.startswith('/announce') or text.startswith('.announce')):
+                        for i in range(num):
+                            await message.channel.send(text)
+                            await asyncio.sleep(0.1)
+                    else:
+                        await self.bot.announce(message.channel, text, announce, num)
 
                 elif not private and time.time() > self.cooldowns[message.channel.name].get(link, 0):
-                    ctx = await self.bot.get_context(message)
-                    await ctx.reply(text)
-                    self.cooldowns[message.channel.name][link] = time.time() + 2.5
+                    self.cooldowns[message.channel.name][link] = time.time() + 3
+                    if not (text.startswith('/announce') or text.startswith('.announce')):
+                        ctx = await self.bot.get_context(message)
+                        await ctx.reply(text)
+                    else:
+                        await self.bot.announce(message.channel, text)
+
 
     @commands.command(
         name='link',
-        aliases=['links', 'del', 'public', 'aliases'],
+        aliases=['links', 'del', 'aliases', 'public', 'announce'],
         cooldown={'per': 0, 'gen': 5},
-        description='Создание кастомных команд-ссылок. Полное описание: https://i.imgur.com/0Ewn3vR.png '
+        description='Создание кастомных команд-ссылок. Полное описание: https://i.imgur.com/uEmfHdD.png '
     )
     async def link(self, ctx):
         if not (ctx.channel.bot_is_vip or ctx.channel.bot_is_mod):
@@ -85,6 +94,8 @@ class Link(commands.Cog):
 
         if ctx.command_alias == 'link':
             await self.edit(ctx)
+        elif ctx.command_alias == 'links':
+            await self.links_list(ctx)
         elif ctx.command_alias == 'del':
             await self.delete(ctx)
         elif ctx.command_alias == 'aliases':
@@ -92,7 +103,7 @@ class Link(commands.Cog):
         elif ctx.command_alias == 'public':
             await self.public(ctx)
         else:
-            await self.links_list(ctx)
+            await self.announce(ctx)
 
     async def edit(self, ctx):
         content = ctx.content.split()
@@ -127,10 +138,7 @@ class Link(commands.Cog):
 
         text = None
         if content[1 + offset:]:
-            announcements = ['announceblue', 'announcegreen', 'announceorange', 'announcepurple']
             text = ' '.join(content[1 + offset:])
-            for announcement in announcements:
-                text = text.replace(announcement, 'announce')
 
         if name := self.links_aliases.get(ctx.channel.name, {}).get(link, ''):
             link = name
@@ -158,13 +166,31 @@ class Link(commands.Cog):
         else:
             message = f'Добавлено {self.bot._prefix}{link}'
             self.links[ctx.channel.name] = {link}
-            values = {'$setOnInsert': {'channel': ctx.channel.name, 'private': True},
+            self.cooldowns[ctx.channel.name] = {link: 0}
+            self.mod_cooldowns[ctx.channel.name] = 0
+            values = {'$setOnInsert': {'channel': ctx.channel.name, 'private': True, 'announce': 'primary'},
                       '$addToSet': {'links': {'name': link, 'text': text}}}
             if private is not None:
                 values['$addToSet']['links']['private'] = private
 
         await db.links.update_one(key, values, upsert=True)
         await ctx.reply(message)
+
+    async def links_list(self, ctx):
+        if self.links.get(ctx.channel.name, None):
+            if ctx.content.lower() == 'public':
+                links = await db.links.find_one({'channel': ctx.channel.name}, {'links': 1, 'private': 1})
+                links = [link['name'] for link in links['links'] if not link.get('private', links['private'])]
+                message = f'Публичные ссылки: {self.bot._prefix}{str(" " + self.bot._prefix).join(links)}' if links else 'Публичные ссылки отсутствуют'
+            elif ctx.content.lower() == 'private':
+                links = await db.links.find_one({'channel': ctx.channel.name}, {'links': 1, 'private': 1})
+                links = [link['name'] for link in links['links'] if link.get('private', links['private'])]
+                message = f'Приватные ссылки: {self.bot._prefix}{str(" " + self.bot._prefix).join(links)}' if links else 'Приватные ссылки отсутствуют'
+            else:
+                message = f'Доступные ссылки: {self.bot._prefix}{str(" " + self.bot._prefix).join(self.links[ctx.channel.name])}'
+            await ctx.reply(message)
+        else:
+            await ctx.reply('На вашем канале ещё нет ссылок')
 
     async def delete(self, ctx):
         content = ctx.content.split()
@@ -272,21 +298,17 @@ class Link(commands.Cog):
         await db.links.update_one({'channel': ctx.channel.name}, values, upsert=True)
         await ctx.reply(message)
 
-    async def links_list(self, ctx):
-        if self.links.get(ctx.channel.name, None):
-            if ctx.content.lower() == 'public':
-                links = await db.links.find_one({'channel': ctx.channel.name}, {'links': 1, 'private': 1})
-                links = [link['name'] for link in links['links'] if not link.get('private', links['private'])]
-                message = f'Публичные ссылки: {self.bot._prefix}{str(" " + self.bot._prefix).join(links)}' if links else 'Публичные ссылки отсутствуют'
-            elif ctx.content.lower() == 'private':
-                links = await db.links.find_one({'channel': ctx.channel.name}, {'links': 1, 'private': 1})
-                links = [link['name'] for link in links['links'] if link.get('private', links['private'])]
-                message = f'Приватные ссылки: {self.bot._prefix}{str(" " + self.bot._prefix).join(links)}' if links else 'Приватные ссылки отсутствуют'
-            else:
-                message = f'Доступные ссылки: {self.bot._prefix}{str(" " + self.bot._prefix).join(self.links[ctx.channel.name])}'
-            await ctx.reply(message)
-        else:
+    async def announce(self, ctx):
+        if not self.links.get(ctx.channel.name, None):
             await ctx.reply('На вашем канале ещё нет ссылок')
+            return
+
+        if ctx.content.lower() not in ['blue', 'green', 'orange', 'purple', 'primary']:
+            await ctx.reply('Неверный цвет, досупные цвета: blue, green, orange, purple, primary')
+            return
+
+        await db.links.update_one({'channel': ctx.channel.name}, {'$set': {'announce': ctx.content.lower()}})
+        await ctx.reply('Изменён цвет announce')
 
     @routines.routine(iterations=1)
     async def get_links(self):

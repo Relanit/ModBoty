@@ -80,7 +80,6 @@ class Link(commands.Cog):
                     else:
                         await self.bot.announce(message.channel, text)
 
-
     @commands.command(
         name='link',
         aliases=['links', 'del', 'aliases', 'public', 'announce'],

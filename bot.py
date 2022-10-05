@@ -1,8 +1,9 @@
-import asyncio
 import os
 import time
 from pathlib import Path
 
+import aiohttp
+import twitchio.errors
 from twitchio.ext import commands, routines
 
 from config import CHANNELS, db
@@ -23,6 +24,7 @@ class ModBoty(commands.Bot, Cooldown):
             self.load_module(f'commands.{command}')
 
         self.check_streams.start(stop_on_error=False)
+        self.refresh_token.start(stop_on_error=False)
         Cooldown.__init__(self, CHANNELS)
 
     async def event_ready(self):
@@ -93,6 +95,25 @@ class ModBoty(commands.Bot, Cooldown):
 
                     if data and data['active'] and data['offline']:
                         await self.cogs['Inspect'].set(channel)
+
+    @routines.routine(minutes=5, iterations=0)
+    async def refresh_token(self):
+        data = await db.config.find_one({'_id': 1})
+
+        expired = False
+        try:
+            response = await self._http.validate(token=data['access_token'])
+        except twitchio.errors.AuthenticationError:
+            expired = True
+
+        if expired or response['expires_in'] < 900:
+            url = f'https://id.twitch.tv/oauth2/token?client_id={os.getenv("CLIENT_ID")}&client_secret={os.getenv("CLIENT_SECRET")}&refresh_token={data["refresh_token"]}&grant_type=refresh_token'
+
+            async with aiohttp.ClientSession() as session:
+                async with session.post(url, headers={'Content-Type': 'application/x-www-form-urlencoded'}) as response:
+                    response = await response.json()
+
+            await db.config.update_one({'_id': 1}, {'$set': {'access_token': response['access_token'], 'refresh_token': response['refresh_token']}})
 
 
 bot = ModBoty()

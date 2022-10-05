@@ -74,6 +74,11 @@ class Banwords(commands.Cog):
             await ctx.reply('Банворд уже добавлен')
             return
 
+        for word in self.banwords.get(ctx.channel.name, []):
+            if word in banword:
+                await ctx.reply('Часть фразы уже есть в банвордах канала')
+                return
+
         if len(banword) > 20:
             await ctx.reply('Длина банворда не должна превышать 20 символов')
             return
@@ -127,6 +132,10 @@ class Banwords(commands.Cog):
         for item in self.mutewords.get(ctx.channel.name, []):
             if item['muteword'] == muteword:
                 found = True
+                break
+            elif item['muteword'] in muteword:
+                await ctx.reply('Часть фразы уже есть в списке мутвордов канала')
+                return
 
         message = 'Добавлено'
         if found:
@@ -175,10 +184,15 @@ class Banwords(commands.Cog):
                     else:
                         message2 += banword
 
-            await ctx.reply(message)
+            data = await db.config.find_one({'_id': 1})
+            user = await ctx.author.user()
+            await ctx.reply('Список мутвордов отправлен в личные сообщения')
+            await user.send_whisper(token=data['access_token'], from_user_id=self.bot.user_id, to_user_id=user.id,
+                                    message=message)
             if message2:
                 await asyncio.sleep(1)
-                await ctx.reply(message2)
+                await user.send_whisper(token=data['access_token'], from_user_id=self.bot.user_id, to_user_id=user.id,
+                                        message=message2)
 
     async def list_mutewords(self, ctx):
         if not self.mutewords.get(ctx.channel.name):
@@ -198,10 +212,15 @@ class Banwords(commands.Cog):
                     else:
                         message2 += muteword
 
-            await ctx.reply(message)
+            data = await db.config.find_one({'_id': 1})
+            user = await ctx.author.user()
+            await ctx.reply('Список банвордов отправлен в личные сообщения')
+            await user.send_whisper(token=data['access_token'], from_user_id=self.bot.user_id, to_user_id=user.id,
+                                    message=message)
             if message2:
                 await asyncio.sleep(1)
-                await ctx.reply(message2)
+                await user.send_whisper(token=data['access_token'], from_user_id=self.bot.user_id, to_user_id=user.id,
+                                        message=message2)
 
     @routines.routine(iterations=1)
     async def get_banwords(self):
@@ -210,11 +229,6 @@ class Banwords(commands.Cog):
                 self.banwords[document['channel']] = document['banwords']
             if 'mutewords' in document:
                 self.mutewords[document['channel']] = document['mutewords']
-
-        import random
-        import string
-        letters = string.ascii_lowercase
-        self.mutewords['nelanit'] = [{'muteword': ''.join(random.choice(letters) for i in range(15)), 'timeout': 3600} for i in range(30)]
 
 
 def prepare(bot):

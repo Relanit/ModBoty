@@ -3,10 +3,9 @@ import time
 from pathlib import Path
 
 import aiohttp
-import twitchio.errors
 from twitchio.ext import commands, routines
 
-from config import CHANNELS, db
+from config import db, fernet
 from cooldown import Cooldown
 
 
@@ -14,8 +13,9 @@ class ModBoty(commands.Bot, Cooldown):
     def __init__(self):
         super().__init__(
             token=os.getenv('TOKEN'),
-            initial_channels=CHANNELS,
+            initial_channels=os.getenv('CHANNELS').split('&'),
             prefix='!',
+            client_secret=os.getenv('CLIENT_SECRET')
         )
         self.admins = ['relanit']
         self.streams = set()
@@ -25,7 +25,7 @@ class ModBoty(commands.Bot, Cooldown):
 
         self.check_streams.start(stop_on_error=False)
         self.refresh_token.start(stop_on_error=False)
-        Cooldown.__init__(self, CHANNELS)
+        Cooldown.__init__(self, os.getenv('CHANNELS').split('&'))
 
     async def event_ready(self):
         print(f'Logged in as {self.nick}')
@@ -60,7 +60,7 @@ class ModBoty(commands.Bot, Cooldown):
 
     @routines.routine(minutes=1.0, iterations=0)
     async def check_streams(self):
-        channels = self.channels_names or CHANNELS
+        channels = os.getenv('CHANNELS').split('&')
         streams = await self.fetch_streams(user_logins=channels)
 
         for channel in channels:
@@ -98,22 +98,24 @@ class ModBoty(commands.Bot, Cooldown):
 
     @routines.routine(minutes=5, iterations=0)
     async def refresh_token(self):
-        data = await db.config.find_one({'_id': 1})
+        response = await self._http.validate(token=os.getenv('TOKEN'))
+        print(response)
 
-        expired = False
-        try:
-            response = await self._http.validate(token=data['access_token'])
-        except twitchio.errors.AuthenticationError:
-            expired = True
-
-        if expired or response['expires_in'] < 900:
-            url = f'https://id.twitch.tv/oauth2/token?client_id={os.getenv("CLIENT_ID")}&client_secret={os.getenv("CLIENT_SECRET")}&refresh_token={data["refresh_token"]}&grant_type=refresh_token'
+        if response['expires_in'] < 900:
+            print('expired')
+            url = f'https://id.twitch.tv/oauth2/token?client_id={os.getenv("CLIENT_ID")}&client_secret={os.getenv("CLIENT_SECRET")}&refresh_token={os.getenv("REFRESH_TOKEN")}&grant_type=refresh_token'
 
             async with aiohttp.ClientSession() as session:
                 async with session.post(url, headers={'Content-Type': 'application/x-www-form-urlencoded'}) as response:
                     response = await response.json()
 
-            await db.config.update_one({'_id': 1}, {'$set': {'access_token': response['access_token'], 'refresh_token': response['refresh_token']}})
+            self._http.token = response['access_token']
+            self._connection._token = response['access_token']
+            os.environ['TOKEN'] = response['access_token']
+            os.environ['REFRESH_TOKEN'] = response['refresh_token']
+            enc_token = fernet.encrypt(response['access_token'].encode()).decode()
+            enc_refresh = fernet.encrypt(response['refresh_token'].encode()).decode()
+            await db.config.update_one({'_id': 1}, {'$set': {'access_token': enc_token, 'refresh_token': enc_refresh}})
 
 
 bot = ModBoty()

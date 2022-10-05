@@ -1,3 +1,5 @@
+import os
+
 from twitchio.ext import commands
 
 from config import db
@@ -26,6 +28,7 @@ class JoinChannel(commands.Cog):
             cog.message_history[channel] = []
             await db.channels.update_one({'_id': 1}, {'$addToSet': {'channels': channel}})
             await self.bot.join_channels([channel])
+            os.environ['CHANNELS'] = '&'.join(os.environ['CHANNELS'].split('&') + [channel])
             await ctx.reply('✅ Добавлен')
         else:
             if not channel:
@@ -42,6 +45,9 @@ class JoinChannel(commands.Cog):
             cog.message_history.pop(channel)
             await db.channels.update_one({'_id': 1}, {'$pull': {'channels': channel}})
             await self.bot.part_channels([channel])
+            channels = os.environ['CHANNELS'].split('&')
+            channels.remove(channel)
+            os.environ['CHANNELS'] = '&'.join(channels)
             await ctx.reply('✅ Удалён')
 
 

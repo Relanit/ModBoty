@@ -1,4 +1,5 @@
-https://github.com/Relanit/TwitchIO/archive/4b2a20b.zip
+TwitchIO~=2.4.0
 dnspython==2.2.0
 aiohttp~=3.7.4.post0
 motor~=3.0.0
+cryptography~=38.0.1

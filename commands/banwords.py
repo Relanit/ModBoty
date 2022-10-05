@@ -1,4 +1,5 @@
 import asyncio
+import os
 
 from twitchio.ext import commands, routines
 
@@ -184,14 +185,13 @@ class Banwords(commands.Cog):
                     else:
                         message2 += banword
 
-            data = await db.config.find_one({'_id': 1})
             user = await ctx.author.user()
-            await ctx.reply('Список мутвордов отправлен в личные сообщения')
-            await user.send_whisper(token=data['access_token'], from_user_id=self.bot.user_id, to_user_id=user.id,
+            await ctx.reply('Список банвордов отправлен в личные сообщения')
+            await user.send_whisper(token=os.getenv('TOKEN'), from_user_id=self.bot.user_id, to_user_id=user.id,
                                     message=message)
             if message2:
                 await asyncio.sleep(1)
-                await user.send_whisper(token=data['access_token'], from_user_id=self.bot.user_id, to_user_id=user.id,
+                await user.send_whisper(token=os.getenv('TOKEN'), from_user_id=self.bot.user_id, to_user_id=user.id,
                                         message=message2)
 
     async def list_mutewords(self, ctx):
@@ -212,14 +212,13 @@ class Banwords(commands.Cog):
                     else:
                         message2 += muteword
 
-            data = await db.config.find_one({'_id': 1})
             user = await ctx.author.user()
-            await ctx.reply('Список банвордов отправлен в личные сообщения')
-            await user.send_whisper(token=data['access_token'], from_user_id=self.bot.user_id, to_user_id=user.id,
+            await ctx.reply('Список мутвордов отправлен в личные сообщения')
+            await user.send_whisper(token=os.getenv('TOKEN'), from_user_id=self.bot.user_id, to_user_id=user.id,
                                     message=message)
             if message2:
                 await asyncio.sleep(1)
-                await user.send_whisper(token=data['access_token'], from_user_id=self.bot.user_id, to_user_id=user.id,
+                await user.send_whisper(token=os.getenv('TOKEN'), from_user_id=self.bot.user_id, to_user_id=user.id,
                                         message=message2)
 
     @routines.routine(iterations=1)

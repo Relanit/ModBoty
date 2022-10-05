@@ -1,9 +1,8 @@
 import asyncio
+import os
 import time
 
 from twitchio.ext import commands
-
-from config import CHANNELS
 
 reason = 'Сообщение, содержащее запрещённую фразу (by ModBoty)'
 
@@ -16,7 +15,7 @@ class MassBan(commands.Cog):
         self.ban_phrases = {}
         self.queue = {}
 
-        for channel in CHANNELS:
+        for channel in os.getenv('CHANNELS').split('&'):
             self.message_history[channel] = []
 
     @commands.Cog.event()
@@ -70,7 +69,7 @@ class MassBan(commands.Cog):
 
         ban_phrase = content
 
-        if ctx.command_alias == 'mt':
+        if ctx.command_alias in ('mt', 'm'):
             content_split = content.split(' ', 1)
             try:
                 timeout = int(content_split[0])

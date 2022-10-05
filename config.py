@@ -12,8 +12,8 @@ fernet = Fernet(os.getenv('KEY').encode())
 
 async def get_channels():
     data = await db.config.find_one({'_id': 1})
-    token = fernet.decrypt(data['test1'].encode()).decode()
-    refresh_token = fernet.decrypt(data['test2'].encode()).decode()
+    token = fernet.decrypt(data['access_token'].encode()).decode()
+    refresh_token = fernet.decrypt(data['refresh_token'].encode()).decode()
     channels = data['channels']
     os.environ['CHANNELS'] = '&'.join(channels)
 

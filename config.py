@@ -9,7 +9,7 @@ CHANNELS = []
 
 
 async def get_channels():
-    data = await db.channels.find_one({'_id': 1})
+    data = await db.config.find_one({'_id': 1})
     global CHANNELS
     CHANNELS = data['channels']
 

@@ -9,7 +9,7 @@ class Spam(commands.Cog):
         self.bot = bot
 
     @commands.command(
-        name="spam",
+        name='spam',
         cooldown={'per': 0, 'gen': 10},
         description='Спам текстом указанное количество раз (до 15).',
     )

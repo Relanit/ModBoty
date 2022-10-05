@@ -175,7 +175,7 @@ class Timer(commands.Cog):
             self.timers[ctx.channel.name] = {}
             self.messages_from_timer[ctx.channel.name] = 0
 
-        if link in self.timers[ctx.channel.name]:
+        if exist := link in self.timers[ctx.channel.name]:
             key['timers.link'] = link
             values = {'$set': {f'timers.$.{key}': value for key, value in (timer | {'link': link}).items()}}
             self.timers[ctx.channel.name][link] = self.timers[ctx.channel.name][link] | timer | {'cooldown': 0}
@@ -186,10 +186,11 @@ class Timer(commands.Cog):
             message = f'Добавлен таймер {self.bot._prefix}{link}'
             self.offline[ctx.channel.name] = False
 
-        if 'active' in timer and timer['active']:
-            message = f'Включён таймер {self.bot._prefix}{link}'
-        elif 'active' in timer:
-            message = f'Выключен таймер {self.bot._prefix}{link}'
+        if exist:
+            if 'active' in timer and timer['active']:
+                message = f'Включён таймер {self.bot._prefix}{link}'
+            elif 'active' in timer:
+                message = f'Выключен таймер {self.bot._prefix}{link}'
 
         await db.timers.update_one(key, values, upsert=True)
         await ctx.reply(message)

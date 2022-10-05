@@ -99,10 +99,8 @@ class ModBoty(commands.Bot, Cooldown):
     @routines.routine(minutes=5, iterations=0)
     async def refresh_token(self):
         response = await self._http.validate(token=os.getenv('TOKEN'))
-        print(response)
 
         if response['expires_in'] < 900:
-            print('expired')
             url = f'https://id.twitch.tv/oauth2/token?client_id={os.getenv("CLIENT_ID")}&client_secret={os.getenv("CLIENT_SECRET")}&refresh_token={os.getenv("REFRESH_TOKEN")}&grant_type=refresh_token'
 
             async with aiohttp.ClientSession() as session:

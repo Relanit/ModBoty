@@ -75,13 +75,12 @@ class Inspect(commands.Cog):
                         handle = True
 
             if not handle:
-                new = []
-                for msg in self.message_log[message.channel.name]:
-                    if msg['author'] != message.author.name:
-                        new.append(msg)
-
+                new = [msg for msg in self.message_log[message.channel.name] if msg['author'] != message.author.name]
                 self.message_log[message.channel.name] = new
 
+                if message.channel.name in self.bot.streams:
+                    await db.inspects.update_one({'channel': message.channel.name},
+                                                 {'$inc': {f'stats.{message.author.name}': 1}})
             if not handle and message.author.name not in self.warned_users[message.channel.name]:
                 self.warned_users[message.channel.name][message.author.name] = 0
 
@@ -92,9 +91,6 @@ class Inspect(commands.Cog):
                     await asyncio.sleep(0.1)
 
                 await ctx.send(f'/timeout {message.author.name} 10 {reason}')
-                if message.channel.name in self.bot.streams:
-                    await db.inspects.update_one({'channel': message.channel.name},
-                                                 {'$inc': {f'stats.{message.author.name}': 1}})
             elif not handle:
                 i = self.warned_users[message.channel.name][message.author.name]
                 timeout = self.timeouts[message.channel.name][i]
@@ -106,9 +102,6 @@ class Inspect(commands.Cog):
                     await asyncio.sleep(0.1)
 
                 await message.channel.send(f'/timeout {message.author.name} {timeout} {reason}')
-                if message.channel.name in self.bot.streams:
-                    await db.inspects.update_one({'channel': message.channel.name},
-                                                 {'$inc': {f'stats.{message.author.name}': 1}})
 
     @commands.command(
         name='inspect',
@@ -121,9 +114,9 @@ class Inspect(commands.Cog):
             return
 
         content = ctx.content.lower()
-        if not content:
-            data = await db.inspects.find_one({'channel': ctx.channel.name})
+        data = await db.inspects.find_one({'channel': ctx.channel.name}) or {}
 
+        if not content:
             if not data:
                 await ctx.reply(f'Сначала настройте наблюдение, {self.bot._prefix}help inspect')
                 return
@@ -145,8 +138,6 @@ class Inspect(commands.Cog):
                       f'{"Только на стриме." if not data["offline"] else ""}'
             await ctx.reply(message)
         elif content == 'on':
-            data = await db.inspects.find_one({'channel': ctx.channel.name})
-
             if data:
                 if ctx.channel.name not in self.limits:
                     if ctx.channel.name in self.bot.streams or data['offline']:
@@ -156,8 +147,6 @@ class Inspect(commands.Cog):
             else:
                 await ctx.reply(f'Сначала настройте наблюдение, {self.bot._prefix}help inspect')
         elif content == 'off':
-            data = await db.inspects.find_one({'channel': ctx.channel.name})
-
             if data:
                 if ctx.channel.name in self.limits:
                     self.unset(ctx.channel.name)
@@ -166,8 +155,6 @@ class Inspect(commands.Cog):
             else:
                 await ctx.reply(f'Сначала настройте наблюдение, {self.bot._prefix}help inspect')
         elif content == 'stats':
-            data = await db.inspects.find_one({'channel': ctx.channel.name})
-
             if not data or not data.get('stats'):
                 await ctx.reply('Статистика не найдена')
                 return
@@ -183,8 +170,6 @@ class Inspect(commands.Cog):
 
             await ctx.reply(f'Всего отстранено: {number}. Топ спамеров за стрим: {", ".join(top)}')
         elif content.startswith('stats'):
-            data = await db.inspects.find_one({'channel': ctx.channel.name})
-
             if not data.get('stats'):
                 await ctx.reply('Статистика не найдена')
                 return
@@ -207,7 +192,6 @@ class Inspect(commands.Cog):
         else:
             content = content.split()
             values = {'$set': {}, '$unset': {}}
-            inspect = await db.inspects.find_one({'channel': ctx.channel.name}) or {}
 
             for value in content:
                 if '/' in value:
@@ -230,8 +214,8 @@ class Inspect(commands.Cog):
                             return
 
                         values['$set'][limit] = {'messages': messages, 'time_unit': time_unit}
-                    elif inspect and 'first_limit' in inspect \
-                            and 'second_limit' in inspect and not ('first_limit' in values['$unset'] or 'second_limit' in values['$unset']):
+                    elif data and 'first_limit' in data \
+                            and 'second_limit' in data and not ('first_limit' in values['$unset'] or 'second_limit' in values['$unset']):
                         values['$unset'][limit] = 1
                     else:
                         await ctx.reply('Чтобы удалить лимит, должен быть установлен другой')
@@ -271,8 +255,8 @@ class Inspect(commands.Cog):
                         await ctx.reply('Неверное значение таймаута')
                         return
 
-            first_unit = values['$set'].get('first_limit', inspect.get('first_limit', {})).get('time_unit', 0)
-            second_unit = values['$set'].get('second_limit', inspect.get('second_limit', {})).get('time_unit', 0)
+            first_unit = values['$set'].get('first_limit', data.get('first_limit', {})).get('time_unit', 0)
+            second_unit = values['$set'].get('second_limit', data.get('second_limit', {})).get('time_unit', 0)
             if first_unit and first_unit == second_unit:
                 await ctx.reply('Не должно быть двух лимитов с одинаковым временем')
                 return
@@ -281,7 +265,7 @@ class Inspect(commands.Cog):
                 return
 
             on_insert = {'channel': ctx.channel.name, 'active': False}
-            if not inspect:
+            if not data:
                 if not ('first_limit' in values['$set'] or 'second_limit' in values['$set']):
                     await ctx.reply('Для начала установите сообщения и время')
                     return
@@ -293,7 +277,7 @@ class Inspect(commands.Cog):
             await db.inspects.update_one({'channel': ctx.channel.name}, {'$setOnInsert': on_insert, **values}, upsert=True)
 
             if ctx.channel.name not in self.bot.streams:
-                if values['$set'].get('offline', inspect.get('offline')) and inspect.get('active'):
+                if values['$set'].get('offline', data.get('offline')) and data.get('active'):
                     await self.set(ctx.channel.name)
                 elif ctx.channel.name in self.limits:
                     self.unset(ctx.channel.name)

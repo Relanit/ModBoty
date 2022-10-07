@@ -99,6 +99,7 @@ class Timer(commands.Cog):
                 except ValueError:
                     await ctx.reply('Ошибка ввода')
                     return
+
         if link not in self.timers.get(ctx.channel.name, []) and not (interval or number):
             await ctx.reply('Не указан интервал (в минутах) или количество сообщений')
             return
@@ -201,10 +202,10 @@ class Timer(commands.Cog):
         await ctx.reply(f'Удалён таймер {self.bot._prefix}{link}')
 
     async def list_timers(self, ctx):
-        if self.timers.get(ctx.channel.name) and not ctx.content:
-            message = f'Установленные таймеры: {self.bot._prefix}{str(" " + self.bot._prefix).join(self.timers[ctx.channel.name])}'
-        elif not self.timers.get(ctx.channel.name):
+        if not self.timers.get(ctx.channel.name):
             message = 'На вашем канале ещё нет таймеров'
+        elif not ctx.content:
+            message = f'Установленные таймеры: {self.bot._prefix}{str(" " + self.bot._prefix).join(self.timers[ctx.channel.name])}'
         elif ctx.content.lower() == 'online':
             await db.timers.update_one({'channel': ctx.channel.name}, {'$set': {'offline': False}})
             message = 'Теперь таймеры будут работать только на стриме'
@@ -215,6 +216,7 @@ class Timer(commands.Cog):
             self.offline[ctx.channel.name] = True
         else:
             message = 'Неверный ввод'
+
         await ctx.reply(message)
 
     @routines.routine(seconds=11, iterations=0)

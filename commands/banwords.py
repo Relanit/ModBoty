@@ -120,7 +120,7 @@ class Banwords(commands.Cog):
             return
 
         if not 1 <= timeout <= 1209600:
-            await ctx.reply('Неверное значение таймаута')
+            await ctx.reply('Неверное время мута')
             return
 
         muteword = ' '.join(content[1:]).lower()

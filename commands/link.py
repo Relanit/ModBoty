@@ -86,7 +86,7 @@ class Link(commands.Cog):
         name='link',
         aliases=['links', 'del', 'aliases', 'public', 'announce'],
         cooldown={'per': 0, 'gen': 5},
-        description='Создание кастомных команд-ссылок. Полное описание: https://i.imgur.com/KzAYDCX.png '
+        description='Создание кастомных команд-ссылок. Полное описание: https://i.imgur.com/pwUqbPi.png '
     )
     async def link(self, ctx):
         if not (ctx.channel.bot_is_vip or ctx.channel.bot_is_mod):
@@ -279,13 +279,13 @@ class Link(commands.Cog):
 
     async def public(self, ctx):
         if (content := ctx.content.lower()) in ('on', 'off'):
-            values = {'$unset': {'links.$[].private': ''}}
+            values = {}
             if content == 'on':
                 values['$set'] = {'private': False}
-                message = 'Теперь все ссылки могут быть вызваны любыми участниками чата'
+                message = 'Теперь ссылки могут быть вызваны любыми участниками чата'
             elif content == 'off':
                 values['$set'] = {'private': True}
-                message = 'Теперь все ссылки могут быть вызваны только модераторами'
+                message = 'Теперь ссылки могут быть вызваны только модераторами'
             else:
                 await ctx.reply('Ошибка')
                 return

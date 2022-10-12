@@ -4,7 +4,7 @@ import time
 
 from twitchio.ext import commands
 
-reason = 'Сообщение, содержащее запрещённую фразу (by ModBoty)'
+reason = 'Сообщение, содержащее запрещённую фразу (от ModBoty). Начато %s'
 
 
 class MassBan(commands.Cog):
@@ -82,9 +82,9 @@ class MassBan(commands.Cog):
                 ban_phrase = content_split[1]
             except ValueError:
                 timeout = 300
-            text = f'/timeout %s {timeout} {reason}'
+            text = f'/timeout %s {timeout} {reason % ctx.author.name}'
         else:
-            text = f'/ban %s {reason}'
+            text = f'/ban %s {reason % ctx.author.name}'
 
         while ctx.limited:
             await asyncio.sleep(0.1)

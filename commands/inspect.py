@@ -5,7 +5,7 @@ from twitchio.ext import commands
 
 from config import db
 
-reason = 'spam (by ModBoty)'
+reason = 'Спам (от ModBoty)'
 
 
 class Inspect(commands.Cog):

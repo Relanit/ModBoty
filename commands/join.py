@@ -22,13 +22,16 @@ class JoinChannel(commands.Cog):
             if not user:
                 await ctx.reply('❌ Несуществующий логин')
                 return
+            elif channel in os.environ['CHANNELS']:
+                await ctx.reply('❌ Уже добавлен')
+                return
 
             self.bot.cooldowns[channel] = {}
             cog = self.bot.get_cog('MassBan')
             cog.message_history[channel] = []
             await db.channels.update_one({'_id': 1}, {'$addToSet': {'channels': channel}})
             await self.bot.join_channels([channel])
-            os.environ['CHANNELS'] = '&'.join(os.environ['CHANNELS'].split('&') + [channel])
+            os.environ['CHANNELS'] = os.environ['CHANNELS'] + '&' + channel
             await ctx.reply('✅ Добавлен')
         else:
             if not channel:

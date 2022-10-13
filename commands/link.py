@@ -76,11 +76,12 @@ class Link(commands.Cog):
 
                 elif not private and time.time() > self.cooldowns[message.channel.name].get(link, 0):
                     self.cooldowns[message.channel.name][link] = time.time() + 3
-                    if not (text.startswith('/announce') or text.startswith('.announce')):
-                        ctx = await self.bot.get_context(message)
-                        await ctx.reply(text)
-                    else:
-                        await self.bot.announce(message.channel, text)
+
+                    if text.startswith('/announce') or text.startswith('.announce'):
+                        text = text.split(maxsplit=1)[1]
+
+                    ctx = await self.bot.get_context(message)
+                    await ctx.reply(text)
 
     @commands.command(
         name='link',
@@ -134,9 +135,9 @@ class Link(commands.Cog):
             return
 
         offset = 1 if private is not None else 0
-        text = ' '.join(content[1 + offset:]) if content[1 + offset:] else None
+        text = ' '.join(content[1 + offset:]) if content[1 + offset:] else ''
 
-        if not (text or link in self.links.get(ctx.channel.name, [])):
+        if not (text or link in self.links.get(ctx.channel.name, [])) or ((text.startswith('.') or text.startswith('/')) and len(text.split()) == 1):
             await ctx.reply(f'Пустой ввод - {self.bot._prefix}help link')
             return
 
@@ -176,7 +177,7 @@ class Link(commands.Cog):
 
         links = await db.links.find_one({'channel': ctx.channel.name}, {'links': 1, 'private': 1})
         if not ctx.content:
-            message = f'Доступные ссылки: {self.bot._prefix}{str(" " + self.bot._prefix).join(links["links"])}'
+            message = f'Доступные ссылки: {self.bot._prefix}{str(" " + self.bot._prefix).join(self.links[ctx.channel.name])}'
         elif ctx.content.lower() == 'public':
             links = [link['name'] for link in links['links'] if not link.get('private', links['private'])]
             message = f'Публичные ссылки: {self.bot._prefix}{str(" " + self.bot._prefix).join(links)}' if links else 'Публичные ссылки отсутствуют'

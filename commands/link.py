@@ -23,8 +23,9 @@ class Link(commands.Cog):
             return
 
         content = message.content
+        reply = ''
         if message.content.startswith('@'):
-            content = message.content.split(' ', 1)[1] if len(message.content.split(' ', 1)) > 1 else message.content
+            reply, content = message.content.split(' ', 1) if len(message.content.split(' ', 1)) > 1 else ('', message.content)
 
         if content.startswith(self.bot._prefix):
             content = content.lstrip(self.bot._prefix)
@@ -68,6 +69,7 @@ class Link(commands.Cog):
                         self.cooldowns[message.channel.name][link] = time.time() + 3
 
                     if not (announce or text.startswith('/announce') or text.startswith('.announce')):
+                        text = f'{reply} {text}' if reply and num == 1 else text
                         for i in range(num):
                             await message.channel.send(text)
                             await asyncio.sleep(0.1)
@@ -80,8 +82,11 @@ class Link(commands.Cog):
                     if text.startswith('/announce') or text.startswith('.announce'):
                         text = text.split(maxsplit=1)[1]
 
-                    ctx = await self.bot.get_context(message)
-                    await ctx.reply(text)
+                    if reply:
+                        await message.channel.send(f'{reply} {text}')
+                    else:
+                        ctx = await self.bot.get_context(message)
+                        await ctx.reply(text)
 
     @commands.command(
         name='link',

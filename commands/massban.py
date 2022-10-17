@@ -51,7 +51,7 @@ class MassBan(commands.Cog):
         name='mb',
         aliases=['mt', 'm'],
         cooldown={'per': 0, 'gen': 60},
-        description='Отстраняет/банит пользователей, написавших сообщение с указанной фразой. Действует на 50 последних сообщений и все новые. !stop для остановки.'
+        description='Бан/мут пользователей, написавших сообщение с указанной фразой. Полное описание - https://relanit.github.io/modboty-docs/docs/features/massban'
     )
     async def mass_ban(self, ctx):
         if not ctx.channel.bot_is_mod:

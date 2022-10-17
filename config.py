@@ -10,12 +10,11 @@ db = motor.motor_asyncio.AsyncIOMotorClient(os.getenv('MONGO')).modboty
 fernet = Fernet(os.getenv('KEY').encode())
 
 
-async def get_channels():
+async def get_config():
     data = await db.config.find_one({'_id': 1})
     token = fernet.decrypt(data['access_token'].encode()).decode()
     refresh_token = fernet.decrypt(data['refresh_token'].encode()).decode()
-    channels = data['channels']
-    os.environ['CHANNELS'] = '&'.join(channels)
+    os.environ['CHANNELS'] = '&'.join(data['channels'])
 
     url = 'https://id.twitch.tv/oauth2/validate'
     headers = {'Authorization': f'OAuth {token}'}
@@ -41,4 +40,4 @@ async def get_channels():
 
 loop = asyncio.new_event_loop()
 asyncio.set_event_loop(loop)
-loop.run_until_complete(get_channels())
+loop.run_until_complete(get_config())

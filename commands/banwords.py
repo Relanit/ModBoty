@@ -40,7 +40,7 @@ class Banwords(commands.Cog):
         name='bword',
         aliases=['mword', 'delb', 'delm', 'bwords', 'mwords'],
         cooldown={'per': 0, 'gen': 5},
-        description='Запрещённые слова, за отправку которых пользователь получает бан/мут. Полное описание: https://i.imgur.com/6qvUgfN.png '
+        description='Запрещённые слова, за отправку которых пользователь получает бан/мут. Полное описание - https://relanit.github.io/modboty-docs/docs/features/banwords '
     )
     async def command(self, ctx):
         if not ctx.channel.bot_is_mod:

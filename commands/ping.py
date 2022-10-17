@@ -9,7 +9,7 @@ class Ping(commands.Cog):
     @commands.command(
         name='ping',
         cooldown={'per': 0, 'gen': 5},
-        description='Pong.'
+        description='Проверка бота.'
     )
     async def ping(self, ctx):
         await ctx.reply('Pong.')

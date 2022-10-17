@@ -106,7 +106,7 @@ class Inspect(commands.Cog):
     @commands.command(
         name='inspect',
         cooldown={'per': 0, 'gen': 5},
-        description='Лимиты на количество отправленных сообщений. Полное описание - https://relanit.github.io/modboty-docs/docs/features/inspect ',
+        description='Лимиты на количество отправленных сообщений. Полное описание - https://vk.cc/chCfJI ',
     )
     async def inspect(self, ctx):
         if not ctx.channel.bot_is_mod:

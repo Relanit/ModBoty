@@ -28,7 +28,7 @@ class Timer(commands.Cog):
         name='timer',
         aliases=['delt', 'timers'],
         cooldown={'per': 0, 'gen': 3},
-        description='Автоматическая отправка команд с определённым интервалом. Полное описание: https://relanit.github.io/modboty-docs/docs/features/timers '
+        description='Автоматическая отправка команд с определённым интервалом. Полное описание - https://vk.cc/chCfMF '
     )
     async def timer(self, ctx):
         if not (ctx.channel.bot_is_vip or ctx.channel.bot_is_mod):

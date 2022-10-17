@@ -92,7 +92,7 @@ class Link(commands.Cog):
         name='link',
         aliases=['links', 'del', 'aliases', 'public', 'announce'],
         cooldown={'per': 0, 'gen': 5},
-        description='Кастомные команды для спама (от модераторов) или вызова пользователями. Полное описание - https://relanit.github.io/modboty-docs/docs/features/links '
+        description='Кастомные команды для спама (от модераторов) или вызова пользователями. Полное описание - https://vk.cc/chCfKt '
     )
     async def link(self, ctx):
         if not (ctx.channel.bot_is_vip or ctx.channel.bot_is_mod):

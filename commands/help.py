@@ -17,7 +17,7 @@ class Help(commands.Cog):
     async def help(self, ctx):
         content = ctx.content.lstrip(self.bot._prefix).lower()
         if not content:
-            message = f'Доступные команды - bword, inspect, link, mb, spam, timer  | Документация - https://relanit.github.io/modboty-docs/ | ' \
+            message = f'Доступные команды - bword, inspect, link, mb, spam, timer  | Документация - https://vk.cc/chCaQc | ' \
                       f'Напишите {self.bot._prefix}help [команда], чтобы узнать описание команды'
             await ctx.reply(message)
             return

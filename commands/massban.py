@@ -12,11 +12,13 @@ class MassBan(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
         self.message_history = {}
+        self.first_senders = {}
         self.ban_phrases = {}
         self.queue = {}
 
         for channel in os.getenv('CHANNELS').split('&'):
             self.message_history[channel] = []
+            self.first_senders[channel] = []
 
     @commands.Cog.event()
     async def event_message(self, message):
@@ -39,19 +41,31 @@ class MassBan(commands.Cog):
                     await ctx.reply('Остановлено')
             return
 
-        self.message_history[message.channel.name].append((message.author.name, message.content))
+        self.message_history[message.channel.name].append({'author': message.author.name, 'content': message.content})
         if len(self.message_history[message.channel.name]) >= 50:
             del self.message_history[message.channel.name][0]
 
-        if message.channel.name in self.ban_phrases:
+        for msg in self.first_senders[message.channel.name].copy():
+            if time.time() - msg['time'] > 15:
+                del self.first_senders[message.channel.name][0]
+            else:
+                break
+
+        if message.tags['first-msg'] == '1':
+            self.first_senders[message.channel.name].append({'time': time.time(), 'author': message.author.name})
+            if self.ban_phrases.get(message.channel.name) == '':
+                self.queue[message.channel.name].append(message.author.name)
+
+        if self.ban_phrases.get(message.channel.name):
             if self.ban_phrases[message.channel.name] in message.content.lower():
                 self.queue[message.channel.name].append(message.author.name)
 
+
     @commands.command(
         name='mb',
-        aliases=['mt', 'm'],
+        aliases=['mt', 'm', 'mbf'],
         cooldown={'per': 0, 'gen': 60},
-        description='Бан/мут пользователей, написавших сообщение с указанной фразой. Полное описание - https://vk.cc/chCfLq '
+        description='Бан/мут пользователей, написавших сообщение с указанной фразой или первое сообщение в чате. Полное описание - https://vk.cc/chCfLq '
     )
     async def mass_ban(self, ctx):
         if not ctx.channel.bot_is_mod:
@@ -60,14 +74,14 @@ class MassBan(commands.Cog):
 
         content = ctx.content.lower()
 
-        if not content:
+        if not content and ctx.command_alias != 'mbf':
             if ctx.command_alias == 'mb':
                 await ctx.send('Введите банфразу')
             else:
                 await ctx.send('Введите время и мутфразу')
             return
 
-        ban_phrase = content
+        ban_phrase = content if ctx.command_alias != 'mbf' else ''
 
         if ctx.command_alias in ('mt', 'm'):
             content_split = content.split(' ', 1)
@@ -95,13 +109,24 @@ class MassBan(commands.Cog):
         self.queue[ctx.channel.name] = []
         banned_users = []
 
-        for message in self.message_history[ctx.channel.name].copy():
-            if ban_phrase in message[1].lower() and message[0] not in banned_users:
+        if ban_phrase:
+            for message in self.message_history[ctx.channel.name].copy():
+                if ban_phrase in message['content'].lower() and message['author'] not in banned_users:
+                    while ctx.limited:
+                        await asyncio.sleep(0.1)
+                    if ctx.channel.name in self.ban_phrases:
+                        await ctx.send(text % message['author'])
+                        banned_users.append(message['author'])
+                        await asyncio.sleep(0.3)
+                    else:
+                        return
+        else:
+            for message in self.first_senders[ctx.channel.name].copy():
                 while ctx.limited:
                     await asyncio.sleep(0.1)
                 if ctx.channel.name in self.ban_phrases:
-                    await ctx.send(text % message[0])
-                    banned_users.append(message[0])
+                    await ctx.send(text % message['author'])
+                    banned_users.append(message['author'])
                     await asyncio.sleep(0.3)
                 else:
                     return

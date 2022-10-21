@@ -14,8 +14,7 @@ class ModBoty(commands.Bot, Cooldown):
         super().__init__(
             token=os.getenv('TOKEN'),
             initial_channels=os.getenv('CHANNELS').split('&'),
-            prefix='!',
-            client_secret=os.getenv('CLIENT_SECRET')
+            prefix='!'
         )
         self.admins = ['relanit']
         self.streams = set()
@@ -64,37 +63,29 @@ class ModBoty(commands.Bot, Cooldown):
         streams = await self.fetch_streams(user_logins=channels)
 
         for channel in channels:
-            stream = None
-
-            for s in streams:
-                if s.user.name.lower() == channel:
-                    stream = s
-                    break
-
-            if stream:
+            if next((s for s in streams if s.user.name.lower() == channel), None):
                 if channel not in self.streams:
                     self.streams.add(channel)
 
                     if (data := await db.inspects.find_one({'channel': channel})) and data['active']:
                         await db.inspects.update_one({'channel': channel}, {'$set': {'stats': {}}})
                         await self.cogs['Inspect'].set(channel)
-            else:
-                if channel in self.streams:
-                    self.streams.remove(channel)
+            elif channel in self.streams:
+                self.streams.remove(channel)
 
-                    if channel == 't2x2':
-                        messageable = self.get_channel(channel)
-                        await messageable.send('@Relanit запись стрима dinkDonk')
+                if channel == 't2x2':
+                    messageable = self.get_channel(channel)
+                    await messageable.send('@Relanit запись стрима dinkDonk')
 
-                    if (data := await db.inspects.find_one({'channel': channel})) and data['active']:
-                        self.cogs['Inspect'].unset(channel)
-                    elif data and data['active'] and data['offline']:
-                        await self.cogs['Inspect'].set(channel)
-                elif channel not in self.cogs['Inspect'].limits or time.time() % 36000 < 60:
-                    data = await db.inspects.find_one({'channel': channel})
+                if (data := await db.inspects.find_one({'channel': channel})) and data['active']:
+                    self.cogs['Inspect'].unset(channel)
+                elif data and data['active'] and data['offline']:
+                    await self.cogs['Inspect'].set(channel)
+            elif channel not in self.cogs['Inspect'].limits or time.time() % 36000 < 60:
+                data = await db.inspects.find_one({'channel': channel})
 
-                    if data and data['active'] and data['offline']:
-                        await self.cogs['Inspect'].set(channel)
+                if data and data['active'] and data['offline']:
+                    await self.cogs['Inspect'].set(channel)
 
     @routines.routine(minutes=5, iterations=0)
     async def refresh_token(self):

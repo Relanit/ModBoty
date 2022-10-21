@@ -34,7 +34,7 @@ class Spam(commands.Cog):
             message = ' '.join(content_split)
 
         if not (message.startswith('/a') or message.startswith('.a')):
-            for i in range(num):
+            for _ in range(num):
                 await ctx.send(message)
                 await asyncio.sleep(0.1)
         elif ctx.channel.bot_is_mod:

@@ -1,6 +1,5 @@
 import asyncio
 import time
-import traceback
 
 from twitchio.ext import commands, routines
 
@@ -25,7 +24,8 @@ class Link(commands.Cog):
         content = message.content
         reply = ''
         if message.content.startswith('@'):
-            reply, content = message.content.split(' ', 1) if len(message.content.split(' ', 1)) > 1 else ('', message.content)
+            reply, content = message.content.split(' ', 1) if len(message.content.split(' ', 1)) > 1 else (
+                '', message.content)
 
         if content.startswith(self.bot._prefix):
             content = content.lstrip(self.bot._prefix)
@@ -35,7 +35,7 @@ class Link(commands.Cog):
             link = content.split(maxsplit=1)[0].lower()
 
             if link in self.links.get(message.channel.name, []) or (
-            link := self.links_aliases.get(message.channel.name, {}).get(link, '')):
+                    link := self.links_aliases.get(message.channel.name, {}).get(link, '')):
                 if not message.author.is_mod and time.time() < self.cooldowns[message.channel.name].get(link, 0):
                     return
 
@@ -70,7 +70,7 @@ class Link(commands.Cog):
 
                     if not (announce or text.startswith('/announce') or text.startswith('.announce')):
                         text = f'{reply} {text}' if reply and num == 1 else text
-                        for i in range(num):
+                        for _ in range(num):
                             await message.channel.send(text)
                             await asyncio.sleep(0.1)
                     else:
@@ -142,7 +142,8 @@ class Link(commands.Cog):
         offset = 1 if private is not None else 0
         text = ' '.join(content[1 + offset:]) if content[1 + offset:] else ''
 
-        if not (text or link in self.links.get(ctx.channel.name, [])) or ((text.startswith('.') or text.startswith('/')) and len(text.split()) == 1):
+        if not (text or link in self.links.get(ctx.channel.name, [])) or (
+                (text.startswith('.') or text.startswith('/')) and len(text.split()) == 1):
             await ctx.reply(f'Пустой ввод - {self.bot._prefix}help link')
             return
 
@@ -182,13 +183,16 @@ class Link(commands.Cog):
 
         links = await db.links.find_one({'channel': ctx.channel.name}, {'links': 1, 'private': 1})
         if not ctx.content:
-            message = f'Доступные ссылки: {self.bot._prefix}{str(" " + self.bot._prefix).join(self.links[ctx.channel.name])}'
+            message = f'Доступные ссылки: {self.bot._prefix}{str(f" {self.bot._prefix}").join(self.links[ctx.channel.name])}'
+
         elif ctx.content.lower() == 'public':
             links = [link['name'] for link in links['links'] if not link.get('private', links['private'])]
-            message = f'Публичные ссылки: {self.bot._prefix}{str(" " + self.bot._prefix).join(links)}' if links else 'Публичные ссылки отсутствуют'
+            message = f'Публичные ссылки: {self.bot._prefix}{str(f" {self.bot._prefix}").join(links)}' if links else 'Публичные ссылки отсутствуют'
+
         elif ctx.content.lower() == 'private':
             links = [link['name'] for link in links['links'] if link.get('private', links['private'])]
-            message = f'Приватные ссылки: {self.bot._prefix}{str(" " + self.bot._prefix).join(links)}' if links else 'Приватные ссылки отсутствуют'
+            message = f'Приватные ссылки: {self.bot._prefix}{str(f" {self.bot._prefix}").join(links)}' if links else 'Приватные ссылки отсутствуют'
+
         else:
             message = 'Неверный ввод'
 
@@ -320,18 +324,22 @@ class Link(commands.Cog):
         if link in self.links[ctx.channel.name] or (link := self.links_aliases.get(ctx.channel.name, {}).get(link, '')):
             if len(content_split) == 2:
                 color = content_split[1]
+
                 if color not in ['blue', 'green', 'orange', 'purple', 'primary']:
                     await ctx.reply('Неверный цвет, доступные цвета: blue, green, orange, purple, primary')
                     return
+
                 values['$set'] = {'links.$.announce': color}
                 message = f'Изменён цвет announce для {self.bot._prefix}{link}'
+
             else:
                 message = f'Сброшен цвет announce для {self.bot._prefix}{link}'
                 values['$unset'] = {'links.$.announce': 1}
             key['links.name'] = link
+
         elif content_split[0] in ['blue', 'green', 'orange', 'purple', 'primary']:
             values['$set'] = {'announce': content_split[0]}
-            message = f'Изменён цвет announce'
+            message = 'Изменён цвет announce'
         else:
             await ctx.reply('Неверный цвет или название ссылки, доступные цвета: blue, green, orange, purple, primary')
             return

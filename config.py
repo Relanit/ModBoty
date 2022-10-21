@@ -1,11 +1,12 @@
 import os
-import asyncio
 
 import aiohttp
 import motor.motor_asyncio
 from cryptography.fernet import Fernet
 
-db = motor.motor_asyncio.AsyncIOMotorClient(os.getenv('MONGO')).modboty
+
+client = motor.motor_asyncio.AsyncIOMotorClient(os.getenv('MONGO'))
+db = client.modboty
 
 fernet = Fernet(os.getenv('KEY').encode())
 
@@ -13,7 +14,7 @@ fernet = Fernet(os.getenv('KEY').encode())
 async def get_config():
     data = await db.config.find_one({'_id': 1})
     token = fernet.decrypt(data['access_token'].encode()).decode()
-    refresh_token = fernet.decrypt(data['refresh_token'].encode()).decode()
+    refresh_token = fernet.decrypt(data['refresh_token'].encode()).decode() if 'refresh_token' in data else None
     os.environ['CHANNELS'] = '&'.join(data['channels'])
 
     url = 'https://id.twitch.tv/oauth2/validate'
@@ -34,10 +35,9 @@ async def get_config():
                 enc_refresh = fernet.encrypt(refresh_token.encode()).decode()
                 await db.config.update_one({'_id': 1}, {'$set': {'access_token': enc_token, 'refresh_token': enc_refresh}})
 
-    os.environ['TOKEN'] = token
     os.environ['REFRESH_TOKEN'] = refresh_token
+    os.environ['TOKEN'] = token
 
 
-loop = asyncio.new_event_loop()
-asyncio.set_event_loop(loop)
+loop = client.get_io_loop()
 loop.run_until_complete(get_config())

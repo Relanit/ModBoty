@@ -35,7 +35,7 @@ class Timer(commands.Cog):
             await ctx.reply('Боту необходима випка или модерка для работы этой команды')
             return
 
-        if not ctx.command_alias == 'timers':
+        if ctx.command_alias != 'timers':
             content = ctx.content.split(maxsplit=1)
             if not content:
                 await ctx.reply('Неверный ввод')
@@ -100,7 +100,7 @@ class Timer(commands.Cog):
                     await ctx.reply('Ошибка ввода')
                     return
 
-        if link not in self.timers.get(ctx.channel.name, []) and not (interval or number):
+        if link not in self.timers.get(ctx.channel.name, []) and not interval and not number:
             await ctx.reply('Не указан интервал (в минутах) или количество сообщений')
             return
         elif interval and not number:
@@ -111,18 +111,14 @@ class Timer(commands.Cog):
                 await ctx.reply('Таймеры с периодом меньше трёх минут могут отправлять не более трёх сообщений')
                 return
 
-            num = 1
-            for l, t in self.timers.get(ctx.channel.name, {}).items():
-                if t['interval'] < 3 and t.get('active', True) and l != link:
-                    num += 1
+            num = 1 + sum(bool(t['interval'] < 3 and t.get('active', True) and l != link) for l, t in self.timers.get(ctx.channel.name, {}).items())
+
             if num > 2:
                 await ctx.reply('На канале может быть не более двух активных таймеров с периодом менее трёх минут')
                 return
         elif number > 5:
-            num = 1
-            for l, t in self.timers.get(ctx.channel.name, {}).items():
-                if t['number'] > 5 and t.get('active', True) and l != link:
-                    num += 1
+            num = 1 + sum(bool(t['number'] > 5 and t.get('active', True) and l != link) for l, t in self.timers.get(ctx.channel.name, {}).items())
+
             if num > 3:
                 await ctx.reply('На канале может быть не более трёх активных таймеров с количеством сообщений больше пяти')
                 return
@@ -132,21 +128,20 @@ class Timer(commands.Cog):
                 await ctx.reply('На канале может быть не более десяти таймеров')
                 return
 
-            num = 1
-            for l, t in self.timers.get(ctx.channel.name, {}).items():
-                if t.get('active', True):
-                    num += 1
+            num = 1 + sum(bool(t.get('active', True)) for l, t in self.timers.get(ctx.channel.name, {}).items())
+
             if num > 5:
                 await ctx.reply('На канале может быть не более пяти активных таймеров')
                 return
         elif timer.get('active') and self.timers[ctx.channel.name].get(link):
             num = 0
             t = self.timers[ctx.channel.name][link]
-            if t['interval'] < 3 and t['number'] > 3:
-                await ctx.reply('Таймеры с периодом меньше трёх минут могут отправлять не более трёх сообщений')
-                return
-            if t['interval'] < 3 and not t.get('active', True):
-                num = 1
+            if t['interval'] < 3:
+                if t['number'] > 3:
+                    await ctx.reply('Таймеры с периодом меньше трёх минут могут отправлять не более трёх сообщений')
+                    return
+                if not t.get('active', True):
+                    num = 1
             for l, t in self.timers.get(ctx.channel.name, {}).items():
                 if t['interval'] < 3 and t.get('active', True) and l != link:
                     num += 1
@@ -164,10 +159,8 @@ class Timer(commands.Cog):
                 await ctx.reply('На канале может быть не более трёх активных таймеров с количеством сообщений больше пяти')
                 return
 
-            num = 1
-            for l, t in self.timers.get(ctx.channel.name, {}).items():
-                if t.get('active', True):
-                    num += 1
+            num = 1 + sum(bool(t.get('active', True)) for l, t in self.timers.get(ctx.channel.name, {}).items())
+
             if num > 5:
                 await ctx.reply('На канале может быть не более пяти активных таймеров')
                 return
@@ -187,10 +180,10 @@ class Timer(commands.Cog):
             message = f'Добавлен таймер {self.bot._prefix}{link}'
             self.offline[ctx.channel.name] = False
 
-        if exist:
-            if 'active' in timer and timer['active']:
+        if exist and 'active' in timer:
+            if timer['active']:
                 message = f'Включён таймер {self.bot._prefix}{link}'
-            elif 'active' in timer:
+            else:
                 message = f'Выключен таймер {self.bot._prefix}{link}'
 
         await db.timers.update_one(key, values, upsert=True)
@@ -205,7 +198,7 @@ class Timer(commands.Cog):
         if not self.timers.get(ctx.channel.name):
             message = 'На вашем канале ещё нет таймеров'
         elif not ctx.content:
-            message = f'Установленные таймеры: {self.bot._prefix}{str(" " + self.bot._prefix).join(self.timers[ctx.channel.name])}'
+            message = f'Установленные таймеры: {self.bot._prefix}{str(f" {self.bot._prefix}").join(self.timers[ctx.channel.name])}'
         elif ctx.content.lower() == 'online':
             await db.timers.update_one({'channel': ctx.channel.name}, {'$set': {'offline': False}})
             message = 'Теперь таймеры будут работать только на стриме'
@@ -230,7 +223,7 @@ class Timer(commands.Cog):
                     if channel not in self.bot.streams and not self.timers[channel][timer].get('offline', self.offline[channel]):
                         continue
                     if time.time() > self.timers[channel][timer]['cooldown'] and \
-                            self.messages_from_timer[channel] >= self.timers[channel][timer]['number'] + 7:
+                                self.messages_from_timer[channel] >= self.timers[channel][timer]['number'] + 7:
                         cog = self.bot.get_cog('Link')
 
                         if self.timers[channel][timer]['number'] > 2 and time.time() - cog.mod_cooldowns.get(channel, 0) < 3:
@@ -256,7 +249,7 @@ class Timer(commands.Cog):
                         self.timers[channel][timer]['cooldown'] = time.time() + self.timers[channel][timer]['interval'] * 60
 
                         if not (announce or text.startswith('/announce') or text.startswith('.announce')):
-                            for i in range(self.timers[channel][timer]['number']):
+                            for _ in range(self.timers[channel][timer]['number']):
                                 await messageable.send(text)
                                 await asyncio.sleep(0.1)
                         else:

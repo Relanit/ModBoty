@@ -7,13 +7,13 @@ from twitchio.ext import commands
 reason = 'Сообщение, содержащее запрещённую фразу: "%s" (от ModBoty). Начато %s'
 
 
-def get_substring_counts(strings):
+def get_sorted_substrings(strings):
     def substrings(s1, s2):
         final = [s1[i:b + 1] for i in range(len(s1)) for b in range(len(s1))]
         return [i for i in final if i in s1 and i in s2 and len(i) > 2]
 
     substring_counts = {}
-    for i in range(0, len(strings)):
+    for i in range(len(strings)):
         for j in range(i + 1, len(strings)):
             string1 = strings[i]
             string2 = strings[j]
@@ -21,19 +21,16 @@ def get_substring_counts(strings):
             for match in matches:
                 substring_counts[match] = substring_counts.get(match, 0) + 1
 
-    return substring_counts
+    return sorted(substring_counts.items(), key=lambda x: x[1], reverse=True)
 
 
 class MassBan(commands.Cog):
 
     def __init__(self, bot):
         self.bot = bot
-        self.message_history = {}
         self.ban_phrases = {}
         self.queue = {}
-
-        for channel in os.getenv('CHANNELS').split('&'):
-            self.message_history[channel] = []
+        self.message_history = {channel: [] for channel in os.getenv('CHANNELS').split('&')}
 
     @commands.Cog.event()
     async def event_message(self, message):
@@ -63,9 +60,8 @@ class MassBan(commands.Cog):
         if len(self.message_history[message.channel.name]) >= 50:
             del self.message_history[message.channel.name][0]
 
-        if self.ban_phrases.get(message.channel.name):
-            if self.ban_phrases[message.channel.name] in message.content.lower():
-                self.queue[message.channel.name].append(message.author.name)
+        if self.ban_phrases.get(message.channel.name) and self.ban_phrases[message.channel.name] in message.content.lower():
+            self.queue[message.channel.name].append(message.author.name)
 
     @commands.command(
         name='mb',
@@ -114,47 +110,45 @@ class MassBan(commands.Cog):
                 return
 
             if len(first_messages) > 1:
-                first_senders_copy = first_messages.copy()
-                for i, message in enumerate(first_senders_copy):
-                    if message != first_senders_copy[-1]:
+                first_messages_copy = first_messages.copy()
+                for i, message in enumerate(first_messages_copy):
+                    if message != first_messages_copy[-1]:
                         if i == 0:
-                            if first_senders_copy[i+1]['time'] - message['time'] > 1:
+                            if first_messages_copy[i+1]['time'] - message['time'] > 1:
                                 first_messages.remove(message)
-                        elif message['time'] - first_senders_copy[i-1]['time'] > 1 and first_senders_copy[i+1]['time'] - message['time'] > 1:
+                        elif message['time'] - first_messages_copy[i-1]['time'] > 1 and first_messages_copy[i+1]['time'] - message['time'] > 1:
                             first_messages.remove(message)
-                    elif message['time'] - first_senders_copy[i-1]['time'] > 1:
+                    elif message['time'] - first_messages_copy[i-1]['time'] > 1:
                         first_messages.remove(message)
-                        break
 
-            substring_counts = get_substring_counts([message['content'].lower() for message in first_messages])
-            sorted_sub = sorted(substring_counts.items(), key=lambda x: x[1], reverse=True)
-
+            sorted_sub = get_sorted_substrings([message['content'].lower() for message in first_messages])
             ban_phrase, count = sorted_sub[0] if sorted_sub else ('', 0)
+
             for substring in sorted_sub:
                 if substring[1] == count and len(substring[0]) > len(ban_phrase):
                     ban_phrase = substring[0]
                 elif substring[1] < count:
                     break
 
-            substring_counts = get_substring_counts(['asd'] * len(first_messages))
-            sorted_sub = sorted(substring_counts.items(), key=lambda x: x[1], reverse=True)
+            sorted_sub = get_sorted_substrings(['asd'] * len(first_messages))
             found = count > sorted_sub[0][1] / 100 * 60 if count else False
 
             if not found:
                 while ctx.limited:
                     await asyncio.sleep(0.1)
+
                 await ctx.reply('Запущено, банфраза не найдена, будут забанены последние новые пользователи')
                 text = f'/ban %s {reason % ("Первое сообщение в чате", ctx.author.name)}'
 
                 for message in first_messages:
                     while ctx.limited:
                         await asyncio.sleep(0.1)
-                    if ctx.channel.name in self.queue:
-                        await ctx.send(text % message['author'])
-                        banned_users.append(message['author'])
-                        await asyncio.sleep(0.3)
-                    else:
+                    if ctx.channel.name not in self.queue:
                         return
+                    await ctx.send(text % message['author'])
+                    banned_users.append(message['author'])
+                    await asyncio.sleep(0.3)
+
                 self.ban_phrases.pop(ctx.channel.name, None)
                 self.queue.pop(ctx.channel.name, None)
                 return
@@ -174,24 +168,22 @@ class MassBan(commands.Cog):
             if ban_phrase in message['content'].lower() and message['author'] not in banned_users:
                 while ctx.limited:
                     await asyncio.sleep(0.1)
-                if ctx.channel.name in self.ban_phrases:
-                    await ctx.send(text % message['author'])
-                    banned_users.append(message['author'])
-                    await asyncio.sleep(0.3)
-                else:
+                if ctx.channel.name not in self.ban_phrases:
                     return
+                await ctx.send(text % message['author'])
+                banned_users.append(message['author'])
+                await asyncio.sleep(0.3)
 
         while ctx.channel.name in self.ban_phrases:
             for user in self.queue[ctx.channel.name]:
                 if user not in banned_users:
                     while ctx.limited:
                         await asyncio.sleep(0.1)
-                    if ctx.channel.name in self.ban_phrases:
-                        await ctx.send(text % user)
-                        banned_users.append(user)
-                        await asyncio.sleep(0.3)
-                    else:
+                    if ctx.channel.name not in self.ban_phrases:
                         return
+                    await ctx.send(text % user)
+                    banned_users.append(user)
+                    await asyncio.sleep(0.3)
 
             if time.time() - start > 300:
                 self.ban_phrases.pop(ctx.channel.name, None)

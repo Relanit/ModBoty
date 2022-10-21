@@ -19,24 +19,19 @@ class Mail(commands.Cog):
 
         await ctx.reply('Рассылка начата')
 
-        announce = True if ctx.content.startswith('/announce') or ctx.content.startswith('.announce') else False
+        announce = bool(ctx.content.startswith('/announce') or ctx.content.startswith('.announce'))
 
         for channel in self.bot.connected_channels:
-            if channel.name != ctx.channel.name:
-                if announce:
-                    if channel.bot_is_mod:
-                        while channel.limited:
-                            await asyncio.sleep(0.1)
-                        await self.bot.announce(channel, ctx.content)
-                    else:
-                        while channel.limited:
-                            await asyncio.sleep(0.1)
-                        await channel.send(ctx.content.split(maxsplit=1)[1])
+            while channel.limited:
+                await asyncio.sleep(0.1)
+            if announce:
+                if channel.bot_is_mod:
+                    await self.bot.announce(channel, ctx.content)
                 else:
-                    while channel.limited:
-                        await asyncio.sleep(0.1)
-                    await channel.send(ctx.content)
-                await asyncio.sleep(3)
+                    await channel.send(ctx.content.split(maxsplit=1)[1])
+            else:
+                await channel.send(ctx.content)
+            await asyncio.sleep(3)
 
         await ctx.reply('Рассылка закончена')
 

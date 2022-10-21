@@ -12,9 +12,7 @@ def get_cooldown_end(data):
 class Cooldown:
 
     def __init__(self, channels):
-        self.cooldowns = {}
-        for channel in channels:
-            self.cooldowns[channel] = {}
+        self.cooldowns = {channel: {} for channel in channels}
 
     async def handle_command(self, command, message, admin=False):
         now = time.time()
@@ -24,15 +22,11 @@ class Cooldown:
 
         if not admin:
             user = message.author.name
-            if not message.author.is_mod:
+            if not message.author.is_mod or 'admin' in data.flags:
                 return
-            elif 'admin' in data.flags:
-                return
-
             if command in self.cooldowns[channel]:
                 if self.cooldowns[channel][command]['gen'] < now > self.cooldowns[channel][command]['per'].get(user, 0):
                     per, gen = get_cooldown_end(data)
-
                     self.cooldowns[channel][command]['per'][user], self.cooldowns[channel][command]['gen'] = per, gen
                     return True
 

@@ -46,9 +46,7 @@ class Inspect(commands.Cog):
             handle = True
 
             if count > main_limit['messages']:
-                handle = False
-                if percent_limit and not (count > len(chatters) / 100 * percent_limit):
-                    handle = True
+                handle = bool(percent_limit and count <= len(chatters) / 100 * percent_limit)
 
             if secondary_limit and handle:
                 if main_limit['time_unit'] < secondary_limit['time_unit'] * 2:
@@ -70,9 +68,7 @@ class Inspect(commands.Cog):
                 count = chatters.count(message.author.name)
 
                 if count > secondary_limit['messages']:
-                    handle = False
-                    if percent_limit and not (count > len(chatters) / 100 * percent_limit):
-                        handle = True
+                    handle = bool(percent_limit and count <= len(chatters) / 100 * percent_limit)
 
             if not handle:
                 new = [msg for msg in self.message_log[message.channel.name] if msg['author'] != message.author.name]
@@ -81,27 +77,25 @@ class Inspect(commands.Cog):
                 if message.channel.name in self.bot.streams:
                     await db.inspects.update_one({'channel': message.channel.name},
                                                  {'$inc': {f'stats.{message.author.name}': 1}})
-            if not handle and message.author.name not in self.warned_users[message.channel.name]:
-                self.warned_users[message.channel.name][message.author.name] = 0
 
-                ctx = await self.bot.get_context(message)
-                await ctx.reply('Без спамчика :|')
+                if message.author.name in self.warned_users[message.channel.name]:
+                    i = self.warned_users[message.channel.name][message.author.name]
+                    timeout = self.timeouts[message.channel.name][i]
 
-                while ctx.limited:
-                    await asyncio.sleep(0.1)
+                    if len(self.timeouts[message.channel.name]) > self.warned_users[message.channel.name][message.author.name] + 1:
+                        self.warned_users[message.channel.name][message.author.name] += 1
 
-                await ctx.send(f'/timeout {message.author.name} 10 {reason}')
-            elif not handle:
-                i = self.warned_users[message.channel.name][message.author.name]
-                timeout = self.timeouts[message.channel.name][i]
+                    while message.channel.limited:
+                        await asyncio.sleep(0.1)
+                    await message.channel.send(f'/timeout {message.author.name} {timeout} {reason}')
+                else:
+                    self.warned_users[message.channel.name][message.author.name] = 0
+                    ctx = await self.bot.get_context(message)
+                    await ctx.reply('Без спамчика :|')
 
-                if len(self.timeouts[message.channel.name]) > self.warned_users[message.channel.name][message.author.name] + 1:
-                    self.warned_users[message.channel.name][message.author.name] += 1
-
-                while message.channel.limited:
-                    await asyncio.sleep(0.1)
-
-                await message.channel.send(f'/timeout {message.author.name} {timeout} {reason}')
+                    while ctx.limited:
+                        await asyncio.sleep(0.1)
+                    await ctx.send(f'/timeout {message.author.name} 10 {reason}')
 
     @commands.command(
         name='inspect',

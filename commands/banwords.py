@@ -116,7 +116,7 @@ class Banwords(commands.Cog):
         try:
             timeout = int(content[0])
         except ValueError:
-            await ctx.reply(f'Укажите время мута в секундах')
+            await ctx.reply('Укажите время мута в секундах')
             return
 
         if not 1 <= timeout <= 1209600:
@@ -141,7 +141,7 @@ class Banwords(commands.Cog):
         message = 'Добавлено'
         if found:
             await db.banwords.update_one({'channel': ctx.channel.name}, {'$pull': {'mutewords': {'muteword': muteword}}})
-            message = f'Изменено'
+            message = 'Изменено'
 
         if ctx.channel.name not in self.mutewords:
             self.mutewords[ctx.channel.name] = []
@@ -166,7 +166,7 @@ class Banwords(commands.Cog):
             return
 
         await db.banwords.update_one({'channel': ctx.channel.name}, {'$pull': {'mutewords': {'muteword': muteword}}})
-        await ctx.reply(f'Удалено')
+        await ctx.reply('Удалено')
 
     async def list_banwords(self, ctx):
         if not self.banwords.get(ctx.channel.name):
@@ -179,7 +179,8 @@ class Banwords(commands.Cog):
                 message = f'Банворды канала {ctx.channel.name}: '
 
                 for banword in self.banwords[ctx.channel.name]:
-                    banword = banword + ' | ' if banword != self.banwords[ctx.channel.name][-1] else banword
+                    banword = f'{banword} | ' if banword != self.banwords[ctx.channel.name][-1] else banword
+
                     if len(message + banword) < 500:
                         message += banword
                     else:

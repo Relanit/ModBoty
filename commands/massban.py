@@ -103,11 +103,6 @@ class MassBan(commands.Cog):
 
         if not ban_phrase:
             first_messages = [message for message in self.message_history[ctx.channel.name].copy() if message['first-msg']]
-            if not first_messages:
-                self.ban_phrases.pop(ctx.channel.name, None)
-                self.queue.pop(ctx.channel.name, None)
-                await ctx.reply('Сообщений от новых пользователей не найдено')
-                return
 
             if len(first_messages) > 1:
                 first_messages_copy = first_messages.copy()
@@ -120,6 +115,12 @@ class MassBan(commands.Cog):
                             first_messages.remove(message)
                     elif message['time'] - first_messages_copy[i-1]['time'] > 1:
                         first_messages.remove(message)
+
+            if not first_messages:
+                self.ban_phrases.pop(ctx.channel.name, None)
+                self.queue.pop(ctx.channel.name, None)
+                await ctx.reply('Сообщений от новых пользователей не найдено')
+                return
 
             sorted_sub = get_sorted_substrings([message['content'].lower() for message in first_messages])
             ban_phrase, count = sorted_sub[0] if sorted_sub else ('', 0)

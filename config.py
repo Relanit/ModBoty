@@ -1,4 +1,5 @@
 import os
+import time
 
 import aiohttp
 import motor.motor_asyncio
@@ -33,7 +34,7 @@ async def get_config():
                 refresh_token = response['refresh_token']
                 enc_token = fernet.encrypt(token.encode()).decode()
                 enc_refresh = fernet.encrypt(refresh_token.encode()).decode()
-                await db.config.update_one({'_id': 1}, {'$set': {'access_token': enc_token, 'refresh_token': enc_refresh}})
+                await db.config.update_one({'_id': 1}, {'$set': {'access_token': enc_token, 'refresh_token': enc_refresh, 'expire_time': time.time() + response['expires_in']}})
 
     os.environ['REFRESH_TOKEN'] = refresh_token
     os.environ['TOKEN'] = token

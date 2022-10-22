@@ -18,7 +18,7 @@ class Link(commands.Cog):
 
     @commands.Cog.event()
     async def event_message(self, message):
-        if message.echo:
+        if message.echo or type(message.author).__name__ == 'WhisperChatter':
             return
 
         content = message.content

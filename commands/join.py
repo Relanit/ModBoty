@@ -29,7 +29,7 @@ class JoinChannel(commands.Cog):
             self.bot.cooldowns[channel] = {}
             cog = self.bot.get_cog('MassBan')
             cog.message_history[channel] = []
-            await db.channels.update_one({'_id': 1}, {'$addToSet': {'channels': channel}})
+            await db.config.update_one({'_id': 1}, {'$addToSet': {'channels': channel}})
             await self.bot.join_channels([channel])
             os.environ['CHANNELS'] = os.environ['CHANNELS'] + '&' + channel
             await ctx.reply('✅ Добавлен')
@@ -46,7 +46,7 @@ class JoinChannel(commands.Cog):
             self.bot.cooldowns.pop(channel)
             cog = self.bot.get_cog('MassBan')
             cog.message_history.pop(channel)
-            await db.channels.update_one({'_id': 1}, {'$pull': {'channels': channel}})
+            await db.config.update_one({'_id': 1}, {'$pull': {'channels': channel}})
             await self.bot.part_channels([channel])
             channels = os.environ['CHANNELS'].split('&')
             channels.remove(channel)

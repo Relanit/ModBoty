@@ -253,6 +253,8 @@ class Timer(commands.Cog):
                                 await messageable.send(text)
                                 await asyncio.sleep(0.1)
                         else:
+                            if text.startswith('/me') or text.startswith('.me'):
+                                text = text.split(maxsplit=1)[1]
                             await self.bot.announce(messageable, text, announce, self.timers[channel][timer]['number'])
 
                         self.messages_from_timer[channel] = 0

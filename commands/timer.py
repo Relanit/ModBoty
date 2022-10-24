@@ -19,7 +19,7 @@ class Timer(commands.Cog):
 
     @commands.Cog.event()
     async def event_message(self, message):
-        if message.echo or type(message.author).__name__ == 'WhisperChatter' or message.channel.name not in self.timers:
+        if message.echo or message.channel.name not in self.timers:
             return
 
         self.messages_from_timer[message.channel.name] += 1

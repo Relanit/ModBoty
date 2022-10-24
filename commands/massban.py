@@ -34,7 +34,7 @@ class MassBan(commands.Cog):
 
     @commands.Cog.event()
     async def event_message(self, message):
-        if message.echo or type(message.author).__name__ == 'WhisperChatter':
+        if message.echo:
             return
 
         if message.channel.name in self.ban_phrases and message.author.is_mod:
@@ -55,7 +55,7 @@ class MassBan(commands.Cog):
 
         self.message_history[message.channel.name].append({'author': message.author.name,
                                                            'content': message.content,
-                                                           'first-msg': bool(int(message.tags['first-msg'])),
+                                                           'first-msg': message.tags['first-msg'],
                                                            'time': time.time()})
         if len(self.message_history[message.channel.name]) >= 50:
             del self.message_history[message.channel.name][0]
@@ -102,7 +102,7 @@ class MassBan(commands.Cog):
         reply = 'Запущено'
 
         if not ban_phrase:
-            first_messages = [message for message in self.message_history[ctx.channel.name].copy() if message['first-msg']]
+            first_messages = [message for message in self.message_history[ctx.channel.name].copy() if message['first-msg'] == '1']
 
             if len(first_messages) > 1:
                 first_messages_copy = first_messages.copy()

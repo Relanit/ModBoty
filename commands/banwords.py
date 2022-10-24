@@ -18,7 +18,7 @@ class Banwords(commands.Cog):
 
     @commands.Cog.event()
     async def event_message(self, message):
-        if message.echo or type(message.author).__name__ == 'WhisperChatter':
+        if message.echo:
             return
 
         if message.channel.name == 't2x2' and message.tags['first-msg'] == '1' and 'бум' in message.content:

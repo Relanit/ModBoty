@@ -19,7 +19,7 @@ class Inspect(commands.Cog):
 
     @commands.Cog.event()
     async def event_message(self, message):
-        if message.echo or type(message.author).__name__ == 'WhisperChatter':
+        if message.echo:
             return
 
         if message.channel.name in self.limits:

@@ -91,7 +91,7 @@ class Link(commands.Cog):
     @commands.command(
         name='link',
         aliases=['links', 'del', 'aliases', 'public', 'announce'],
-        cooldown={'per': 0, 'gen': 5},
+        cooldown={'per': 0, 'gen': 3},
         description='Кастомные команды для спама (от модераторов) или вызова пользователями. Полное описание - https://vk.cc/chCfKt '
     )
     async def link(self, ctx):

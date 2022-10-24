@@ -99,7 +99,7 @@ class Inspect(commands.Cog):
 
     @commands.command(
         name='inspect',
-        cooldown={'per': 0, 'gen': 5},
+        cooldown={'per': 0, 'gen': 3},
         description='Лимиты на количество отправленных сообщений. Полное описание - https://vk.cc/chCfJI ',
     )
     async def inspect(self, ctx):

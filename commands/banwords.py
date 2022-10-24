@@ -42,7 +42,7 @@ class Banwords(commands.Cog):
     @commands.command(
         name='bword',
         aliases=['mword', 'delb', 'delm', 'bwords', 'mwords'],
-        cooldown={'per': 0, 'gen': 5},
+        cooldown={'per': 0, 'gen': 3},
         description='Запрещённые слова, за отправку которых пользователь получает бан/мут. Полное описание - https://vk.cc/chCfIC '
     )
     async def command(self, ctx):

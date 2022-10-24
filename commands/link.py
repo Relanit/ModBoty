@@ -74,6 +74,8 @@ class Link(commands.Cog):
                             await message.channel.send(text)
                             await asyncio.sleep(0.1)
                     else:
+                        if text.startswith('/me') or text.startswith('.me'):
+                            text = text.split(maxsplit=1)[1]
                         await self.bot.announce(message.channel, text, announce, num)
 
                 elif not private and time.time() > self.cooldowns[message.channel.name].get(link, 0):

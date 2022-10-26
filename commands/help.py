@@ -17,8 +17,7 @@ class Help(commands.Cog):
     async def help(self, ctx):
         content = ctx.content.lstrip(self.bot._prefix).lower()
         if not content:
-            message = f'Доступные команды - bword, inspect, link, mb, spam, timer  | Документация - https://vk.cc/chCevV | ' \
-                          f'Напишите {self.bot._prefix}help [команда], чтобы узнать описание команды'
+            message = f'Документация - https://vk.cc/chCevV | Напишите {self.bot._prefix}help [команда], чтобы узнать описание команды'
             await ctx.reply(message)
             return
 

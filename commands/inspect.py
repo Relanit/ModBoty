@@ -112,7 +112,7 @@ class Inspect(commands.Cog):
 
         if not content:
             if not data:
-                await ctx.reply(f'Сначала настройте наблюдение, {self.bot._prefix}help inspect')
+                await ctx.reply(f'Сначала настройте наблюдение - https://vk.cc/chCfJI ')
                 return
 
             first_limit = data['first_limit'] if 'first_limit' in data else False
@@ -124,22 +124,17 @@ class Inspect(commands.Cog):
             if first_limit:
                 first_limit = f'{first_limit["messages"]}/{first_limit["time_unit"] if first_limit["time_unit"] % 1 != 0 else int(first_limit["time_unit"])}{", " if second_limit else ""}'
 
-            message = f'Статус: {"включено" if data["active"] else "выключено"}. ' \
-                      f'Лимиты: {first_limit if first_limit else ""}' \
-                      f'{second_limit if second_limit else "."} ' \
-                      f'{percent_limit if percent_limit else ""} ' \
-                      f'Таймауты: {", ".join(map(str, data["timeouts"]))}. ' \
-                      f'{"Только на стриме." if not data["offline"] else ""}'
+            message = f'Статус: {"включено" if data["active"] else "выключено"}. Лимиты: {first_limit or ""}{second_limit or "."} {percent_limit or ""} Таймауты: {", ".join(map(str, data["timeouts"]))}. {"" if data["offline"] else "Только на стриме."}'
+
             await ctx.reply(message)
         elif content == 'on':
             if data:
-                if ctx.channel.name not in self.limits:
-                    if ctx.channel.name in self.bot.streams or data['offline']:
-                        await self.set(ctx.channel.name)
+                if ctx.channel.name not in self.limits and (ctx.channel.name in self.bot.streams or data['offline']):
+                    await self.set(ctx.channel.name)
                 await db.inspects.update_one({'channel': ctx.channel.name}, {'$set': {'active': True}})
                 await ctx.reply('✅ Включено')
             else:
-                await ctx.reply(f'Сначала настройте наблюдение, {self.bot._prefix}help inspect')
+                await ctx.reply(f'Сначала настройте наблюдение - https://vk.cc/chCfJI ')
         elif content == 'off':
             if data:
                 if ctx.channel.name in self.limits:
@@ -147,7 +142,7 @@ class Inspect(commands.Cog):
                 await db.inspects.update_one({'channel': ctx.channel.name}, {'$set': {'active': False}})
                 await ctx.reply('❌ Выключено')
             else:
-                await ctx.reply(f'Сначала настройте наблюдение, {self.bot._prefix}help inspect')
+                await ctx.reply(f'Сначала настройте наблюдение - https://vk.cc/chCfJI ')
         elif content == 'stats':
             if not data or not data.get('stats'):
                 await ctx.reply('Статистика не найдена')
@@ -197,7 +192,7 @@ class Inspect(commands.Cog):
                             messages = int(messages)
                             time_unit = round(float(time_unit), 1)
                         except ValueError:
-                            await ctx.reply('Неверная запись времени или количества сообщений')
+                            await ctx.reply('Неверная запись времени или количества сообщений - https://vk.cc/chCfJI')
                             return
 
                         if not 1 <= time_unit <= 60:
@@ -208,8 +203,7 @@ class Inspect(commands.Cog):
                             return
 
                         values['$set'][limit] = {'messages': messages, 'time_unit': time_unit}
-                    elif data and 'first_limit' in data \
-                            and 'second_limit' in data and not ('first_limit' in values['$unset'] or 'second_limit' in values['$unset']):
+                    elif data and 'first_limit' in data and 'second_limit' in data and 'first_limit' not in values['$unset'] and 'second_limit' not in values['$unset']:
                         values['$unset'][limit] = 1
                     else:
                         await ctx.reply('Чтобы удалить лимит, должен быть установлен другой')
@@ -221,11 +215,11 @@ class Inspect(commands.Cog):
                         try:
                             percent_limit = int(percent_limit)
                         except ValueError:
-                            await ctx.reply('Неверная запись лимита в процентах')
+                            await ctx.reply('Неверная запись лимита в процентах - https://vk.cc/chCfJI')
                             return
 
                         if not 0 <= percent_limit < 100:
-                            await ctx.reply('Неверная запись лимита в процентах')
+                            await ctx.reply('Неверная запись лимита в процентах - https://vk.cc/chCfJI')
                             return
 
                     if not percent_limit:
@@ -242,7 +236,7 @@ class Inspect(commands.Cog):
                         values['$set']['timeouts'] = [] if 'timeouts' not in values['$set'] else values['$set']['timeouts']
                         values['$set']['timeouts'].append(timeout)
                     except ValueError:
-                        await ctx.reply('Неверная запись таймаутов или команды')
+                        await ctx.reply('Неверная запись таймаутов или команды - https://vk.cc/chCfJI')
                         return
 
                     if not 1 <= timeout <= 1209600:
@@ -260,7 +254,7 @@ class Inspect(commands.Cog):
 
             on_insert = {'channel': ctx.channel.name, 'active': False}
             if not data:
-                if not ('first_limit' in values['$set'] or 'second_limit' in values['$set']):
+                if 'first_limit' not in values['$set'] and 'second_limit' not in values['$set']:
                     await ctx.reply('Для начала установите сообщения и время')
                     return
 

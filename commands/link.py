@@ -117,7 +117,7 @@ class Link(commands.Cog):
     async def edit(self, ctx):
         content = ctx.content.split()
         if len(content) < 2:
-            await ctx.reply(f'Пустой ввод - {self.bot._prefix}help link')
+            await ctx.reply('Недостаточно значений - https://vk.cc/chCfKt')
             return
         elif len(self.links.get(ctx.channel.name, [])) == 40:
             await ctx.reply('Достигнут лимит количества ссылок - 40')
@@ -146,7 +146,7 @@ class Link(commands.Cog):
 
         if not (text or link in self.links.get(ctx.channel.name, [])) or (
                 (text.startswith('.') or text.startswith('/')) and len(text.split()) == 1):
-            await ctx.reply(f'Пустой ввод - {self.bot._prefix}help link')
+            await ctx.reply('Недостаточно значений - https://vk.cc/chCfKt')
             return
 
         key = {'channel': ctx.channel.name}
@@ -203,7 +203,7 @@ class Link(commands.Cog):
     async def delete(self, ctx):
         content = ctx.content.split()
         if not content:
-            await ctx.reply(f'Пустой ввод - {self.bot._prefix}help link')
+            await ctx.reply('Недостаточно значений - https://vk.cc/chCfKt')
             return
 
         link = content[0].lower()
@@ -314,7 +314,7 @@ class Link(commands.Cog):
             return
 
         if not ctx.content:
-            await ctx.reply(f'Пустой ввод - {self.bot._prefix}help link')
+            await ctx.reply('Недостаточно значений - https://vk.cc/chCfKt')
             return
 
         content_split = ctx.content.lower().split()

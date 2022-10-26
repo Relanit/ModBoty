@@ -31,7 +31,7 @@ class ModBoty(commands.Bot, Cooldown):
         print(f'Logged in as {self.nick}')
 
     async def event_message(self, message):
-        if message.echo or type(message.author).__name__ == 'WhisperChatter':
+        if message.echo:
             return
 
         content = message.content
@@ -116,13 +116,16 @@ class ModBoty(commands.Bot, Cooldown):
                     async with session.post(url, headers={'Content-Type': 'application/x-www-form-urlencoded'}) as response:
                         response = await response.json()
 
-                token_data = {
-                    'login': user['login'],
-                    'access_token': fernet.encrypt(response['access_token'].encode()).decode(),
-                    'refresh_token': fernet.encrypt(response['refresh_token'].encode()).decode(),
-                    'expire_time': time.time() + response['expires_in']
-                }
-                await db.config.update_one({'_id': 1, 'user_tokens.login': user['login']}, {'$set': {'user_tokens.$': token_data}})
+                if response == {'status': 400, 'message': 'Invalid refresh token'}:
+                    await db.config.update_one({'_id': 1},  {'$pull': {'user_tokens': {'login': user['login']}}})
+                else:
+                    token_data = {
+                        'login': user['login'],
+                        'access_token': fernet.encrypt(response['access_token'].encode()).decode(),
+                        'refresh_token': fernet.encrypt(response['refresh_token'].encode()).decode(),
+                        'expire_time': time.time() + response['expires_in']
+                    }
+                    await db.config.update_one({'_id': 1, 'user_tokens.login': user['login']}, {'$set': {'user_tokens.$': token_data}})
 
 
 bot = ModBoty()

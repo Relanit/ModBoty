@@ -51,7 +51,7 @@ class Banwords(commands.Cog):
             return
 
         if not ctx.content and ctx.command_alias not in ('bwords', 'mwords'):
-            await ctx.reply('Пустой ввод')
+            await ctx.reply('Недостаточно значений - https://vk.cc/chCfIC')
             return
 
         if ctx.command_alias == 'bword':

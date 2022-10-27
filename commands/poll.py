@@ -24,7 +24,7 @@ class Poll(commands.Cog):
 
         data = await db.config.find_one({'_id': 1, 'user_tokens.login': ctx.channel.name}, {'user_tokens.$': 1})
         if not data:
-            await ctx.reply('Для работы этой команды стримеру нужно пройти авторизацию')
+            await ctx.reply('Для работы этой команды стримеру нужно пройти авторизацию - https://vk.cc/chZxeI')
             return
 
         access_token = fernet.decrypt(data['user_tokens'][0]['access_token'].encode()).decode()
@@ -78,19 +78,19 @@ class Poll(commands.Cog):
             return
 
         try:
-            await user.create_poll(access_token, title=title, choices=choices, duration=duration)
+            await user.create_poll(access_token, title, choices, duration)
         except twitchio.errors.Unauthorized:
-            await ctx.reply('Для работы этой команды нужно пройти авторизацию')
+            await ctx.reply('Для работы этой команды стримеру нужно пройти авторизацию - https://vk.cc/chZxeI')
             return
 
-        await ctx.reply(f'Создан опрос - {title}')
+        await ctx.reply('Опрос создан')
 
     @staticmethod
     async def end_poll(ctx, user, access_token):
         try:
             polls = await user.fetch_polls(access_token)
         except twitchio.errors.Unauthorized:
-            await ctx.reply('Для работы этой команды нужно пройти авторизацию')
+            await ctx.reply('Для работы этой команды стримеру нужно пройти авторизацию - https://vk.cc/chZxeI')
             return
 
         if polls[0].status != 'ACTIVE':
@@ -98,7 +98,7 @@ class Poll(commands.Cog):
             return
 
         await user.end_poll(access_token, polls[0].id, 'TERMINATED')
-        await ctx.reply(f'Удалён опрос - {polls[0].title}')
+        await ctx.reply('Опрос удалён')
 
 
 def prepare(bot):

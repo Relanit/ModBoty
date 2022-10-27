@@ -17,7 +17,7 @@ class Prediction(commands.Cog):
         name='prediction',
         aliases=['pred', 'endpred', 'delpred', 'lockpred'],
         cooldown={'per': 0, 'gen': 3},
-        description='Создание и редактирование ставок. Полное описание - '
+        description='Создание и редактирование ставок. Полное описание - https://vk.cc/chZLJH'
     )
     async def prediction(self, ctx):
         user = await ctx.channel.user()
@@ -56,13 +56,13 @@ class Prediction(commands.Cog):
     async def create_prediction(ctx, user, access_token):
         content_split = ctx.content.split('/')
         if len(content_split) < 3:
-            await ctx.reply('Недостаточно значений - ')
+            await ctx.reply('Недостаточно значений - https://vk.cc/chZLJH')
             return
 
         try:
             duration, title = content_split[0].split(maxsplit=1)
         except ValueError:
-            await ctx.reply('Недостаточно значений - ')
+            await ctx.reply('Недостаточно значений - https://vk.cc/chZLJH')
             return
 
         try:

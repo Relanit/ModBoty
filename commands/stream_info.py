@@ -159,7 +159,7 @@ class StreamInfo(commands.Cog):
                 self.aliases[ctx.channel.name][alias] = {'name': game[0].name, 'id': game[0].id}
                 values = {'$addToSet': {'games': {'name': game[0].name, 'id': game[0].id, 'aliases': [alias]}}}
         else:
-            self.games[ctx.channel.name] = [game[0].id]
+            self.games[ctx.channel.name] = {game[0].id}
             self.aliases[ctx.channel.name] = {alias: {'name': game[0].name, 'id': game[0].id}}
             self.cooldowns[ctx.channel.name] = 0
             values = {'$setOnInsert': {'channel': ctx.channel.name},

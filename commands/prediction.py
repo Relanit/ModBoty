@@ -14,8 +14,8 @@ class Prediction(commands.Cog):
         self.bot = bot
 
     @commands.command(
-        name='prediction',
-        aliases=['pred', 'endpred', 'delpred', 'lockpred'],
+        name='pred',
+        aliases=['endpred', 'delpred', 'lockpred'],
         cooldown={'per': 0, 'gen': 3},
         description='Создание и редактирование ставок. Полное описание - https://vk.cc/chZLJH'
     )
@@ -32,7 +32,7 @@ class Prediction(commands.Cog):
 
         access_token = fernet.decrypt(data['user_tokens'][0]['access_token'].encode()).decode()
 
-        if ctx.command_alias in ('prediction', 'pred'):
+        if ctx.command_alias == 'pred':
             await self.create_prediction(ctx, user, access_token)
         else:
             try:
@@ -123,7 +123,7 @@ class Prediction(commands.Cog):
             await ctx.reply('Ставка уже активна')
             return
 
-        await ctx.reply('Ставка создана')
+        await ctx.reply(f'Создана ставка - {title}')
 
     @staticmethod
     async def end_prediction(ctx, user, access_token, predictions):

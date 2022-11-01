@@ -47,8 +47,19 @@ class Help(commands.Cog):
             cog = self.bot.get_cog('Link')
 
             if link not in cog.links.get(ctx.channel.name, []) and link not in cog.links_aliases.get(ctx.channel.name, []).keys():
-                await ctx.reply('Несуществующая команда')
-                return
+                cog = self.bot.get_cog('StreamInfo')
+                if link in cog.aliases.get(ctx.channel.name, []):
+                    game_id, name = cog.aliases[ctx.channel.name][link]['id'], cog.aliases[ctx.channel.name][link]['name']
+                    aliases = [alias for alias, _ in cog.aliases[ctx.channel.name].items() if cog.aliases[ctx.channel.name][alias]['id'] == game_id]
+                    aliases = f'{self.bot._prefix}{str(f" {self.bot._prefix}").join(aliases)}'
+                    await ctx.reply(f'{aliases} - элиасы категории {name}. Кд: общий 3с')
+                elif game := [game['name'] for game in cog.aliases.get(ctx.channel.name, {}).values() if game['name'].lower() == content]:
+                    aliases = [alias for alias, _ in cog.aliases[ctx.channel.name].items() if cog.aliases[ctx.channel.name][alias]['name'] == game[0]]
+                    aliases = f'{self.bot._prefix}{str(f" {self.bot._prefix}").join(aliases)}'
+                    await ctx.reply(f'{aliases} - элиасы категории {game[0]}. Кд: общий 3с')
+                else:
+                    await ctx.reply('Несуществующая команда')
+                    return
             elif link in cog.links_aliases.get(ctx.channel.name, []):
                 link = cog.links_aliases[ctx.channel.name][link]
 
@@ -73,7 +84,7 @@ class Help(commands.Cog):
                             f'{", с announce" if timer.get("announce", False) in timer else ""}' \
                             f'{"." if timer.get("offline", offline) else ", только на стриме."}'
 
-            message = f'{self.bot._prefix}{link}{f" {aliases}." if aliases else "."} Доступ: {"приватный" if private else "публичный"}. Кд 3с. {timer}'
+            message = f'{self.bot._prefix}{link}{f" {aliases}." if aliases else "."} Доступ: {"приватный" if private else "публичный"}. Кд: общий 3с. {timer}'
 
         await ctx.reply(message)
 

@@ -83,7 +83,7 @@ class Poll(commands.Cog):
             await ctx.reply('Для работы этой команды стримеру нужно пройти авторизацию - https://vk.cc/chZxeI')
             return
 
-        await ctx.reply('Опрос создан')
+        await ctx.reply(f'Создан опрос - {title}')
 
     @staticmethod
     async def end_poll(ctx, user, access_token):

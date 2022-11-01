@@ -134,8 +134,12 @@ class Link(commands.Cog):
         elif content[1].lower() == 'public':
             private = False
 
+        cog = self.bot.get_cog('StreamInfo')
+        if link in cog.aliases.get(ctx.channel.name, []):
+            await ctx.reply(f'Название {self.bot._prefix}{link} уже занято категорией {cog.aliases[ctx.channel.name][link]["name"]}')
+            return
         if self.bot.get_command_name(link) or link in ['public', 'private']:
-            await ctx.reply(f'Нельзя создать ссылку с таким названием - {link}')
+            await ctx.reply(f'Название {self.bot._prefix}{link} уже занято командой')
             return
         elif len(link) > 15:
             await ctx.reply('Нельзя создать ссылку с названием длиной более 15 символов')
@@ -209,7 +213,6 @@ class Link(commands.Cog):
         link = content[0].lower()
         if link in self.links.get(ctx.channel.name, []) or (
                 link := self.links_aliases.get(ctx.channel.name, {}).get(link, '')):
-            values = {'$pull': {'links': {'name': link}}}
             self.links[ctx.channel.name].remove(link)
 
             if self.links_aliases.get(ctx.channel.name, {}):
@@ -229,7 +232,7 @@ class Link(commands.Cog):
             await ctx.reply('Ссылка не найдена')
             return
 
-        await db.links.update_one({'channel': ctx.channel.name}, values)
+        await db.links.update_one({'channel': ctx.channel.name}, {'$pull': {'links': {'name': link}}})
         await ctx.reply(message)
 
     async def aliases(self, ctx):
@@ -242,18 +245,22 @@ class Link(commands.Cog):
         aliases = set()
 
         if link in self.links.get(ctx.channel.name, []):
+            cog = self.bot.get_cog('StreamInfo')
             for alias in content[1:]:
                 alias = alias.lstrip(self.bot._prefix)
                 if self.bot.get_command_name(alias) or alias == 'private':
-                    await ctx.reply(f'Нельзя создать ссылку с таким названием - {alias}')
+                    await ctx.reply(f'Название {self.bot._prefix}{alias} уже занято командой')
                     return
-                elif alias in self.links.get(ctx.channel.name, []):
+                if alias in cog.aliases.get(ctx.channel.name, []):
+                    await ctx.reply(f'Название {self.bot._prefix}{alias} уже занято категорией {cog.aliases[ctx.channel.name][alias]["name"]}')
+                    return
+                if alias in self.links.get(ctx.channel.name, []):
                     await ctx.reply(f'Нельзя указывать названия существующих ссылок - {alias}')
                     return
-                elif self.links_aliases.get(ctx.channel.name, {}).get(alias, link) != link:
+                if self.links_aliases.get(ctx.channel.name, {}).get(alias, link) != link:
                     await ctx.reply(f'Нельзя указывать элиасы существующих ссылок - {alias}')
                     return
-                elif len(alias) > 15:
+                if len(alias) > 15:
                     await ctx.reply(f'Нельзя создать элиас длиной более 15 символов - {alias}')
                     return
                 aliases.add(alias)

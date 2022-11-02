@@ -8,18 +8,15 @@ reason = 'Сообщение, содержащее запрещённую фра
 
 
 def get_sorted_substrings(strings):
-    def substrings(s1, s2):
-        final = [s1[i:b + 1] for i in range(len(s1)) for b in range(len(s1))]
-        return [i for i in final if i in s1 and i in s2 and len(i) > 2]
+    def matches(s1, s2):
+        final = {s1[i:b + 1] for i in range(len(s1)) for b in range(len(s1))}
+        return (i for i in final if i in s1 and i in s2 and 15 >= len(i) > 2)
 
     substring_counts = {}
     for i in range(len(strings)):
         for j in range(i + 1, len(strings)):
-            string1 = strings[i]
-            string2 = strings[j]
-            matches = substrings(string1, string2)
-            for match in matches:
-                substring_counts[match] = substring_counts.get(match, 0) + 2 / (string1.count(match) + string2.count(match))
+            for match in matches(strings[i], strings[j]):
+                substring_counts[match] = substring_counts.get(match, 0) + 1
 
     return sorted(substring_counts.items(), key=lambda x: x[1], reverse=True)
 
@@ -122,16 +119,16 @@ class MassBan(commands.Cog):
                 await ctx.reply('Сообщений от новых пользователей не найдено')
                 return
 
-            sorted_sub = get_sorted_substrings([message['content'].lower() for message in first_messages])
+            sorted_sub = get_sorted_substrings([message['content'].lower() for message in first_messages[-18:]])
             ban_phrase, count = sorted_sub[0] if sorted_sub else ('', 0)
 
             for substring in sorted_sub:
-                if substring[1] * 1.1 >= count and len(substring[0]) > len(ban_phrase):
-                    ban_phrase, count = substring
-                elif substring[1] * 1.1 < count:
+                if substring[1] == count and len(substring[0]) > len(ban_phrase):
+                    ban_phrase = substring[0]
+                elif substring[1] < count:
                     break
 
-            sorted_sub = get_sorted_substrings(['asd'] * len(first_messages))
+            sorted_sub = get_sorted_substrings(['asd'] * len(first_messages[-18:]))
             found = count > sorted_sub[0][1] / 100 * 60 if count else False
 
             if not found:

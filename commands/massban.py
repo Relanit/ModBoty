@@ -119,7 +119,15 @@ class MassBan(commands.Cog):
                 await ctx.reply('Сообщений от новых пользователей не найдено')
                 return
 
-            sorted_sub = get_sorted_substrings([message['content'].lower() for message in first_messages[-18:]])
+            characters = 0
+            i = 0
+            for index, message in enumerate(first_messages[-20:], start=1):
+                characters += len(message['content'])
+                if characters > 2200:
+                    break
+                i = index
+
+            sorted_sub = get_sorted_substrings([message['content'].lower() for message in first_messages[-i:]])
             ban_phrase, count = sorted_sub[0] if sorted_sub else ('', 0)
 
             for substring in sorted_sub:
@@ -128,7 +136,7 @@ class MassBan(commands.Cog):
                 elif substring[1] < count:
                     break
 
-            sorted_sub = get_sorted_substrings(['asd'] * len(first_messages[-18:]))
+            sorted_sub = get_sorted_substrings(['asd'] * len(first_messages[-i:]))
             found = count > sorted_sub[0][1] / 100 * 60 if count else False
 
             if not found:

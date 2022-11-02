@@ -19,7 +19,7 @@ def get_sorted_substrings(strings):
             string2 = strings[j]
             matches = substrings(string1, string2)
             for match in matches:
-                substring_counts[match] = substring_counts.get(match, 0) + 1
+                substring_counts[match] = substring_counts.get(match, 0) + 2 / (string1.count(match) + string2.count(match))
 
     return sorted(substring_counts.items(), key=lambda x: x[1], reverse=True)
 
@@ -126,9 +126,9 @@ class MassBan(commands.Cog):
             ban_phrase, count = sorted_sub[0] if sorted_sub else ('', 0)
 
             for substring in sorted_sub:
-                if substring[1] == count and len(substring[0]) > len(ban_phrase):
-                    ban_phrase = substring[0]
-                elif substring[1] < count:
+                if substring[1] * 1.1 >= count and len(substring[0]) > len(ban_phrase):
+                    ban_phrase, count = substring
+                elif substring[1] * 1.1 < count:
                     break
 
             sorted_sub = get_sorted_substrings(['asd'] * len(first_messages))

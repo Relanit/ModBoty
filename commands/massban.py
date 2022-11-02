@@ -151,7 +151,6 @@ class MassBan(commands.Cog):
                 self.queue.pop(ctx.channel.name, None)
                 return
 
-            ban_phrase = ban_phrase[:20]
             text = f'/ban %s {reason % (ban_phrase, ctx.author.name)}'
             reply = 'Запущено, банфраза найдена'
 

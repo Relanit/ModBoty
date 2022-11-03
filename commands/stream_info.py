@@ -220,7 +220,10 @@ class StreamInfo(commands.Cog):
             await ctx.reply("На вашем канале ещё нет элиасов категорий")
             return
 
-        message = f'Доступные элиасы категорий: {self.bot._prefix}{str(f" {self.bot._prefix}").join(self.aliases[ctx.channel.name])}'
+        message = (
+            f"Доступные элиасы категорий: {self.bot._prefix}"
+            f'{str(f" {self.bot._prefix}").join(self.aliases[ctx.channel.name])}'
+        )
         await ctx.reply(message)
 
     @routines.routine(iterations=1)

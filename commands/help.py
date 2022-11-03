@@ -39,7 +39,10 @@ class Help(commands.Cog):
             else:
                 cooldown = f"общий {gen}с."
 
-            message = f'{self.bot._prefix}{command}{f" {aliases}:" if aliases else ":"} {data.description.format(prefix=self.bot._prefix)} Кд: {cooldown}'
+            message = (
+                f'{self.bot._prefix}{command}{f" {aliases}:" if aliases else ":"} '
+                f"{data.description.format(prefix=self.bot._prefix)} Кд: {cooldown}"
+            )
 
         else:
             link = content.split()[0]
@@ -100,12 +103,16 @@ class Help(commands.Cog):
                 offline = offline_raw["offline"]
                 timer = cog.timers[ctx.channel.name][link]
                 timer = (
-                    f'Установлен {"активный" if timer.get("active", True) else "неактивный"} таймер: {timer["number"]} сообщений раз в {timer["interval"]}м'
+                    f'Установлен {"активный" if timer.get("active", True) else "неактивный"} таймер: '
+                    f'{timer["number"]} сообщений раз в {timer["interval"]}м'
                     f'{", с announce" if timer.get("announce", False) in timer else ""}'
                     f'{"." if timer.get("offline", offline) else ", только на стриме."}'
                 )
 
-            message = f'{self.bot._prefix}{link}{f" {aliases}." if aliases else "."} Доступ: {"приватный" if private else "публичный"}. Кд: общий 3с. {timer}'
+            message = (
+                f'{self.bot._prefix}{link}{f" {aliases}." if aliases else "."} Доступ: '
+                f'{"приватный" if private else "публичный"}. Кд: общий 3с. {timer}'
+            )
 
         await ctx.reply(message)
 

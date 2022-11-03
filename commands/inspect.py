@@ -129,12 +129,23 @@ class Inspect(commands.Cog):
                 f'Лимит от всех сообщений в чате:  {data["percent_limit"]}%.' if "percent_limit" in data else False
             )
 
-            if second_limit:
-                second_limit = f' {second_limit["messages"]}//{second_limit["time_unit"] if second_limit["time_unit"] % 1 != 0 else int(second_limit["time_unit"])}.'
             if first_limit:
-                first_limit = f'{first_limit["messages"]}/{first_limit["time_unit"] if first_limit["time_unit"] % 1 != 0 else int(first_limit["time_unit"])}{", " if second_limit else ""}'
+                first_limit = (
+                    f'{first_limit["messages"]}/'
+                    f'{first_limit["time_unit"] if first_limit["time_unit"] % 1 != 0 else int(first_limit["time_unit"])}'
+                    f'{", " if second_limit else ""}'
+                )
+            if second_limit:
+                second_limit = (
+                    f' {second_limit["messages"]}//'
+                    f'{second_limit["time_unit"] if second_limit["time_unit"] % 1 != 0 else int(second_limit["time_unit"])}.'
+                )
 
-            message = f'Статус: {"включено" if data["active"] else "выключено"}. Лимиты: {first_limit or ""}{second_limit or "."} {percent_limit or ""} Таймауты: {", ".join(map(str, data["timeouts"]))}. {"" if data["offline"] else "Только на стриме."}'
+            message = (
+                f'Статус: {"включено" if data["active"] else "выключено"}. '
+                f'Лимиты: {first_limit or ""}{second_limit or "."} {percent_limit or ""} '
+                f'Таймауты: {", ".join(map(str, data["timeouts"]))}. {"" if data["offline"] else "Только на стриме."}'
+            )
 
             await ctx.reply(message)
         elif content == "on":

@@ -130,11 +130,11 @@ class MassBan(commands.Cog):
                     break
                 i = index
 
-            ban_phrase = most_common_substring([message['content'].lower() for message in first_messages[-i:]])
-            ban_phrase, count = ban_phrase or ('', 0)
+            strings = [message['content'].lower() for message in first_messages[-i:]]
+            ban_phrase, count = most_common_substring(strings) or ('', 0)
 
-            asd = most_common_substring(['asd'] * len(first_messages[-i:]))
-            found = count > asd[1] / 100 * 60 if count else False
+            _, max_count = most_common_substring(['asd'] * len(first_messages[-i:]))
+            found = count > max_count / 100 * 60 if count else False
 
             if not found:
                 while ctx.limited:

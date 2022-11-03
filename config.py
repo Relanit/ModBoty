@@ -20,7 +20,7 @@ async def get_config():
         if "refresh_token" in data
         else None
     )
-    os.environ['CHANNELS'] = '&'.join(data['channels'])
+    os.environ["CHANNELS"] = "&".join(data["channels"])
 
     url = "https://id.twitch.tv/oauth2/validate"
     headers = {"Authorization": f"OAuth {token}"}

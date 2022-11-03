@@ -15,9 +15,7 @@ class Mail(commands.Cog):
 
         await ctx.reply("Рассылка начата")
 
-        announce = bool(
-            ctx.content.startswith("/announce") or ctx.content.startswith(".announce")
-        )
+        announce = bool(ctx.content.startswith("/announce") or ctx.content.startswith(".announce"))
 
         for channel in self.bot.connected_channels:
             while channel.limited:

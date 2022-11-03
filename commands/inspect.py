@@ -23,9 +23,7 @@ class Inspect(commands.Cog):
 
         if message.channel.name in self.limits:
             now = time.time()
-            self.message_log[message.channel.name].append(
-                {"time": now, "author": message.author.name}
-            )
+            self.message_log[message.channel.name].append({"time": now, "author": message.author.name})
 
             first_limit = self.limits[message.channel.name].get("first_limit", {})
             second_limit = self.limits[message.channel.name].get("second_limit", {})
@@ -51,9 +49,7 @@ class Inspect(commands.Cog):
             handle = True
 
             if count > main_limit["messages"]:
-                handle = bool(
-                    percent_limit and count <= len(chatters) / 100 * percent_limit
-                )
+                handle = bool(percent_limit and count <= len(chatters) / 100 * percent_limit)
 
             if secondary_limit and handle:
                 if main_limit["time_unit"] < secondary_limit["time_unit"] * 2:
@@ -75,16 +71,10 @@ class Inspect(commands.Cog):
                 count = chatters.count(message.author.name)
 
                 if count > secondary_limit["messages"]:
-                    handle = bool(
-                        percent_limit and count <= len(chatters) / 100 * percent_limit
-                    )
+                    handle = bool(percent_limit and count <= len(chatters) / 100 * percent_limit)
 
             if not handle:
-                new = [
-                    msg
-                    for msg in self.message_log[message.channel.name]
-                    if msg["author"] != message.author.name
-                ]
+                new = [msg for msg in self.message_log[message.channel.name] if msg["author"] != message.author.name]
                 self.message_log[message.channel.name] = new
 
                 if message.channel.name in self.bot.streams:
@@ -99,18 +89,13 @@ class Inspect(commands.Cog):
 
                     if (
                         len(self.timeouts[message.channel.name])
-                        > self.warned_users[message.channel.name][message.author.name]
-                        + 1
+                        > self.warned_users[message.channel.name][message.author.name] + 1
                     ):
-                        self.warned_users[message.channel.name][
-                            message.author.name
-                        ] += 1
+                        self.warned_users[message.channel.name][message.author.name] += 1
 
                     while message.channel.limited:
                         await asyncio.sleep(0.1)
-                    await message.channel.send(
-                        f"/timeout {message.author.name} {timeout} {reason}"
-                    )
+                    await message.channel.send(f"/timeout {message.author.name} {timeout} {reason}")
                 else:
                     self.warned_users[message.channel.name][message.author.name] = 0
                     ctx = await self.bot.get_context(message)
@@ -141,9 +126,7 @@ class Inspect(commands.Cog):
             first_limit = data["first_limit"] if "first_limit" in data else False
             second_limit = data["second_limit"] if "second_limit" in data else False
             percent_limit = (
-                f'Лимит от всех сообщений в чате:  {data["percent_limit"]}%.'
-                if "percent_limit" in data
-                else False
+                f'Лимит от всех сообщений в чате:  {data["percent_limit"]}%.' if "percent_limit" in data else False
             )
 
             if second_limit:
@@ -156,13 +139,9 @@ class Inspect(commands.Cog):
             await ctx.reply(message)
         elif content == "on":
             if data:
-                if ctx.channel.name not in self.limits and (
-                    ctx.channel.name in self.bot.streams or data["offline"]
-                ):
+                if ctx.channel.name not in self.limits and (ctx.channel.name in self.bot.streams or data["offline"]):
                     await self.set(ctx.channel.name)
-                await db.inspects.update_one(
-                    {"channel": ctx.channel.name}, {"$set": {"active": True}}
-                )
+                await db.inspects.update_one({"channel": ctx.channel.name}, {"$set": {"active": True}})
                 await ctx.reply("✅ Включено")
             else:
                 await ctx.reply("Сначала настройте наблюдение - https://vk.cc/chCfJI ")
@@ -170,9 +149,7 @@ class Inspect(commands.Cog):
             if data:
                 if ctx.channel.name in self.limits:
                     self.unset(ctx.channel.name)
-                await db.inspects.update_one(
-                    {"channel": ctx.channel.name}, {"$set": {"active": False}}
-                )
+                await db.inspects.update_one({"channel": ctx.channel.name}, {"$set": {"active": False}})
                 await ctx.reply("❌ Выключено")
             else:
                 await ctx.reply("Сначала настройте наблюдение - https://vk.cc/chCfJI ")
@@ -188,13 +165,9 @@ class Inspect(commands.Cog):
             top = []
             for place, user in enumerate(sorted_users[:5], start=1):
                 name = user[0][:1] + "\U000E0000" + user[0][1:]
-                top.append(
-                    f'{place}. {name} - {user[1]}{" отстранений" if place == 1 else ""}'
-                )
+                top.append(f'{place}. {name} - {user[1]}{" отстранений" if place == 1 else ""}')
 
-            await ctx.reply(
-                f'Всего отстранено: {number}. Топ спамеров за стрим: {", ".join(top)}'
-            )
+            await ctx.reply(f'Всего отстранено: {number}. Топ спамеров за стрим: {", ".join(top)}')
         elif content.startswith("stats"):
             if not data.get("stats"):
                 await ctx.reply("Статистика не найдена")
@@ -221,11 +194,7 @@ class Inspect(commands.Cog):
 
             for value in content:
                 if "/" in value:
-                    split, limit = (
-                        ("//", "second_limit")
-                        if "//" in value
-                        else ("/", "first_limit")
-                    )
+                    split, limit = ("//", "second_limit") if "//" in value else ("/", "first_limit")
 
                     if value.replace("/", ""):
                         try:
@@ -233,20 +202,14 @@ class Inspect(commands.Cog):
                             messages = int(messages)
                             time_unit = round(float(time_unit), 1)
                         except ValueError:
-                            await ctx.reply(
-                                "Неверная запись времени или количества сообщений - https://vk.cc/chCfJI"
-                            )
+                            await ctx.reply("Неверная запись времени или количества сообщений - https://vk.cc/chCfJI")
                             return
 
                         if not 1 <= time_unit <= 60:
-                            await ctx.reply(
-                                "Время не должно быть меньше 1 или больше 60 секунд"
-                            )
+                            await ctx.reply("Время не должно быть меньше 1 или больше 60 секунд")
                             return
                         if not 1 <= messages <= 60:
-                            await ctx.reply(
-                                "Количество сообщений не должно быть меньше 1 или больше 60."
-                            )
+                            await ctx.reply("Количество сообщений не должно быть меньше 1 или больше 60.")
                             return
 
                         values["$set"][limit] = {
@@ -262,9 +225,7 @@ class Inspect(commands.Cog):
                     ):
                         values["$unset"][limit] = 1
                     else:
-                        await ctx.reply(
-                            "Чтобы удалить лимит, должен быть установлен другой"
-                        )
+                        await ctx.reply("Чтобы удалить лимит, должен быть установлен другой")
                         return
                 elif value.endswith("%"):
                     percent_limit = value.strip("%")
@@ -273,15 +234,11 @@ class Inspect(commands.Cog):
                         try:
                             percent_limit = int(percent_limit)
                         except ValueError:
-                            await ctx.reply(
-                                "Неверная запись лимита в процентах - https://vk.cc/chCfJI"
-                            )
+                            await ctx.reply("Неверная запись лимита в процентах - https://vk.cc/chCfJI")
                             return
 
                         if not 0 <= percent_limit < 100:
-                            await ctx.reply(
-                                "Неверная запись лимита в процентах - https://vk.cc/chCfJI"
-                            )
+                            await ctx.reply("Неверная запись лимита в процентах - https://vk.cc/chCfJI")
                             return
 
                     if not percent_limit:
@@ -296,46 +253,29 @@ class Inspect(commands.Cog):
                     try:
                         timeout = int(value)
                         values["$set"]["timeouts"] = (
-                            []
-                            if "timeouts" not in values["$set"]
-                            else values["$set"]["timeouts"]
+                            [] if "timeouts" not in values["$set"] else values["$set"]["timeouts"]
                         )
                         values["$set"]["timeouts"].append(timeout)
                     except ValueError:
-                        await ctx.reply(
-                            "Неверная запись таймаутов или команды - https://vk.cc/chCfJI"
-                        )
+                        await ctx.reply("Неверная запись таймаутов или команды - https://vk.cc/chCfJI")
                         return
 
                     if not 1 <= timeout <= 1209600:
                         await ctx.reply("Неверное значение таймаута")
                         return
 
-            first_unit = (
-                values["$set"]
-                .get("first_limit", data.get("first_limit", {}))
-                .get("time_unit", 0)
-            )
-            second_unit = (
-                values["$set"]
-                .get("second_limit", data.get("second_limit", {}))
-                .get("time_unit", 0)
-            )
+            first_unit = values["$set"].get("first_limit", data.get("first_limit", {})).get("time_unit", 0)
+            second_unit = values["$set"].get("second_limit", data.get("second_limit", {})).get("time_unit", 0)
             if first_unit and first_unit == second_unit:
                 await ctx.reply("Не должно быть двух лимитов с одинаковым временем")
                 return
             elif first_unit > 15 and second_unit > 15:
-                await ctx.reply(
-                    "Не должно быть больше одного лимита с временем более 15 секунд"
-                )
+                await ctx.reply("Не должно быть больше одного лимита с временем более 15 секунд")
                 return
 
             on_insert = {"channel": ctx.channel.name, "active": False}
             if not data:
-                if (
-                    "first_limit" not in values["$set"]
-                    and "second_limit" not in values["$set"]
-                ):
+                if "first_limit" not in values["$set"] and "second_limit" not in values["$set"]:
                     await ctx.reply("Для начала установите сообщения и время")
                     return
 
@@ -350,9 +290,7 @@ class Inspect(commands.Cog):
             )
 
             if ctx.channel.name not in self.bot.streams:
-                if values["$set"].get("offline", data.get("offline")) and data.get(
-                    "active"
-                ):
+                if values["$set"].get("offline", data.get("offline")) and data.get("active"):
                     await self.set(ctx.channel.name)
                 elif ctx.channel.name in self.limits:
                     self.unset(ctx.channel.name)

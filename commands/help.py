@@ -60,12 +60,8 @@ class Help(commands.Cog):
                         for alias, _ in cog.aliases[ctx.channel.name].items()
                         if cog.aliases[ctx.channel.name][alias]["id"] == game_id
                     ]
-                    aliases = (
-                        f'{self.bot._prefix}{str(f" {self.bot._prefix}").join(aliases)}'
-                    )
-                    await ctx.reply(
-                        f"{aliases} - элиасы категории {name}. Кд: общий 3с"
-                    )
+                    aliases = f'{self.bot._prefix}{str(f" {self.bot._prefix}").join(aliases)}'
+                    await ctx.reply(f"{aliases} - элиасы категории {name}. Кд: общий 3с")
                 elif game := [
                     game["name"]
                     for game in cog.aliases.get(ctx.channel.name, {}).values()
@@ -76,12 +72,8 @@ class Help(commands.Cog):
                         for alias, _ in cog.aliases[ctx.channel.name].items()
                         if cog.aliases[ctx.channel.name][alias]["name"] == game[0]
                     ]
-                    aliases = (
-                        f'{self.bot._prefix}{str(f" {self.bot._prefix}").join(aliases)}'
-                    )
-                    await ctx.reply(
-                        f"{aliases} - элиасы категории {game[0]}. Кд: общий 3с"
-                    )
+                    aliases = f'{self.bot._prefix}{str(f" {self.bot._prefix}").join(aliases)}'
+                    await ctx.reply(f"{aliases} - элиасы категории {game[0]}. Кд: общий 3с")
                 else:
                     await ctx.reply("Несуществующая команда")
                     return
@@ -93,28 +85,18 @@ class Help(commands.Cog):
                 {"links": {"$elemMatch": {"name": link}}, "private": 1},
             )
 
-            aliases = (
-                data["links"][0]["aliases"] if "aliases" in data["links"][0] else []
-            )
+            aliases = data["links"][0]["aliases"] if "aliases" in data["links"][0] else []
 
             if aliases:
-                aliases = (
-                    f'({self.bot._prefix}{str(f", {self.bot._prefix}").join(aliases)})'
-                )
+                aliases = f'({self.bot._prefix}{str(f", {self.bot._prefix}").join(aliases)})'
 
-            private = (
-                data["links"][0]["private"]
-                if "private" in data["links"][0]
-                else data["private"]
-            )
+            private = data["links"][0]["private"] if "private" in data["links"][0] else data["private"]
 
             timer = ""
             cog = self.bot.get_cog("Timer")
 
             if link in cog.timers.get(ctx.channel.name, []):
-                offline_raw = await db.timers.find_one(
-                    {"channel": ctx.channel.name}, {"offline": 1}
-                )
+                offline_raw = await db.timers.find_one({"channel": ctx.channel.name}, {"offline": 1})
                 offline = offline_raw["offline"]
                 timer = cog.timers[ctx.channel.name][link]
                 timer = (

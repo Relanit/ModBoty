@@ -29,9 +29,7 @@ class MassBan(commands.Cog):
         self.bot = bot
         self.ban_phrases = {}
         self.queue = {}
-        self.message_history = {
-            channel: [] for channel in os.getenv("CHANNELS").split("&")
-        }
+        self.message_history = {channel: [] for channel in os.getenv("CHANNELS").split("&")}
 
     @commands.Cog.event()
     async def event_message(self, message):
@@ -111,9 +109,7 @@ class MassBan(commands.Cog):
 
         if not ban_phrase:
             first_messages = [
-                message
-                for message in self.message_history[ctx.channel.name].copy()
-                if message["first-msg"] == "1"
+                message for message in self.message_history[ctx.channel.name].copy() if message["first-msg"] == "1"
             ]
 
             if len(first_messages) > 1:
@@ -155,12 +151,8 @@ class MassBan(commands.Cog):
                 while ctx.limited:
                     await asyncio.sleep(0.1)
 
-                await ctx.reply(
-                    "Запущено, банфраза не найдена, будут забанены последние новые пользователи"
-                )
-                text = (
-                    f'/ban %s {reason % ("Первое сообщение в чате", ctx.author.name)}'
-                )
+                await ctx.reply("Запущено, банфраза не найдена, будут забанены последние новые пользователи")
+                text = f'/ban %s {reason % ("Первое сообщение в чате", ctx.author.name)}'
 
                 for message in first_messages:
                     while ctx.limited:
@@ -186,10 +178,7 @@ class MassBan(commands.Cog):
         self.ban_phrases[ctx.channel.name] = ban_phrase
 
         for message in self.message_history[ctx.channel.name].copy():
-            if (
-                ban_phrase in message["content"].lower()
-                and message["author"] not in banned_users
-            ):
+            if ban_phrase in message["content"].lower() and message["author"] not in banned_users:
                 while ctx.limited:
                     await asyncio.sleep(0.1)
                 if ctx.channel.name not in self.ban_phrases:

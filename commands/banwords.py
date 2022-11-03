@@ -20,11 +20,7 @@ class Banwords(commands.Cog):
         if message.echo:
             return
 
-        if (
-            message.channel.name == "t2x2"
-            and message.tags["first-msg"] == "1"
-            and "бум" in message.content
-        ):
+        if message.channel.name == "t2x2" and message.tags["first-msg"] == "1" and "бум" in message.content:
             await message.channel.send(f"/timeout {message.author.name} 600 {reason}")
 
         if message.channel.name in self.banwords:
@@ -40,9 +36,7 @@ class Banwords(commands.Cog):
                 if muteword["muteword"] in content and muteword["timeout"] > timeout:
                     timeout = muteword["timeout"]
             if timeout:
-                await message.channel.send(
-                    f"/timeout {message.author.name} {timeout} {reason}"
-                )
+                await message.channel.send(f"/timeout {message.author.name} {timeout} {reason}")
 
     @commands.command(
         name="bword",
@@ -73,11 +67,7 @@ class Banwords(commands.Cog):
             await self.list_mutewords(ctx)
 
     async def add_banword(self, ctx):
-        if (
-            len(self.banwords.get(ctx.channel.name, []))
-            + len(self.mutewords.get(ctx.channel.name, []))
-            == 30
-        ):
+        if len(self.banwords.get(ctx.channel.name, [])) + len(self.mutewords.get(ctx.channel.name, [])) == 30:
             await ctx.reply("Достигнут лимит банвордов и мутвордов - 30")
             return
 
@@ -118,17 +108,11 @@ class Banwords(commands.Cog):
             return
 
         self.banwords[ctx.channel.name].remove(banword)
-        await db.banwords.update_one(
-            {"channel": ctx.channel.name}, {"$pull": {"banwords": banword}}
-        )
+        await db.banwords.update_one({"channel": ctx.channel.name}, {"$pull": {"banwords": banword}})
         await ctx.reply("Удалено")
 
     async def add_muteword(self, ctx):
-        if (
-            len(self.banwords.get(ctx.channel.name, []))
-            + len(self.mutewords.get(ctx.channel.name, []))
-            == 30
-        ):
+        if len(self.banwords.get(ctx.channel.name, [])) + len(self.mutewords.get(ctx.channel.name, [])) == 30:
             await ctx.reply("Достигнут лимит банвордов и мутвордов - 30")
             return
 
@@ -173,9 +157,7 @@ class Banwords(commands.Cog):
         if ctx.channel.name not in self.mutewords:
             self.mutewords[ctx.channel.name] = []
 
-        self.mutewords[ctx.channel.name].append(
-            {"muteword": muteword, "timeout": timeout}
-        )
+        self.mutewords[ctx.channel.name].append({"muteword": muteword, "timeout": timeout})
         await db.banwords.update_one(
             {"channel": ctx.channel.name},
             {
@@ -210,20 +192,14 @@ class Banwords(commands.Cog):
         if not self.banwords.get(ctx.channel.name):
             await ctx.reply("На вашем канале ещё нет банвордов")
         else:
-            message = f"Банворды канала {ctx.channel.name}: " + " | ".join(
-                self.banwords[ctx.channel.name]
-            )
+            message = f"Банворды канала {ctx.channel.name}: " + " | ".join(self.banwords[ctx.channel.name])
             message2 = ""
 
             if len(message) > 500:
                 message = f"Банворды канала {ctx.channel.name}: "
 
                 for banword in self.banwords[ctx.channel.name]:
-                    banword = (
-                        f"{banword} | "
-                        if banword != self.banwords[ctx.channel.name][-1]
-                        else banword
-                    )
+                    banword = f"{banword} | " if banword != self.banwords[ctx.channel.name][-1] else banword
 
                     if len(message + banword) < 500:
                         message += banword
@@ -252,10 +228,7 @@ class Banwords(commands.Cog):
             await ctx.reply("На вашем канале ещё нет мутвордов")
         else:
             message = f"Мутворды канала {ctx.channel.name}: " + " | ".join(
-                [
-                    muteword["muteword"] + " " + str(muteword["timeout"])
-                    for muteword in self.mutewords[ctx.channel.name]
-                ]
+                [muteword["muteword"] + " " + str(muteword["timeout"]) for muteword in self.mutewords[ctx.channel.name]]
             )
             message2 = ""
 

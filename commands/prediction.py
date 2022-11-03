@@ -24,18 +24,12 @@ class Prediction(commands.Cog):
             await ctx.reply("Эта команда доступна только компаньонам и партнёрам твича")
             return
 
-        data = await db.config.find_one(
-            {"_id": 1, "user_tokens.login": ctx.channel.name}, {"user_tokens.$": 1}
-        )
+        data = await db.config.find_one({"_id": 1, "user_tokens.login": ctx.channel.name}, {"user_tokens.$": 1})
         if not data:
-            await ctx.reply(
-                "Для работы этой команды стримеру нужно пройти авторизацию - https://vk.cc/chZxeI"
-            )
+            await ctx.reply("Для работы этой команды стримеру нужно пройти авторизацию - https://vk.cc/chZxeI")
             return
 
-        access_token = fernet.decrypt(
-            data["user_tokens"][0]["access_token"].encode()
-        ).decode()
+        access_token = fernet.decrypt(data["user_tokens"][0]["access_token"].encode()).decode()
 
         if ctx.command_alias == "pred":
             await self.create_prediction(ctx, user, access_token)
@@ -43,9 +37,7 @@ class Prediction(commands.Cog):
             try:
                 predictions = await user.get_predictions(access_token)
             except twitchio.errors.Unauthorized:
-                await ctx.reply(
-                    "Для работы этой команды стримеру нужно пройти авторизацию - https://vk.cc/chZxeI"
-                )
+                await ctx.reply("Для работы этой команды стримеру нужно пройти авторизацию - https://vk.cc/chZxeI")
                 return
 
             if predictions[0].ended_at is not None:
@@ -124,9 +116,7 @@ class Prediction(commands.Cog):
             await ctx.reply("На вашем канале недоступны баллы канала")
             return
         elif response.get("status") == 401:
-            await ctx.reply(
-                "Для работы этой команды стримеру нужно пройти авторизацию - https://vk.cc/chZxeI"
-            )
+            await ctx.reply("Для работы этой команды стримеру нужно пройти авторизацию - https://vk.cc/chZxeI")
             return
         elif "already active" in response.get("message", ""):
             await ctx.reply("Ставка уже активна")
@@ -161,9 +151,7 @@ class Prediction(commands.Cog):
 
     @staticmethod
     async def cancel_prediction(ctx, user, access_token, predictions):
-        await user.end_prediction(
-            access_token, predictions[0].prediction_id, "CANCELED"
-        )
+        await user.end_prediction(access_token, predictions[0].prediction_id, "CANCELED")
         await ctx.reply("Ставка удалена")
 
     @staticmethod

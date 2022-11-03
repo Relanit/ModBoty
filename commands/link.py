@@ -24,9 +24,7 @@ class Link(commands.Cog):
         reply = ""
         if message.content.startswith("@"):
             reply, content = (
-                message.content.split(" ", 1)
-                if len(message.content.split(" ", 1)) > 1
-                else ("", message.content)
+                message.content.split(" ", 1) if len(message.content.split(" ", 1)) > 1 else ("", message.content)
             )
 
         if content.startswith(self.bot._prefix):
@@ -39,20 +37,14 @@ class Link(commands.Cog):
             if link in self.links.get(message.channel.name, []) or (
                 link := self.links_aliases.get(message.channel.name, {}).get(link, "")
             ):
-                if not message.author.is_mod and time.time() < self.cooldowns[
-                    message.channel.name
-                ].get(link, 0):
+                if not message.author.is_mod and time.time() < self.cooldowns[message.channel.name].get(link, 0):
                     return
 
                 data = await db.links.find_one(
                     {"channel": message.channel.name, "links.name": link},
                     {"private": 1, "announce": 1, "links.$": 1},
                 )
-                private = (
-                    data["private"]
-                    if "private" not in data["links"][0]
-                    else data["links"][0]["private"]
-                )
+                private = data["private"] if "private" not in data["links"][0] else data["links"][0]["private"]
                 text = data["links"][0]["text"]
 
                 if message.author.is_mod:
@@ -79,11 +71,7 @@ class Link(commands.Cog):
                     else:
                         self.cooldowns[message.channel.name][link] = time.time() + 3
 
-                    if (
-                        not announce
-                        and not text.startswith("/announce")
-                        and not text.startswith(".announce")
-                    ):
+                    if not announce and not text.startswith("/announce") and not text.startswith(".announce"):
                         text = f"{reply} {text}" if reply and num == 1 else text
                         for _ in range(num):
                             await message.channel.send(text)
@@ -93,9 +81,7 @@ class Link(commands.Cog):
                             text = text.split(maxsplit=1)[1]
                         await self.bot.announce(message.channel, text, announce, num)
 
-                elif not private and time.time() > self.cooldowns[
-                    message.channel.name
-                ].get(link, 0):
+                elif not private and time.time() > self.cooldowns[message.channel.name].get(link, 0):
                     self.cooldowns[message.channel.name][link] = time.time() + 3
 
                     if text.startswith("/announce") or text.startswith(".announce"):
@@ -161,9 +147,7 @@ class Link(commands.Cog):
             await ctx.reply(f"Название {self.bot._prefix}{link} уже занято командой")
             return
         elif len(link) > 15:
-            await ctx.reply(
-                "Нельзя создать ссылку с названием длиной более 15 символов"
-            )
+            await ctx.reply("Нельзя создать ссылку с названием длиной более 15 символов")
             return
 
         offset = 1 if private is not None else 0
@@ -215,18 +199,14 @@ class Link(commands.Cog):
             await ctx.reply("На вашем канале ещё нет ссылок")
             return
 
-        links = await db.links.find_one(
-            {"channel": ctx.channel.name}, {"links": 1, "private": 1}
-        )
+        links = await db.links.find_one({"channel": ctx.channel.name}, {"links": 1, "private": 1})
         if not ctx.content:
-            message = f'Доступные ссылки: {self.bot._prefix}{str(f" {self.bot._prefix}").join(self.links[ctx.channel.name])}'
+            message = (
+                f'Доступные ссылки: {self.bot._prefix}{str(f" {self.bot._prefix}").join(self.links[ctx.channel.name])}'
+            )
 
         elif ctx.content.lower() == "public":
-            links = [
-                link["name"]
-                for link in links["links"]
-                if not link.get("private", links["private"])
-            ]
+            links = [link["name"] for link in links["links"] if not link.get("private", links["private"])]
             message = (
                 f'Публичные ссылки: {self.bot._prefix}{str(f" {self.bot._prefix}").join(links)}'
                 if links
@@ -234,11 +214,7 @@ class Link(commands.Cog):
             )
 
         elif ctx.content.lower() == "private":
-            links = [
-                link["name"]
-                for link in links["links"]
-                if link.get("private", links["private"])
-            ]
+            links = [link["name"] for link in links["links"] if link.get("private", links["private"])]
             message = (
                 f'Приватные ссылки: {self.bot._prefix}{str(f" {self.bot._prefix}").join(links)}'
                 if links
@@ -264,18 +240,14 @@ class Link(commands.Cog):
 
             if self.links_aliases.get(ctx.channel.name, {}):
                 self.links_aliases[ctx.channel.name] = {
-                    alias: name
-                    for alias, name in self.links_aliases[ctx.channel.name].items()
-                    if name != link
+                    alias: name for alias, name in self.links_aliases[ctx.channel.name].items() if name != link
                 }
 
             self.cooldowns.get(ctx.channel.name, {}).pop(link, None)
             cog = self.bot.get_cog("Timer")
 
             if link in cog.timers.get(ctx.channel.name, []):
-                await db.timers.update_one(
-                    {"channel": ctx.channel.name}, {"$pull": {"timers": {"link": link}}}
-                )
+                await db.timers.update_one({"channel": ctx.channel.name}, {"$pull": {"timers": {"link": link}}})
                 message = f"Удалены ссылка и таймер {self.bot._prefix}{link}"
                 del cog.timers[ctx.channel.name][link]
             else:
@@ -284,9 +256,7 @@ class Link(commands.Cog):
             await ctx.reply("Ссылка не найдена")
             return
 
-        await db.links.update_one(
-            {"channel": ctx.channel.name}, {"$pull": {"links": {"name": link}}}
-        )
+        await db.links.update_one({"channel": ctx.channel.name}, {"$pull": {"links": {"name": link}}})
         await ctx.reply(message)
 
     async def aliases(self, ctx):
@@ -303,9 +273,7 @@ class Link(commands.Cog):
             for alias in content[1:]:
                 alias = alias.lstrip(self.bot._prefix)
                 if self.bot.get_command_name(alias) or alias == "private":
-                    await ctx.reply(
-                        f"Название {self.bot._prefix}{alias} уже занято командой"
-                    )
+                    await ctx.reply(f"Название {self.bot._prefix}{alias} уже занято командой")
                     return
                 if alias in cog.aliases.get(ctx.channel.name, []):
                     await ctx.reply(
@@ -313,28 +281,17 @@ class Link(commands.Cog):
                     )
                     return
                 if alias in self.links.get(ctx.channel.name, []):
-                    await ctx.reply(
-                        f"Нельзя указывать названия существующих ссылок - {alias}"
-                    )
+                    await ctx.reply(f"Нельзя указывать названия существующих ссылок - {alias}")
                     return
-                if (
-                    self.links_aliases.get(ctx.channel.name, {}).get(alias, link)
-                    != link
-                ):
-                    await ctx.reply(
-                        f"Нельзя указывать элиасы существующих ссылок - {alias}"
-                    )
+                if self.links_aliases.get(ctx.channel.name, {}).get(alias, link) != link:
+                    await ctx.reply(f"Нельзя указывать элиасы существующих ссылок - {alias}")
                     return
                 if len(alias) > 15:
-                    await ctx.reply(
-                        f"Нельзя создать элиас длиной более 15 символов - {alias}"
-                    )
+                    await ctx.reply(f"Нельзя создать элиас длиной более 15 символов - {alias}")
                     return
                 aliases.add(alias)
         elif link := self.links_aliases.get(ctx.channel.name, {}).get(link, ""):
-            await ctx.reply(
-                f"Ссылка не найдена, возможно вы имели в виду {self.bot._prefix}{link}"
-            )
+            await ctx.reply(f"Ссылка не найдена, возможно вы имели в виду {self.bot._prefix}{link}")
             return
         else:
             await ctx.reply("Ссылка не найдена")
@@ -352,9 +309,7 @@ class Link(commands.Cog):
                 self.links_aliases[ctx.channel.name] = {}
 
             self.links_aliases[ctx.channel.name] = {
-                alias: name
-                for alias, name in self.links_aliases[ctx.channel.name].items()
-                if name != link
+                alias: name for alias, name in self.links_aliases[ctx.channel.name].items() if name != link
             }
 
             for alias in aliases:
@@ -363,14 +318,10 @@ class Link(commands.Cog):
             values = {"$unset": {"links.$.aliases": ""}}
             message = f"Удалены элиасы {self.bot._prefix}{link}"
             self.links_aliases[ctx.channel.name] = {
-                alias: name
-                for alias, name in self.links_aliases[ctx.channel.name].items()
-                if name != link
+                alias: name for alias, name in self.links_aliases[ctx.channel.name].items() if name != link
             }
 
-        await db.links.update_one(
-            {"channel": ctx.channel.name, "links.name": link}, values
-        )
+        await db.links.update_one({"channel": ctx.channel.name, "links.name": link}, values)
         await ctx.reply(message)
 
     async def public(self, ctx):
@@ -386,9 +337,7 @@ class Link(commands.Cog):
                 await ctx.reply("Ошибка")
                 return
         else:
-            await ctx.reply(
-                "Напишите on или off, чтобы сделать ссылки публичными или приватными"
-            )
+            await ctx.reply("Напишите on или off, чтобы сделать ссылки публичными или приватными")
             return
 
         await db.links.update_one({"channel": ctx.channel.name}, values, upsert=True)
@@ -409,16 +358,12 @@ class Link(commands.Cog):
         values = {}
         key = {"channel": ctx.channel.name}
 
-        if link in self.links[ctx.channel.name] or (
-            link := self.links_aliases.get(ctx.channel.name, {}).get(link, "")
-        ):
+        if link in self.links[ctx.channel.name] or (link := self.links_aliases.get(ctx.channel.name, {}).get(link, "")):
             if len(content_split) == 2:
                 color = content_split[1]
 
                 if color not in ["blue", "green", "orange", "purple", "primary"]:
-                    await ctx.reply(
-                        "Неверный цвет, доступные цвета: blue, green, orange, purple, primary"
-                    )
+                    await ctx.reply("Неверный цвет, доступные цвета: blue, green, orange, purple, primary")
                     return
 
                 values["$set"] = {"links.$.announce": color}
@@ -433,9 +378,7 @@ class Link(commands.Cog):
             values["$set"] = {"announce": content_split[0]}
             message = "Изменён цвет announce"
         else:
-            await ctx.reply(
-                "Неверный цвет или название ссылки, доступные цвета: blue, green, orange, purple, primary"
-            )
+            await ctx.reply("Неверный цвет или название ссылки, доступные цвета: blue, green, orange, purple, primary")
             return
 
         await db.links.update_one(key, values)
@@ -444,14 +387,9 @@ class Link(commands.Cog):
     @routines.routine(iterations=1)
     async def get_links(self):
         async for document in db.links.find():
-            self.links[document["channel"]] = {
-                link["name"] for link in document["links"]
-            }
+            self.links[document["channel"]] = {link["name"] for link in document["links"]}
             self.links_aliases[document["channel"]] = {
-                alias: link["name"]
-                for link in document["links"]
-                if "aliases" in link
-                for alias in link["aliases"]
+                alias: link["name"] for link in document["links"] if "aliases" in link for alias in link["aliases"]
             }
             self.cooldowns[document["channel"]] = {}
             self.mod_cooldowns[document["channel"]] = 0

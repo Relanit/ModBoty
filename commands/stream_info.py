@@ -43,21 +43,12 @@ class StreamInfo(commands.Cog):
                 ctx = await self.bot.get_context(message)
 
                 if not data:
-                    await ctx.reply(
-                        "Для работы этой команды стримеру нужно пройти авторизацию - https://vk.cc/chZxeI"
-                    )
+                    await ctx.reply("Для работы этой команды стримеру нужно пройти авторизацию - https://vk.cc/chZxeI")
                     return
 
                 user = await ctx.channel.user()
-                token = fernet.decrypt(
-                    data["user_tokens"][0]["access_token"].encode()
-                ).decode()
-                game = [
-                    Game(
-                        self.aliases[message.channel.name][content]
-                        | {"box_art_url": ""}
-                    )
-                ]
+                token = fernet.decrypt(data["user_tokens"][0]["access_token"].encode()).decode()
+                game = [Game(self.aliases[message.channel.name][content] | {"box_art_url": ""})]
                 self.cooldowns[message.channel.name] = time.time() + 3
                 await self.game(ctx, user, token, game)
 
@@ -68,13 +59,9 @@ class StreamInfo(commands.Cog):
         description="Изменение настроек стрима. Полное описание - https://vk.cc/ciaLzx",
     )
     async def stream_info(self, ctx):
-        data = await db.config.find_one(
-            {"_id": 1, "user_tokens.login": ctx.channel.name}, {"user_tokens.$": 1}
-        )
+        data = await db.config.find_one({"_id": 1, "user_tokens.login": ctx.channel.name}, {"user_tokens.$": 1})
         if not data:
-            await ctx.reply(
-                "Для работы этой команды стримеру нужно пройти авторизацию - https://vk.cc/chZxeI"
-            )
+            await ctx.reply("Для работы этой команды стримеру нужно пройти авторизацию - https://vk.cc/chZxeI")
             return
 
         if not ctx.content and ctx.command_alias != "games":
@@ -101,9 +88,7 @@ class StreamInfo(commands.Cog):
         try:
             await user.modify_stream(token, title=ctx.content[:140])
         except twitchio.errors.Unauthorized:
-            await ctx.reply(
-                "Для работы этой команды стримеру нужно пройти авторизацию - https://vk.cc/chZxeI"
-            )
+            await ctx.reply("Для работы этой команды стримеру нужно пройти авторизацию - https://vk.cc/chZxeI")
             return
 
         await ctx.reply(f"Установлено название стрима - {ctx.content[:140]}")
@@ -129,9 +114,7 @@ class StreamInfo(commands.Cog):
         try:
             await user.modify_stream(token, game[0].id)
         except twitchio.errors.Unauthorized:
-            await ctx.reply(
-                "Для работы этой команды стримеру нужно пройти авторизацию - https://vk.cc/chZxeI"
-            )
+            await ctx.reply("Для работы этой команды стримеру нужно пройти авторизацию - https://vk.cc/chZxeI")
             return
 
         await ctx.reply(f"Установлена категория {game[0].name}")
@@ -152,26 +135,18 @@ class StreamInfo(commands.Cog):
             await ctx.reply(f'Категория "{name}" не найдена')
             return
 
-        if (
-            self.aliases.get(ctx.channel.name, {}).get(alias, {}).get("id", game[0].id)
-            != game[0].id
-        ):
+        if self.aliases.get(ctx.channel.name, {}).get(alias, {}).get("id", game[0].id) != game[0].id:
             await ctx.reply(
                 f'Элиас {self.bot._prefix}{alias} уже занят категорией {self.aliases[ctx.channel.name][alias]["name"]}'
             )
             return
 
-        if (
-            self.aliases.get(ctx.channel.name, {}).get(alias, {}).get("id")
-            == game[0].id
-        ):
+        if self.aliases.get(ctx.channel.name, {}).get(alias, {}).get("id") == game[0].id:
             await ctx.reply("Такой элиас уже существует")
             return
 
         cog = self.bot.get_cog("Link")
-        if alias in cog.links.get(
-            ctx.channel.name, []
-        ) or alias in cog.links_aliases.get(ctx.channel.name, []):
+        if alias in cog.links.get(ctx.channel.name, []) or alias in cog.links_aliases.get(ctx.channel.name, []):
             await ctx.reply(f"Элиас {self.bot._prefix}{alias} уже занят командой")
             return
 
@@ -207,9 +182,7 @@ class StreamInfo(commands.Cog):
                 }
         else:
             self.games[ctx.channel.name] = {game[0].id}
-            self.aliases[ctx.channel.name] = {
-                alias: {"name": game[0].name, "id": game[0].id}
-            }
+            self.aliases[ctx.channel.name] = {alias: {"name": game[0].name, "id": game[0].id}}
             self.cooldowns[ctx.channel.name] = 0
             values = {
                 "$setOnInsert": {"channel": ctx.channel.name},

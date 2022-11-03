@@ -21,18 +21,12 @@ class Poll(commands.Cog):
             await ctx.reply("Эта команда доступна только компаньонам и партнёрам твича")
             return
 
-        data = await db.config.find_one(
-            {"_id": 1, "user_tokens.login": ctx.channel.name}, {"user_tokens.$": 1}
-        )
+        data = await db.config.find_one({"_id": 1, "user_tokens.login": ctx.channel.name}, {"user_tokens.$": 1})
         if not data:
-            await ctx.reply(
-                "Для работы этой команды стримеру нужно пройти авторизацию - https://vk.cc/chZxeI"
-            )
+            await ctx.reply("Для работы этой команды стримеру нужно пройти авторизацию - https://vk.cc/chZxeI")
             return
 
-        access_token = fernet.decrypt(
-            data["user_tokens"][0]["access_token"].encode()
-        ).decode()
+        access_token = fernet.decrypt(data["user_tokens"][0]["access_token"].encode()).decode()
 
         if ctx.command_alias == "poll":
             await self.create_poll(ctx, user, access_token)
@@ -85,9 +79,7 @@ class Poll(commands.Cog):
         try:
             await user.create_poll(access_token, title, choices, duration)
         except twitchio.errors.Unauthorized:
-            await ctx.reply(
-                "Для работы этой команды стримеру нужно пройти авторизацию - https://vk.cc/chZxeI"
-            )
+            await ctx.reply("Для работы этой команды стримеру нужно пройти авторизацию - https://vk.cc/chZxeI")
             return
 
         await ctx.reply(f"Создан опрос - {title}")
@@ -97,9 +89,7 @@ class Poll(commands.Cog):
         try:
             polls = await user.fetch_polls(access_token)
         except twitchio.errors.Unauthorized:
-            await ctx.reply(
-                "Для работы этой команды стримеру нужно пройти авторизацию - https://vk.cc/chZxeI"
-            )
+            await ctx.reply("Для работы этой команды стримеру нужно пройти авторизацию - https://vk.cc/chZxeI")
             return
 
         if polls[0].status != "ACTIVE":

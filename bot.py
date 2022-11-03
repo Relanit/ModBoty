@@ -36,9 +36,7 @@ class ModBoty(commands.Bot, Cooldown):
         content = message.content
         if message.content.startswith("@"):
             content = (
-                message.content.split(maxsplit=1)[1]
-                if len(message.content.split(maxsplit=1)) > 1
-                else message.content
+                message.content.split(maxsplit=1)[1] if len(message.content.split(maxsplit=1)) > 1 else message.content
             )
 
         if content.startswith(self._prefix):
@@ -51,9 +49,7 @@ class ModBoty(commands.Bot, Cooldown):
 
             if command_name := self.get_command_name(command_lower):
                 message.content = message.content.replace(command, command_lower)
-                if await self.check_command(
-                    command_name, message, admin=message.author.name in self.admins
-                ):
+                if await self.check_command(command_name, message, admin=message.author.name in self.admins):
                     await self.handle_commands(message)
 
     async def event_command_error(self, ctx, error):
@@ -66,18 +62,12 @@ class ModBoty(commands.Bot, Cooldown):
         streams = await self.fetch_streams(user_logins=channels)
 
         for channel in channels:
-            if next(
-                (s for s in streams if s.user.name.lower() == channel), None
-            ):  # check if channel is streaming
+            if next((s for s in streams if s.user.name.lower() == channel), None):  # check if channel is streaming
                 if channel not in self.streams:
                     self.streams.add(channel)
 
-                    if (
-                        data := await db.inspects.find_one({"channel": channel})
-                    ) and data["active"]:
-                        await db.inspects.update_one(
-                            {"channel": channel}, {"$set": {"stats": {}}}
-                        )
+                    if (data := await db.inspects.find_one({"channel": channel})) and data["active"]:
+                        await db.inspects.update_one({"channel": channel}, {"$set": {"stats": {}}})
                         await self.cogs["Inspect"].set(channel)
             elif channel in self.streams:  # check if stream ended
                 self.streams.remove(channel)
@@ -86,11 +76,7 @@ class ModBoty(commands.Bot, Cooldown):
                     messageable = self.get_channel(channel)
                     await messageable.send("@Relanit запись стрима dinkDonk")
 
-                if (
-                    (data := await db.inspects.find_one({"channel": channel}))
-                    and data["active"]
-                    and data["offline"]
-                ):
+                if (data := await db.inspects.find_one({"channel": channel})) and data["active"] and data["offline"]:
                     await self.cogs["Inspect"].set(channel)
                 elif data and data["active"]:
                     self.cogs["Inspect"].unset(channel)
@@ -110,9 +96,7 @@ class ModBoty(commands.Bot, Cooldown):
             url = f'https://id.twitch.tv/oauth2/token?client_id={os.getenv("CLIENT_ID")}&client_secret={os.getenv("CLIENT_SECRET")}&refresh_token={os.getenv("REFRESH_TOKEN")}&grant_type=refresh_token'
 
             async with aiohttp.ClientSession() as session:
-                async with session.post(
-                    url, headers={"Content-Type": "application/x-www-form-urlencoded"}
-                ) as response:
+                async with session.post(url, headers={"Content-Type": "application/x-www-form-urlencoded"}) as response:
                     response = await response.json()
 
             self._http.token = response["access_token"]
@@ -145,18 +129,12 @@ class ModBoty(commands.Bot, Cooldown):
                         response = await response.json()
 
                 if response == {"status": 400, "message": "Invalid refresh token"}:
-                    await db.config.update_one(
-                        {"_id": 1}, {"$pull": {"user_tokens": {"login": user["login"]}}}
-                    )
+                    await db.config.update_one({"_id": 1}, {"$pull": {"user_tokens": {"login": user["login"]}}})
                 else:
                     token_data = {
                         "login": user["login"],
-                        "access_token": fernet.encrypt(
-                            response["access_token"].encode()
-                        ).decode(),
-                        "refresh_token": fernet.encrypt(
-                            response["refresh_token"].encode()
-                        ).decode(),
+                        "access_token": fernet.encrypt(response["access_token"].encode()).decode(),
+                        "refresh_token": fernet.encrypt(response["refresh_token"].encode()).decode(),
                         "expire_time": time.time() + response["expires_in"],
                     }
                     await db.config.update_one(

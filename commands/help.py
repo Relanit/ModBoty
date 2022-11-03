@@ -4,85 +4,124 @@ from config import db
 
 
 class Help(commands.Cog):
-
     def __init__(self, bot):
         self.bot = bot
 
     @commands.command(
-        name='help',
-        aliases=['commands'],
-        cooldown={'per': 3, 'gen': 0},
-        description='Эта команда.'
+        name="help",
+        aliases=["commands"],
+        cooldown={"per": 3, "gen": 0},
+        description="Эта команда.",
     )
     async def help(self, ctx):
         content = ctx.content.lstrip(self.bot._prefix).lower()
         if not content:
-            message = f'Документация - https://vk.cc/chCevV | Напишите {self.bot._prefix}help [команда], чтобы узнать описание команды'
+            message = f"Документация - https://vk.cc/chCevV | Напишите {self.bot._prefix}help [команда], чтобы узнать описание команды"
             await ctx.reply(message)
             return
 
         if command := self.bot.get_command_name(content.split()[0]):
             data = self.bot.get_command(command)
-            if 'admin' in data.flags:
-                await ctx.reply('Несуществующая команда')
+            if "admin" in data.flags:
+                await ctx.reply("Несуществующая команда")
                 return
 
-            aliases = ''
+            aliases = ""
             if data.aliases:
                 aliases = f'({self.bot._prefix}{str(f", {self.bot._prefix}").join(data.aliases)})'
 
-            per = data.cooldown['per']
-            gen = data.cooldown['gen']
+            per = data.cooldown["per"]
+            gen = data.cooldown["gen"]
             if per and gen:
-                cooldown = f'личный {per}с, общий {gen}с.'
+                cooldown = f"личный {per}с, общий {gen}с."
             elif per:
-                cooldown = f'личный {per}с.'
+                cooldown = f"личный {per}с."
             else:
-                cooldown = f'общий {gen}с.'
+                cooldown = f"общий {gen}с."
 
             message = f'{self.bot._prefix}{command}{f" {aliases}:" if aliases else ":"} {data.description.format(prefix=self.bot._prefix)} Кд: {cooldown}'
 
         else:
             link = content.split()[0]
-            cog = self.bot.get_cog('Link')
+            cog = self.bot.get_cog("Link")
 
-            if link not in cog.links.get(ctx.channel.name, []) and link not in cog.links_aliases.get(ctx.channel.name, []).keys():
-                cog = self.bot.get_cog('StreamInfo')
+            if (
+                link not in cog.links.get(ctx.channel.name, [])
+                and link not in cog.links_aliases.get(ctx.channel.name, []).keys()
+            ):
+                cog = self.bot.get_cog("StreamInfo")
                 if link in cog.aliases.get(ctx.channel.name, []):
-                    game_id, name = cog.aliases[ctx.channel.name][link]['id'], cog.aliases[ctx.channel.name][link]['name']
-                    aliases = [alias for alias, _ in cog.aliases[ctx.channel.name].items() if cog.aliases[ctx.channel.name][alias]['id'] == game_id]
-                    aliases = f'{self.bot._prefix}{str(f" {self.bot._prefix}").join(aliases)}'
-                    await ctx.reply(f'{aliases} - элиасы категории {name}. Кд: общий 3с')
-                elif game := [game['name'] for game in cog.aliases.get(ctx.channel.name, {}).values() if game['name'].lower() == content]:
-                    aliases = [alias for alias, _ in cog.aliases[ctx.channel.name].items() if cog.aliases[ctx.channel.name][alias]['name'] == game[0]]
-                    aliases = f'{self.bot._prefix}{str(f" {self.bot._prefix}").join(aliases)}'
-                    await ctx.reply(f'{aliases} - элиасы категории {game[0]}. Кд: общий 3с')
+                    game_id, name = (
+                        cog.aliases[ctx.channel.name][link]["id"],
+                        cog.aliases[ctx.channel.name][link]["name"],
+                    )
+                    aliases = [
+                        alias
+                        for alias, _ in cog.aliases[ctx.channel.name].items()
+                        if cog.aliases[ctx.channel.name][alias]["id"] == game_id
+                    ]
+                    aliases = (
+                        f'{self.bot._prefix}{str(f" {self.bot._prefix}").join(aliases)}'
+                    )
+                    await ctx.reply(
+                        f"{aliases} - элиасы категории {name}. Кд: общий 3с"
+                    )
+                elif game := [
+                    game["name"]
+                    for game in cog.aliases.get(ctx.channel.name, {}).values()
+                    if game["name"].lower() == content
+                ]:
+                    aliases = [
+                        alias
+                        for alias, _ in cog.aliases[ctx.channel.name].items()
+                        if cog.aliases[ctx.channel.name][alias]["name"] == game[0]
+                    ]
+                    aliases = (
+                        f'{self.bot._prefix}{str(f" {self.bot._prefix}").join(aliases)}'
+                    )
+                    await ctx.reply(
+                        f"{aliases} - элиасы категории {game[0]}. Кд: общий 3с"
+                    )
                 else:
-                    await ctx.reply('Несуществующая команда')
+                    await ctx.reply("Несуществующая команда")
                     return
             elif link in cog.links_aliases.get(ctx.channel.name, []):
                 link = cog.links_aliases[ctx.channel.name][link]
 
-            data = await db.links.find_one({'channel': ctx.channel.name},
-                                           {'links': {'$elemMatch': {'name': link}}, 'private': 1})
+            data = await db.links.find_one(
+                {"channel": ctx.channel.name},
+                {"links": {"$elemMatch": {"name": link}}, "private": 1},
+            )
 
-            aliases = data['links'][0]['aliases'] if 'aliases' in data['links'][0] else []
+            aliases = (
+                data["links"][0]["aliases"] if "aliases" in data["links"][0] else []
+            )
 
             if aliases:
-                aliases = f'({self.bot._prefix}{str(f", {self.bot._prefix}").join(aliases)})'
+                aliases = (
+                    f'({self.bot._prefix}{str(f", {self.bot._prefix}").join(aliases)})'
+                )
 
-            private = data['links'][0]['private'] if 'private' in data['links'][0] else data['private']
+            private = (
+                data["links"][0]["private"]
+                if "private" in data["links"][0]
+                else data["private"]
+            )
 
-            timer = ''
-            cog = self.bot.get_cog('Timer')
+            timer = ""
+            cog = self.bot.get_cog("Timer")
 
             if link in cog.timers.get(ctx.channel.name, []):
-                offline_raw = await db.timers.find_one({'channel': ctx.channel.name}, {'offline': 1})
-                offline = offline_raw['offline']
+                offline_raw = await db.timers.find_one(
+                    {"channel": ctx.channel.name}, {"offline": 1}
+                )
+                offline = offline_raw["offline"]
                 timer = cog.timers[ctx.channel.name][link]
-                timer = f'Установлен {"активный" if timer.get("active", True) else "неактивный"} таймер: {timer["number"]} сообщений раз в {timer["interval"]}м' \
-                            f'{", с announce" if timer.get("announce", False) in timer else ""}' \
-                            f'{"." if timer.get("offline", offline) else ", только на стриме."}'
+                timer = (
+                    f'Установлен {"активный" if timer.get("active", True) else "неактивный"} таймер: {timer["number"]} сообщений раз в {timer["interval"]}м'
+                    f'{", с announce" if timer.get("announce", False) in timer else ""}'
+                    f'{"." if timer.get("offline", offline) else ", только на стриме."}'
+                )
 
             message = f'{self.bot._prefix}{link}{f" {aliases}." if aliases else "."} Доступ: {"приватный" if private else "публичный"}. Кд: общий 3с. {timer}'
 

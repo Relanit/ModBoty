@@ -7,7 +7,7 @@ from twitchio.ext import commands
 reason = 'Сообщение, содержащее запрещённую фразу: "%s" (от ModBoty). Начато %s'
 
 
-def get_sorted_substrings(strings):
+def most_common_substring(strings):
     def matches(s1, s2):
         final = {s1[i:b + 1] for i in range(len(s1)) for b in range(len(s1))}
         return (i for i in final if i in s1 and i in s2 and 15 >= len(i) > 2)
@@ -18,7 +18,10 @@ def get_sorted_substrings(strings):
             for match in matches(strings[i], strings[j]):
                 substring_counts[match] = substring_counts.get(match, 0) + 1
 
-    return sorted(substring_counts.items(), key=lambda x: x[1], reverse=True)
+    substrings = substring_counts.items()
+    m = max(substrings, key=lambda x: x[1])[1]
+    top = [substring for substring in substrings if substring[1] == m]
+    return max(top, key=lambda x: len(x[0]))
 
 
 class MassBan(commands.Cog):
@@ -127,17 +130,11 @@ class MassBan(commands.Cog):
                     break
                 i = index
 
-            sorted_sub = get_sorted_substrings([message['content'].lower() for message in first_messages[-i:]])
-            ban_phrase, count = sorted_sub[0] if sorted_sub else ('', 0)
+            ban_phrase = most_common_substring([message['content'].lower() for message in first_messages[-i:]])
+            ban_phrase, count = ban_phrase or ('', 0)
 
-            for substring in sorted_sub:
-                if substring[1] == count and len(substring[0]) > len(ban_phrase):
-                    ban_phrase = substring[0]
-                elif substring[1] < count:
-                    break
-
-            sorted_sub = get_sorted_substrings(['asd'] * len(first_messages[-i:]))
-            found = count > sorted_sub[0][1] / 100 * 60 if count else False
+            asd = most_common_substring(['asd'] * len(first_messages[-i:]))
+            found = count > asd[1] / 100 * 60 if count else False
 
             if not found:
                 while ctx.limited:

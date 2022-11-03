@@ -85,9 +85,7 @@ class ModBoty(commands.Bot, Cooldown):
                     messageable = self.get_channel(channel)
                     await messageable.send("@Relanit запись стрима dinkDonk")
 
-                if (data := await db.inspects.find_one({"channel": channel})) and data[
-                    "active"
-                ]:
+                if (data := await db.inspects.find_one({"channel": channel})) and data["active"]:  # fmt: skip
                     self.cogs["Inspect"].unset(channel)
                 elif data and data["active"] and data["offline"]:
                     await self.cogs["Inspect"].set(channel)

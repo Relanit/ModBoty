@@ -13,7 +13,7 @@ class Cooldown:
     def __init__(self, channels):
         self.cooldowns = {channel: {} for channel in channels}
 
-    async def handle_command(self, command, message, admin=False):
+    async def check_command(self, command, message, admin=False):
         now = time.time()
         data = self.get_command(command)
 

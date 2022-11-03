@@ -36,8 +36,8 @@ class ModBoty(commands.Bot, Cooldown):
         content = message.content
         if message.content.startswith("@"):
             content = (
-                message.content.split(" ", 1)[1]
-                if len(message.content.split(" ", 1)) > 1
+                message.content.split(maxsplit=1)[1]
+                if len(message.content.split(maxsplit=1)) > 1
                 else message.content
             )
 
@@ -51,10 +51,9 @@ class ModBoty(commands.Bot, Cooldown):
 
             if command_name := self.get_command_name(command_lower):
                 message.content = message.content.replace(command, command_lower)
-                if message.author.name in self.admins:
-                    if await self.handle_command(command_name, message, admin=True):
-                        await self.handle_commands(message)
-                elif await self.handle_command(command_name, message):
+                if await self.check_command(
+                    command_name, message, admin=message.author.name in self.admins
+                ):
                     await self.handle_commands(message)
 
     async def event_command_error(self, ctx, error):
@@ -67,7 +66,9 @@ class ModBoty(commands.Bot, Cooldown):
         streams = await self.fetch_streams(user_logins=channels)
 
         for channel in channels:
-            if next((s for s in streams if s.user.name.lower() == channel), None):
+            if next(
+                (s for s in streams if s.user.name.lower() == channel), None
+            ):  # check if channel is streaming
                 if channel not in self.streams:
                     self.streams.add(channel)
 
@@ -78,18 +79,24 @@ class ModBoty(commands.Bot, Cooldown):
                             {"channel": channel}, {"$set": {"stats": {}}}
                         )
                         await self.cogs["Inspect"].set(channel)
-            elif channel in self.streams:
+            elif channel in self.streams:  # check if stream ended
                 self.streams.remove(channel)
 
                 if channel == "t2x2":
                     messageable = self.get_channel(channel)
                     await messageable.send("@Relanit запись стрима dinkDonk")
 
-                if (data := await db.inspects.find_one({"channel": channel})) and data["active"]:  # fmt: skip
-                    self.cogs["Inspect"].unset(channel)
-                elif data and data["active"] and data["offline"]:
+                if (
+                    (data := await db.inspects.find_one({"channel": channel}))
+                    and data["active"]
+                    and data["offline"]
+                ):
                     await self.cogs["Inspect"].set(channel)
-            elif channel not in self.cogs["Inspect"].limits or time.time() % 36000 < 60:
+                elif data and data["active"]:
+                    self.cogs["Inspect"].unset(channel)
+            elif (
+                channel not in self.cogs["Inspect"].limits or time.time() % 36000 < 60
+            ):  # set or refresh inspect data in offline chat if enabled
                 data = await db.inspects.find_one({"channel": channel})
 
                 if data and data["active"] and data["offline"]:
@@ -99,7 +106,7 @@ class ModBoty(commands.Bot, Cooldown):
     async def refresh_tokens(self):
         data = await db.config.find_one({"_id": 1})
 
-        if data["expire_time"] - time.time() < 900:
+        if data["expire_time"] - time.time() < 900:  # refresh bot user token
             url = f'https://id.twitch.tv/oauth2/token?client_id={os.getenv("CLIENT_ID")}&client_secret={os.getenv("CLIENT_SECRET")}&refresh_token={os.getenv("REFRESH_TOKEN")}&grant_type=refresh_token'
 
             async with aiohttp.ClientSession() as session:
@@ -125,7 +132,7 @@ class ModBoty(commands.Bot, Cooldown):
                 },
             )
 
-        for user in data.get("user_tokens", []):
+        for user in data.get("user_tokens", []):  # refresh channels' user tokens
             if user["expire_time"] - time.time() < 900:
                 refresh_token = fernet.decrypt(user["refresh_token"].encode()).decode()
                 url = f'https://id.twitch.tv/oauth2/token?client_id={os.getenv("CLIENT_ID")}&client_secret={os.getenv("CLIENT_SECRET")}&refresh_token={refresh_token}&grant_type=refresh_token'

@@ -44,7 +44,7 @@ class Polls(commands.Cog):
             if polls[0].status != "ACTIVE":
                 await ctx.reply("На канале нет активных опросов")
                 return
-            await self.delp(ctx, user, token, polls[0])
+            await self.delpoll(ctx, user, token, polls[0])
 
     @staticmethod
     async def poll(ctx: commands.Context, user: User, token: str):
@@ -93,7 +93,7 @@ class Polls(commands.Cog):
         await ctx.reply(f"Создан опрос - {title}")
 
     @staticmethod
-    async def delp(ctx: commands.Context, user: User, token: str, poll: Poll):
+    async def delpoll(ctx: commands.Context, user: User, token: str, poll: Poll):
         await user.end_poll(token, poll.id, "TERMINATED")
         await ctx.reply("Опрос удалён")
 

@@ -6,11 +6,11 @@ from config import db
 
 
 class JoinChannel(commands.Cog):
-    def __init__(self, bot):
+    def __init__(self, bot: commands.Bot):
         self.bot = bot
 
     @commands.command(name="mjoin", aliases=["mpart"], flags=["admin"])
-    async def join_channel(self, ctx):
+    async def join_channel(self, ctx: commands.Context):
         channel = ctx.content.lower()
         if ctx.command_alias == "mjoin":
             user = await self.bot.fetch_users(names=[channel])
@@ -49,5 +49,5 @@ class JoinChannel(commands.Cog):
             await ctx.reply("✅ Удалён")
 
 
-def prepare(bot):
+def prepare(bot: commands.Bot):
     bot.add_cog(JoinChannel(bot))

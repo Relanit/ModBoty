@@ -2,6 +2,7 @@ import asyncio
 import os
 
 from twitchio.ext import commands, routines
+from twitchio import Message
 
 from config import db
 
@@ -9,18 +10,18 @@ reason = "Сообщение, содержащее запрещённую фра
 
 
 class Banwords(commands.Cog):
-    def __init__(self, bot):
+    def __init__(self, bot: commands.Bot):
         self.bot = bot
         self.banwords = {}
         self.mutewords = {}
         self.get_banwords.start(stop_on_error=False)
 
     @commands.Cog.event()
-    async def event_message(self, message):
+    async def event_message(self, message: Message):
         if message.echo:
             return
 
-        if message.channel.name == "t2x2" and message.tags["first-msg"] == "1" and "бум" in message.content:
+        if message.channel.name == "t2x2" and message.tags["first-msg"] == "1" and "бум" in message.content.lower():
             await message.channel.send(f"/timeout {message.author.name} 600 {reason}")
 
         if message.channel.name in self.banwords:
@@ -44,7 +45,7 @@ class Banwords(commands.Cog):
         cooldown={"per": 0, "gen": 3},
         description="Запрещённые слова, за отправку которых пользователь получает бан/мут. Полное описание - https://vk.cc/chCfIC ",
     )
-    async def command(self, ctx):
+    async def command(self, ctx: commands.Context):
         if not ctx.channel.bot_is_mod:
             await ctx.reply("Боту необходима модерка для работы этой команды")
             return
@@ -54,19 +55,19 @@ class Banwords(commands.Cog):
             return
 
         if ctx.command_alias == "bword":
-            await self.add_banword(ctx)
+            await self.bword(ctx)
         elif ctx.command_alias == "delb":
-            await self.delete_banword(ctx)
+            await self.delb(ctx)
         elif ctx.command_alias == "mword":
-            await self.add_muteword(ctx)
+            await self.mword(ctx)
         elif ctx.command_alias == "delm":
-            await self.delete_muteword(ctx)
+            await self.delm(ctx)
         elif ctx.command_alias == "bwords":
-            await self.list_banwords(ctx)
+            await self.bwords(ctx)
         else:
-            await self.list_mutewords(ctx)
+            await self.mwords(ctx)
 
-    async def add_banword(self, ctx):
+    async def bword(self, ctx: commands.Context):
         if len(self.banwords.get(ctx.channel.name, [])) + len(self.mutewords.get(ctx.channel.name, [])) == 30:
             await ctx.reply("Достигнут лимит банвордов и мутвордов - 30")
             return
@@ -100,7 +101,7 @@ class Banwords(commands.Cog):
         )
         await ctx.reply("Добавлено")
 
-    async def delete_banword(self, ctx):
+    async def delb(self, ctx: commands.Context):
         banword = ctx.content.lower()
 
         if banword not in self.banwords.get(ctx.channel.name, []):
@@ -111,7 +112,7 @@ class Banwords(commands.Cog):
         await db.banwords.update_one({"channel": ctx.channel.name}, {"$pull": {"banwords": banword}})
         await ctx.reply("Удалено")
 
-    async def add_muteword(self, ctx):
+    async def mword(self, ctx: commands.Context):
         if len(self.banwords.get(ctx.channel.name, [])) + len(self.mutewords.get(ctx.channel.name, [])) == 30:
             await ctx.reply("Достигнут лимит банвордов и мутвордов - 30")
             return
@@ -140,7 +141,7 @@ class Banwords(commands.Cog):
         found = False
         for item in self.mutewords.get(ctx.channel.name, []):
             if item["muteword"] == muteword:
-                found = True
+                found = item
                 break
             elif item["muteword"] in muteword:
                 await ctx.reply("Часть фразы уже есть в списке мутвордов канала")
@@ -149,26 +150,27 @@ class Banwords(commands.Cog):
         message = "Добавлено"
         if found:
             await db.banwords.update_one(
-                {"channel": ctx.channel.name},
-                {"$pull": {"mutewords": {"muteword": muteword}}},
+                {"channel": ctx.channel.name, "mutewords.muteword": muteword},
+                {"$set": {"mutewords.$.timeout": timeout}},
             )
+            self.mutewords[ctx.channel.name].remove(found)
             message = "Изменено"
+        else:
+            if ctx.channel.name not in self.mutewords:
+                self.mutewords[ctx.channel.name] = []
 
-        if ctx.channel.name not in self.mutewords:
-            self.mutewords[ctx.channel.name] = []
-
+            await db.banwords.update_one(
+                {"channel": ctx.channel.name},
+                {
+                    "$setOnInsert": {"channel": ctx.channel.name},
+                    "$push": {"mutewords": {"timeout": timeout, "muteword": muteword}},
+                },
+                upsert=True,
+            )
         self.mutewords[ctx.channel.name].append({"muteword": muteword, "timeout": timeout})
-        await db.banwords.update_one(
-            {"channel": ctx.channel.name},
-            {
-                "$setOnInsert": {"channel": ctx.channel.name},
-                "$push": {"mutewords": {"timeout": timeout, "muteword": muteword}},
-            },
-            upsert=True,
-        )
         await ctx.reply(message)
 
-    async def delete_muteword(self, ctx):
+    async def delm(self, ctx: commands.Context):
         muteword = ctx.content.lower()
 
         found = False
@@ -188,7 +190,7 @@ class Banwords(commands.Cog):
         )
         await ctx.reply("Удалено")
 
-    async def list_banwords(self, ctx):
+    async def bwords(self, ctx: commands.Context):
         if not self.banwords.get(ctx.channel.name):
             await ctx.reply("На вашем канале ещё нет банвордов")
         else:
@@ -223,7 +225,7 @@ class Banwords(commands.Cog):
                     message=message2,
                 )
 
-    async def list_mutewords(self, ctx):
+    async def mwords(self, ctx: commands.Context):
         if not self.mutewords.get(ctx.channel.name):
             await ctx.reply("На вашем канале ещё нет мутвордов")
         else:
@@ -273,5 +275,5 @@ class Banwords(commands.Cog):
                 self.mutewords[document["channel"]] = document["mutewords"]
 
 
-def prepare(bot):
+def prepare(bot: commands.Bot):
     bot.add_cog(Banwords(bot))

@@ -1,21 +1,22 @@
 import twitchio.errors
-from twitchio import BroadcasterTypeEnum
+from twitchio import BroadcasterTypeEnum, User
 from twitchio.ext import commands
+from twitchio.models import Poll
 
 from config import db, fernet
 
 
-class Poll(commands.Cog):
-    def __init__(self, bot):
+class Polls(commands.Cog):
+    def __init__(self, bot: commands.Bot):
         self.bot = bot
 
     @commands.command(
         name="poll",
-        aliases=["delp"],
+        aliases=["delpoll"],
         cooldown={"per": 0, "gen": 3},
         description="Создание и завершение опросов. Полное описание - https://vk.cc/chVYL4",
     )
-    async def poll(self, ctx):
+    async def command(self, ctx: commands.Context):
         user = await ctx.channel.user()
         if user.broadcaster_type == BroadcasterTypeEnum.none:
             await ctx.reply("Эта команда доступна только компаньонам и партнёрам твича")
@@ -26,15 +27,27 @@ class Poll(commands.Cog):
             await ctx.reply("Для работы этой команды стримеру нужно пройти авторизацию - https://vk.cc/chZxeI")
             return
 
-        access_token = fernet.decrypt(data["user_tokens"][0]["access_token"].encode()).decode()
+        token = fernet.decrypt(data["user_tokens"][0]["access_token"].encode()).decode()
+
+        try:
+            polls = await user.fetch_polls(token)
+        except twitchio.errors.Unauthorized:
+            await ctx.reply("Для работы этой команды стримеру нужно пройти авторизацию - https://vk.cc/chZxeI")
+            return
 
         if ctx.command_alias == "poll":
-            await self.create_poll(ctx, user, access_token)
+            if polls[0].status == "ACTIVE":
+                await ctx.reply("На канале уже есть активный вопрос")
+                return
+            await self.poll(ctx, user, token)
         else:
-            await self.end_poll(ctx, user, access_token)
+            if polls[0].status != "ACTIVE":
+                await ctx.reply("На канале нет активных опросов")
+                return
+            await self.delp(ctx, user, token, polls[0])
 
     @staticmethod
-    async def create_poll(ctx, user, access_token):
+    async def poll(ctx: commands.Context, user: User, token: str):
         content_split = ctx.content.split("/")
         if len(content_split) < 3:
             await ctx.reply("Недостаточно значений - https://vk.cc/chVYL4")
@@ -76,29 +89,14 @@ class Poll(commands.Cog):
             await ctx.reply("Максимальное количество вариантов - 5")
             return
 
-        try:
-            await user.create_poll(access_token, title, choices, duration)
-        except twitchio.errors.Unauthorized:
-            await ctx.reply("Для работы этой команды стримеру нужно пройти авторизацию - https://vk.cc/chZxeI")
-            return
-
+        await user.create_poll(token, title, choices, duration)
         await ctx.reply(f"Создан опрос - {title}")
 
     @staticmethod
-    async def end_poll(ctx, user, access_token):
-        try:
-            polls = await user.fetch_polls(access_token)
-        except twitchio.errors.Unauthorized:
-            await ctx.reply("Для работы этой команды стримеру нужно пройти авторизацию - https://vk.cc/chZxeI")
-            return
-
-        if polls[0].status != "ACTIVE":
-            await ctx.reply("На канале нет активных опросов")
-            return
-
-        await user.end_poll(access_token, polls[0].id, "TERMINATED")
+    async def delp(ctx: commands.Context, user: User, token: str, poll: Poll):
+        await user.end_poll(token, poll.id, "TERMINATED")
         await ctx.reply("Опрос удалён")
 
 
-def prepare(bot):
-    bot.add_cog(Poll(bot))
+def prepare(bot: commands.Bot):
+    bot.add_cog(Polls(bot))

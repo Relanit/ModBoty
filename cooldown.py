@@ -1,7 +1,10 @@
 import time
 
+from twitchio import Message
 
-def get_cooldown_end(cooldown):
+
+def get_cooldown_end(cooldown: dict[str, int]) -> (float, float):
+    """Returns personal and general cooldown ends"""
     now = time.time()
     per_end = now + cooldown["per"]
     gen_end = now + cooldown["gen"]
@@ -9,10 +12,15 @@ def get_cooldown_end(cooldown):
 
 
 class Cooldown:
-    def __init__(self, channels):
+    def __init__(self, channels: list[str]):
         self.cooldowns = {channel: {} for channel in channels}
 
-    async def check_command(self, command, message, admin=False):
+    async def check_command(self, command: str, message: Message, admin: bool = False) -> bool | None:
+        """
+        Check user access level by command's flags, check cooldown expiration and set new one
+        Returns True if successful else None
+        """
+
         now = time.time()
         data = self.get_command(command)
 

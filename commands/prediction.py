@@ -2,14 +2,15 @@ import os
 
 import aiohttp
 import twitchio
-from twitchio import BroadcasterTypeEnum
+from twitchio import BroadcasterTypeEnum, User
 from twitchio.ext import commands
+from twitchio.models import Prediction
 
 from config import db, fernet
 
 
-class Prediction(commands.Cog):
-    def __init__(self, bot):
+class Predictions(commands.Cog):
+    def __init__(self, bot: commands.Bot):
         self.bot = bot
 
     @commands.command(
@@ -18,7 +19,7 @@ class Prediction(commands.Cog):
         cooldown={"per": 0, "gen": 3},
         description="Создание и редактирование ставок. Полное описание - https://vk.cc/chZLJH",
     )
-    async def prediction(self, ctx):
+    async def command(self, ctx: commands.Context):
         user = await ctx.channel.user()
         if user.broadcaster_type == BroadcasterTypeEnum.none:
             await ctx.reply("Эта команда доступна только компаньонам и партнёрам твича")
@@ -29,30 +30,33 @@ class Prediction(commands.Cog):
             await ctx.reply("Для работы этой команды стримеру нужно пройти авторизацию - https://vk.cc/chZxeI")
             return
 
-        access_token = fernet.decrypt(data["user_tokens"][0]["access_token"].encode()).decode()
+        token = fernet.decrypt(data["user_tokens"][0]["access_token"].encode()).decode()
+
+        try:
+            predictions = await user.get_predictions(token)
+        except twitchio.errors.Unauthorized:
+            await ctx.reply("Для работы этой команды стримеру нужно пройти авторизацию - https://vk.cc/chZxeI")
+            return
 
         if ctx.command_alias == "pred":
-            await self.create_prediction(ctx, user, access_token)
-        else:
-            try:
-                predictions = await user.get_predictions(access_token)
-            except twitchio.errors.Unauthorized:
-                await ctx.reply("Для работы этой команды стримеру нужно пройти авторизацию - https://vk.cc/chZxeI")
+            if predictions[0].ended_at is None:
+                await ctx.reply("Ставка уже активна")
                 return
-
+            await self.pred(ctx, user, token)
+        else:
             if predictions[0].ended_at is not None:
                 await ctx.reply("Нет активных ставок")
                 return
 
             if ctx.command_alias == "endpred":
-                await self.end_prediction(ctx, user, access_token, predictions)
+                await self.endpred(ctx, user, token, predictions[0])
             elif ctx.command_alias == "delpred":
-                await self.cancel_prediction(ctx, user, access_token, predictions)
+                await self.delpred(ctx, user, token, predictions[0])
             else:
-                await self.lock_prediction(ctx, user, access_token, predictions)
+                await self.lockpred(ctx, user, token, predictions[0])
 
     @staticmethod
-    async def create_prediction(ctx, user, access_token):
+    async def pred(ctx: commands.Context, user: User, token: str):
         content_split = ctx.content.split("/")
         if len(content_split) < 3:
             await ctx.reply("Недостаточно значений - https://vk.cc/chZLJH")
@@ -98,7 +102,7 @@ class Prediction(commands.Cog):
         async with aiohttp.ClientSession() as session:
             url = "https://api.twitch.tv/helix/predictions"
             headers = {
-                "Authorization": f"Bearer {access_token}",
+                "Authorization": f"Bearer {token}",
                 "Client-Id": os.getenv("CLIENT_ID"),
                 "Content-Type": "application/json",
             }
@@ -118,14 +122,11 @@ class Prediction(commands.Cog):
         elif response.get("status") == 401:
             await ctx.reply("Для работы этой команды стримеру нужно пройти авторизацию - https://vk.cc/chZxeI")
             return
-        elif "already active" in response.get("message", ""):
-            await ctx.reply("Ставка уже активна")
-            return
 
         await ctx.reply(f"Создана ставка - {title}")
 
     @staticmethod
-    async def end_prediction(ctx, user, access_token, predictions):
+    async def endpred(ctx: commands.Context, user: User, token: str, prediction: Prediction):
         if not ctx.content:
             await ctx.reply("Введите номер верного исхода")
             return
@@ -136,29 +137,29 @@ class Prediction(commands.Cog):
             await ctx.reply("Номер верного исхода должен быть числом")
             return
 
-        if not 1 <= outcome_id <= len(predictions[0].outcomes):
+        if not 1 <= outcome_id <= len(prediction.outcomes):
             await ctx.reply("Неверный номер исхода")
             return
 
-        outcome_id = predictions[0].outcomes[outcome_id - 1].outcome_id
+        outcome_id = prediction.outcomes[outcome_id - 1].outcome_id
         await user.end_prediction(
-            access_token,
-            predictions[0].prediction_id,
+            token,
+            prediction.prediction_id,
             "RESOLVED",
             winning_outcome_id=outcome_id,
         )
         await ctx.reply("Ставка завершена")
 
     @staticmethod
-    async def cancel_prediction(ctx, user, access_token, predictions):
-        await user.end_prediction(access_token, predictions[0].prediction_id, "CANCELED")
+    async def delpred(ctx: commands.Context, user: User, token: str, prediction: Prediction):
+        await user.end_prediction(token, prediction.prediction_id, "CANCELED")
         await ctx.reply("Ставка удалена")
 
     @staticmethod
-    async def lock_prediction(ctx, user, access_token, predictions):
-        await user.end_prediction(access_token, predictions[0].prediction_id, "LOCKED")
+    async def lockpred(ctx: commands.Context, user: User, token: str, prediction: Prediction):
+        await user.end_prediction(token, prediction.prediction_id, "LOCKED")
         await ctx.reply("Ставка заблокирована")
 
 
-def prepare(bot):
-    bot.add_cog(Prediction(bot))
+def prepare(bot: commands.Bot):
+    bot.add_cog(Predictions(bot))

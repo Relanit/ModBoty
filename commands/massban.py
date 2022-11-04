@@ -1,14 +1,21 @@
 import asyncio
 import os
 import time
+from typing import Generator
 
 from twitchio.ext import commands
+from twitchio import Message
 
 reason = 'Сообщение, содержащее запрещённую фразу: "%s" (от ModBoty). Начато %s'
 
 
-def most_common_substring(strings):
-    def matches(s1, s2):
+def most_common_substring(strings: list[str]) -> tuple[str, int]:
+    """
+    Gets the longest most common substring
+    Returns string and number of matches
+    """
+
+    def matches(s1: str, s2: str) -> Generator[str]:
         final = {s1[i : b + 1] for i in range(len(s1)) for b in range(len(s1))}
         return (i for i in final if i in s1 and i in s2 and 15 >= len(i) > 2)
 
@@ -18,27 +25,27 @@ def most_common_substring(strings):
             for match in matches(strings[i], strings[j]):
                 substring_counts[match] = substring_counts.get(match, 0) + 1
 
-    substrings = substring_counts.items()
+    substrings = substring_counts.items() or [("", 0)]
     m = max(substrings, key=lambda x: x[1])[1]
     top = [substring for substring in substrings if substring[1] == m]
     return max(top, key=lambda x: len(x[0]))
 
 
 class MassBan(commands.Cog):
-    def __init__(self, bot):
+    def __init__(self, bot: commands.Bot):
         self.bot = bot
         self.ban_phrases = {}
         self.queue = {}
         self.message_history = {channel: [] for channel in os.getenv("CHANNELS").split("&")}
 
     @commands.Cog.event()
-    async def event_message(self, message):
+    async def event_message(self, message: Message):
         if message.echo:
             return
 
         if message.channel.name in self.ban_phrases and message.author.is_mod:
-            if message.content.startswith(self.bot._prefix):
-                content = message.content.lstrip(self.bot._prefix)
+            if message.content.startswith(self.bot.prefix):
+                content = message.content.lstrip(self.bot.prefix)
                 if not content:
                     return
 
@@ -75,7 +82,7 @@ class MassBan(commands.Cog):
         cooldown={"per": 0, "gen": 60},
         description="Бан/мут пользователей, написавших сообщение с указанной фразой. Полное описание - https://vk.cc/chCfLq ",
     )
-    async def mass_ban(self, ctx):
+    async def mass_ban(self, ctx: commands.Context):
         if not ctx.channel.bot_is_mod:
             await ctx.reply("Боту необходима модерка для работы этой команды")
             return
@@ -112,7 +119,7 @@ class MassBan(commands.Cog):
                 message for message in self.message_history[ctx.channel.name].copy() if message["first-msg"] == "1"
             ]
 
-            if len(first_messages) > 1:
+            if len(first_messages) > 1:  # an attempt to separate users from bots by removing single messages
                 first_messages_copy = first_messages.copy()
                 for i, message in enumerate(first_messages_copy):
                     if message != first_messages_copy[-1]:
@@ -142,7 +149,7 @@ class MassBan(commands.Cog):
                 i = index
 
             strings = [message["content"].lower() for message in first_messages[-i:]]
-            ban_phrase, count = most_common_substring(strings) or ("", 0)
+            ban_phrase, count = most_common_substring(strings)
 
             _, max_count = most_common_substring(["asd"] * len(first_messages[-i:]))
             found = count > max_count / 100 * 60 if count else False
@@ -208,5 +215,5 @@ class MassBan(commands.Cog):
             await asyncio.sleep(0.1)
 
 
-def prepare(bot):
+def prepare(bot: commands.Bot):
     bot.add_cog(MassBan(bot))

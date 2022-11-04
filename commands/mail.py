@@ -4,11 +4,11 @@ from twitchio.ext import commands
 
 
 class Mail(commands.Cog):
-    def __init__(self, bot):
+    def __init__(self, bot: commands.Bot):
         self.bot = bot
 
     @commands.command(name="mail", flags=["admin"])
-    async def mail(self, ctx):
+    async def mail(self, ctx: commands.Context):
         if not ctx.content.lstrip("/announce"):
             await ctx.reply("Укажите текст")
             return
@@ -32,5 +32,5 @@ class Mail(commands.Cog):
         await ctx.reply("Рассылка закончена")
 
 
-def prepare(bot):
+def prepare(bot: commands.Bot):
     bot.add_cog(Mail(bot))

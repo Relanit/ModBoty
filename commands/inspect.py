@@ -2,6 +2,7 @@ import asyncio
 import time
 
 from twitchio.ext import commands
+from twitchio import Message
 
 from config import db
 
@@ -9,7 +10,7 @@ reason = "Спам (от ModBoty)"
 
 
 class Inspect(commands.Cog):
-    def __init__(self, bot):
+    def __init__(self, bot: commands.Bot):
         self.bot = bot
         self.limits = {}
         self.timeouts = {}
@@ -17,7 +18,7 @@ class Inspect(commands.Cog):
         self.message_log = {}
 
     @commands.Cog.event()
-    async def event_message(self, message):
+    async def event_message(self, message: Message):
         if message.echo:
             return
 
@@ -52,6 +53,7 @@ class Inspect(commands.Cog):
                 handle = bool(percent_limit and count <= len(chatters) / 100 * percent_limit)
 
             if secondary_limit and handle:
+                #  choosing the order of iteration depending on the time unit of the smaller limit
                 if main_limit["time_unit"] < secondary_limit["time_unit"] * 2:
                     message_log = self.message_log[message.channel.name].copy()
                     for msg in message_log.copy():
@@ -74,6 +76,7 @@ class Inspect(commands.Cog):
                     handle = bool(percent_limit and count <= len(chatters) / 100 * percent_limit)
 
             if not handle:
+                # remove user's messages from message log
                 new = [msg for msg in self.message_log[message.channel.name] if msg["author"] != message.author.name]
                 self.message_log[message.channel.name] = new
 
@@ -90,7 +93,7 @@ class Inspect(commands.Cog):
                     if (
                         len(self.timeouts[message.channel.name])
                         > self.warned_users[message.channel.name][message.author.name] + 1
-                    ):
+                    ):  # increase timeout if possible
                         self.warned_users[message.channel.name][message.author.name] += 1
 
                     while message.channel.limited:
@@ -110,7 +113,7 @@ class Inspect(commands.Cog):
         cooldown={"per": 0, "gen": 3},
         description="Лимиты на количество отправленных сообщений. Полное описание - https://vk.cc/chCfJI ",
     )
-    async def inspect(self, ctx):
+    async def inspect(self, ctx: commands.Context):
         if not ctx.channel.bot_is_mod:
             await ctx.reply("Боту необходима модерка для работы этой команды")
             return
@@ -310,7 +313,7 @@ class Inspect(commands.Cog):
 
             await ctx.reply("Готово.")
 
-    async def set(self, channel):
+    async def set(self, channel: str) -> None:
         data = await db.inspects.find_one({"channel": channel})
         self.limits[channel] = {}
         self.timeouts[channel] = data["timeouts"]
@@ -332,12 +335,12 @@ class Inspect(commands.Cog):
         if "percent_limit" in data:
             self.limits[channel]["percent_limit"] = data["percent_limit"]
 
-    def unset(self, channel):
+    def unset(self, channel: str) -> None:
         del self.limits[channel]
         del self.timeouts[channel]
         del self.warned_users[channel]
         del self.message_log[channel]
 
 
-def prepare(bot):
+def prepare(bot: commands.Bot):
     bot.add_cog(Inspect(bot))

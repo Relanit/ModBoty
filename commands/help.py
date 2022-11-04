@@ -4,7 +4,7 @@ from config import db
 
 
 class Help(commands.Cog):
-    def __init__(self, bot):
+    def __init__(self, bot: commands.Bot):
         self.bot = bot
 
     @commands.command(
@@ -13,10 +13,10 @@ class Help(commands.Cog):
         cooldown={"per": 3, "gen": 0},
         description="Эта команда.",
     )
-    async def help(self, ctx):
-        content = ctx.content.lstrip(self.bot._prefix).lower()
+    async def help(self, ctx: commands.Context):
+        content = ctx.content.lstrip(self.bot.prefix).lower()
         if not content:
-            message = f"Документация - https://vk.cc/chCevV | Напишите {self.bot._prefix}help [команда], чтобы узнать описание команды"
+            message = f"Документация - https://vk.cc/chCevV | Напишите {self.bot.prefix}help [команда], чтобы узнать описание команды"
             await ctx.reply(message)
             return
 
@@ -28,7 +28,7 @@ class Help(commands.Cog):
 
             aliases = ""
             if data.aliases:
-                aliases = f'({self.bot._prefix}{str(f", {self.bot._prefix}").join(data.aliases)})'
+                aliases = f'({self.bot.prefix}{str(f", {self.bot.prefix}").join(data.aliases)})'
 
             per = data.cooldown["per"]
             gen = data.cooldown["gen"]
@@ -40,30 +40,30 @@ class Help(commands.Cog):
                 cooldown = f"общий {gen}с."
 
             message = (
-                f'{self.bot._prefix}{command}{f" {aliases}:" if aliases else ":"} '
-                f"{data.description.format(prefix=self.bot._prefix)} Кд: {cooldown}"
+                f'{self.bot.prefix}{command}{f" {aliases}:" if aliases else ":"} '
+                f"{data.description.format(prefix=self.bot.prefix)} Кд: {cooldown}"
             )
 
         else:
-            link = content.split()[0]
+            command = content.split()[0]
             cog = self.bot.get_cog("Link")
 
             if (
-                link not in cog.links.get(ctx.channel.name, [])
-                and link not in cog.links_aliases.get(ctx.channel.name, []).keys()
-            ):
+                command not in cog.links.get(ctx.channel.name, [])
+                and command not in cog.links_aliases.get(ctx.channel.name, []).keys()
+            ):  # check if command is game alias
                 cog = self.bot.get_cog("StreamInfo")
-                if link in cog.aliases.get(ctx.channel.name, []):
+                if command in cog.aliases.get(ctx.channel.name, []):
                     game_id, name = (
-                        cog.aliases[ctx.channel.name][link]["id"],
-                        cog.aliases[ctx.channel.name][link]["name"],
+                        cog.aliases[ctx.channel.name][command]["id"],
+                        cog.aliases[ctx.channel.name][command]["name"],
                     )
                     aliases = [
                         alias
                         for alias, _ in cog.aliases[ctx.channel.name].items()
                         if cog.aliases[ctx.channel.name][alias]["id"] == game_id
                     ]
-                    aliases = f'{self.bot._prefix}{str(f" {self.bot._prefix}").join(aliases)}'
+                    aliases = f'{self.bot.prefix}{str(f" {self.bot.prefix}").join(aliases)}'
                     await ctx.reply(f"{aliases} - элиасы категории {name}. Кд: общий 3с")
                 elif game := [
                     game["name"]
@@ -75,33 +75,33 @@ class Help(commands.Cog):
                         for alias, _ in cog.aliases[ctx.channel.name].items()
                         if cog.aliases[ctx.channel.name][alias]["name"] == game[0]
                     ]
-                    aliases = f'{self.bot._prefix}{str(f" {self.bot._prefix}").join(aliases)}'
+                    aliases = f'{self.bot.prefix}{str(f" {self.bot.prefix}").join(aliases)}'
                     await ctx.reply(f"{aliases} - элиасы категории {game[0]}. Кд: общий 3с")
                 else:
                     await ctx.reply("Несуществующая команда")
                     return
-            elif link in cog.links_aliases.get(ctx.channel.name, []):
-                link = cog.links_aliases[ctx.channel.name][link]
+            elif command in cog.links_aliases.get(ctx.channel.name, []):
+                command = cog.links_aliases[ctx.channel.name][command]
 
             data = await db.links.find_one(
                 {"channel": ctx.channel.name},
-                {"links": {"$elemMatch": {"name": link}}, "private": 1},
+                {"links": {"$elemMatch": {"name": command}}, "private": 1},
             )
 
             aliases = data["links"][0]["aliases"] if "aliases" in data["links"][0] else []
 
             if aliases:
-                aliases = f'({self.bot._prefix}{str(f", {self.bot._prefix}").join(aliases)})'
+                aliases = f'({self.bot.prefix}{str(f", {self.bot.prefix}").join(aliases)})'
 
             private = data["links"][0]["private"] if "private" in data["links"][0] else data["private"]
 
             timer = ""
             cog = self.bot.get_cog("Timer")
 
-            if link in cog.timers.get(ctx.channel.name, []):
+            if command in cog.timers.get(ctx.channel.name, []):
                 offline_raw = await db.timers.find_one({"channel": ctx.channel.name}, {"offline": 1})
                 offline = offline_raw["offline"]
-                timer = cog.timers[ctx.channel.name][link]
+                timer = cog.timers[ctx.channel.name][command]
                 timer = (
                     f'Установлен {"активный" if timer.get("active", True) else "неактивный"} таймер: '
                     f'{timer["number"]} сообщений раз в {timer["interval"]}м'
@@ -110,12 +110,12 @@ class Help(commands.Cog):
                 )
 
             message = (
-                f'{self.bot._prefix}{link}{f" {aliases}." if aliases else "."} Доступ: '
+                f'{self.bot.prefix}{command}{f" {aliases}." if aliases else "."} Доступ: '
                 f'{"приватный" if private else "публичный"}. Кд: общий 3с. {timer}'
             )
 
         await ctx.reply(message)
 
 
-def prepare(bot):
+def prepare(bot: commands.Bot):
     bot.add_cog(Help(bot))

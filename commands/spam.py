@@ -4,7 +4,7 @@ from twitchio.ext import commands
 
 
 class Spam(commands.Cog):
-    def __init__(self, bot):
+    def __init__(self, bot: commands.Bot):
         self.bot = bot
 
     @commands.command(
@@ -42,5 +42,5 @@ class Spam(commands.Cog):
             await ctx.send("Боту необходима модерка для работы announce")
 
 
-def prepare(bot):
+def prepare(bot: commands.Bot):
     bot.add_cog(Spam(bot))

@@ -4,6 +4,8 @@ from pathlib import Path
 
 import aiohttp
 from twitchio.ext import commands, routines
+from twitchio.ext.commands import Context, CommandNotFound
+from twitchio import Message
 
 from config import db, fernet
 from cooldown import Cooldown
@@ -29,7 +31,7 @@ class ModBoty(commands.Bot, Cooldown):
     async def event_ready(self):
         print(f"Logged in as {self.nick}")
 
-    async def event_message(self, message):
+    async def event_message(self, message: Message):
         if message.echo:
             return
 
@@ -39,8 +41,8 @@ class ModBoty(commands.Bot, Cooldown):
                 message.content.split(maxsplit=1)[1] if len(message.content.split(maxsplit=1)) > 1 else message.content
             )
 
-        if content.startswith(self._prefix):
-            content = content.lstrip(self._prefix)
+        if content.startswith(self.prefix):
+            content = content.lstrip(self.prefix)
             if not content:
                 return
 
@@ -52,8 +54,8 @@ class ModBoty(commands.Bot, Cooldown):
                 if await self.check_command(command_name, message, admin=message.author.name in self.admins):
                     await self.handle_commands(message)
 
-    async def event_command_error(self, ctx, error):
-        if type(error).__name__ == "CommandNotFound":
+    async def event_command_error(self, ctx: Context, error: Exception):
+        if isinstance(error, CommandNotFound):
             return
 
     @routines.routine(minutes=1.0, iterations=0)

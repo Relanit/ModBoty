@@ -51,7 +51,8 @@ class StreamInfo(commands.Cog):
 
                 user = await ctx.channel.user()
                 token = fernet.decrypt(data["user_tokens"][0]["access_token"].encode()).decode()
-                game = [Game(self.aliases[message.channel.name][content] | {"box_art_url": ""})]
+                game_id = self.aliases[message.channel.name][content]
+                game = [Game({"id": game_id, "name": self.games[ctx.channel.name][game_id], "box_art_url": ""})]
                 self.cooldowns[message.channel.name] = time.time() + 3
                 await self.g(ctx, user, token, game)
 
@@ -142,13 +143,13 @@ class StreamInfo(commands.Cog):
             await ctx.reply(f'Категория "{name}" не найдена')
             return
 
-        if self.aliases.get(ctx.channel.name, {}).get(alias, {}).get("id", game[0].id) != game[0].id:
+        if (game_id := self.aliases.get(ctx.channel.name, {}).get(alias, game[0].id)) != game[0].id:
             await ctx.reply(
-                f'Элиас {self.bot.prefix}{alias} уже занят категорией {self.aliases[ctx.channel.name][alias]["name"]}'
+                f"Элиас {self.bot.prefix}{alias} уже занят категорией {self.games[ctx.channel.name][game_id]}"
             )
             return
 
-        if self.aliases.get(ctx.channel.name, {}).get(alias, {}).get("id") == game[0].id:
+        if self.aliases.get(ctx.channel.name, {}).get(alias) == game[0].id:
             await ctx.reply("Такой элиас уже существует")
             return
 
@@ -166,18 +167,12 @@ class StreamInfo(commands.Cog):
         message = f"Добавлено {self.bot.prefix}{alias}"
         if ctx.channel.name in self.games:
             if game[0].id in self.games[ctx.channel.name]:
-                self.aliases[ctx.channel.name][alias] = {
-                    "name": game[0].name,
-                    "id": game[0].id,
-                }
+                self.aliases[ctx.channel.name][alias] = game[0].id
                 key["games.id"] = game[0].id
                 values = {"$addToSet": {"games.$.aliases": alias}}
             else:
-                self.games[ctx.channel.name].add(game[0].id)
-                self.aliases[ctx.channel.name][alias] = {
-                    "name": game[0].name,
-                    "id": game[0].id,
-                }
+                self.games[ctx.channel.name][game[0].id] = game[0].name
+                self.aliases[ctx.channel.name][alias] = game[0].id
                 values = {
                     "$addToSet": {
                         "games": {
@@ -188,8 +183,8 @@ class StreamInfo(commands.Cog):
                     }
                 }
         else:
-            self.games[ctx.channel.name] = {game[0].id}
-            self.aliases[ctx.channel.name] = {alias: {"name": game[0].name, "id": game[0].id}}
+            self.games[ctx.channel.name] = {game[0].id: game[0].name}
+            self.aliases[ctx.channel.name] = {alias: game[0].id}
             self.cooldowns[ctx.channel.name] = 0
             values = {
                 "$setOnInsert": {"channel": ctx.channel.name},
@@ -202,7 +197,7 @@ class StreamInfo(commands.Cog):
                 },
             }
 
-        await db.game_aliases.update_one(key, values, upsert=True)
+        await db.games.update_one(key, values, upsert=True)
         await ctx.reply(message)
 
     async def delg(self, ctx: commands.Context):
@@ -216,14 +211,14 @@ class StreamInfo(commands.Cog):
 
         game = self.aliases[ctx.channel.name].pop(alias)
 
-        await db.game_aliases.update_one(
+        await db.games.update_one(
             {"channel": ctx.channel.name, "games.id": game["id"]},
             {"$pull": {"games.$.aliases": alias}},
         )
         await ctx.reply(f"Удалено - {self.bot.prefix}{alias}")
 
     async def list_games(self, ctx: commands.Context):
-        if not self.aliases.get(ctx.channel.name, None):
+        if not self.aliases.get(ctx.channel.name):
             await ctx.reply("На вашем канале ещё нет элиасов категорий")
             return
 
@@ -235,13 +230,11 @@ class StreamInfo(commands.Cog):
 
     @routines.routine(iterations=1)
     async def get_games(self):
-        async for document in db.game_aliases.find():
+        async for document in db.games.find():
             self.aliases[document["channel"]] = {
-                alias: {"name": game["name"], "id": game["id"]}
-                for game in document["games"]
-                for alias in game["aliases"]
+                alias: game["id"] for game in document["games"] for alias in game["aliases"]
             }
-            self.games[document["channel"]] = {game["id"] for game in document["games"]}
+            self.games[document["channel"]] = {game["id"]: game["name"] for game in document["games"]}
             self.cooldowns[document["channel"]] = 0
 
 

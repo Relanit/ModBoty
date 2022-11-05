@@ -54,29 +54,25 @@ class Help(commands.Cog):
             ):  # check if command is game alias
                 cog = self.bot.get_cog("StreamInfo")
                 if command in cog.aliases.get(ctx.channel.name, []):
-                    game_id, name = (
-                        cog.aliases[ctx.channel.name][command]["id"],
-                        cog.aliases[ctx.channel.name][command]["name"],
-                    )
+                    game_id = cog.aliases[ctx.channel.name][command]
+                    name = cog.games[ctx.channel.name][game_id]
                     aliases = [
                         alias
                         for alias, _ in cog.aliases[ctx.channel.name].items()
-                        if cog.aliases[ctx.channel.name][alias]["id"] == game_id
+                        if cog.aliases[ctx.channel.name][alias] == game_id
                     ]
                     aliases = f'{self.bot.prefix}{str(f" {self.bot.prefix}").join(aliases)}'
                     await ctx.reply(f"{aliases} - элиасы категории {name}. Кд: общий 3с")
                 elif game := [
-                    game["name"]
-                    for game in cog.aliases.get(ctx.channel.name, {}).values()
-                    if game["name"].lower() == content
+                    game for game in cog.games.get(ctx.channel.name, {}).items() if game[1].lower() == content
                 ]:
                     aliases = [
                         alias
                         for alias, _ in cog.aliases[ctx.channel.name].items()
-                        if cog.aliases[ctx.channel.name][alias]["name"] == game[0]
+                        if cog.aliases[ctx.channel.name][alias] == game[0][0]
                     ]
                     aliases = f'{self.bot.prefix}{str(f" {self.bot.prefix}").join(aliases)}'
-                    await ctx.reply(f"{aliases} - элиасы категории {game[0]}. Кд: общий 3с")
+                    await ctx.reply(f"{aliases} - элиасы категории {game[0][1]}. Кд: общий 3с")
                 else:
                     await ctx.reply("Несуществующая команда")
                     return

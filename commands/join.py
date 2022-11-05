@@ -15,10 +15,10 @@ class JoinChannel(commands.Cog):
         if ctx.command_alias == "mjoin":
             user = await self.bot.fetch_users(names=[channel])
             if not user:
-                await ctx.reply("❌ Несуществующий логин")
+                await ctx.reply("Канал не найден")
                 return
             elif channel in os.environ["CHANNELS"]:
-                await ctx.reply("❌ Уже добавлен")
+                await ctx.reply("Канал уже подключён")
                 return
 
             self.bot.cooldowns[channel] = {}
@@ -35,7 +35,7 @@ class JoinChannel(commands.Cog):
                 data = await db.channels.find_one({"_id": 1})
                 channels = data["channels"]
                 if channel not in channels:
-                    await ctx.reply("❌ Канал не подключён")
+                    await ctx.reply("Канал не подключён")
                     return
 
             self.bot.cooldowns.pop(channel)

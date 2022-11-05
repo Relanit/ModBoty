@@ -140,9 +140,8 @@ class Link(commands.Cog):
 
         cog = self.bot.get_cog("StreamInfo")
         if link in cog.aliases.get(ctx.channel.name, []):
-            await ctx.reply(
-                f'Название {self.bot.prefix}{link} уже занято категорией {cog.aliases[ctx.channel.name][link]["name"]}'
-            )
+            name = cog.games[ctx.channel.name][cog.aliases[ctx.channel.name][link]]
+            await ctx.reply(f"Название {self.bot.prefix}{link} уже занято категорией {name}")
             return
         if self.bot.get_command_name(link) or link in ["public", "private"]:
             await ctx.reply(f"Название {self.bot.prefix}{link} уже занято командой")
@@ -277,9 +276,8 @@ class Link(commands.Cog):
                     await ctx.reply(f"Название {self.bot.prefix}{alias} уже занято командой")
                     return
                 if alias in cog.aliases.get(ctx.channel.name, []):
-                    await ctx.reply(
-                        f'Название {self.bot.prefix}{alias} уже занято категорией {cog.aliases[ctx.channel.name][alias]["name"]}'
-                    )
+                    name = cog.games[ctx.channel.name][cog.aliases[ctx.channel.name][alias]]
+                    await ctx.reply(f"Название {self.bot.prefix}{alias} уже занято категорией {name}")
                     return
                 if alias in self.links.get(ctx.channel.name, []):
                     await ctx.reply(f"Нельзя указывать названия существующих ссылок - {alias}")

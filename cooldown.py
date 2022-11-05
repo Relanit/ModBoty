@@ -30,6 +30,18 @@ class Cooldown:
             user = message.author.name
             if not message.author.is_mod or "admin" in data.flags:
                 return
+            if (
+                (
+                    command in self.editor_commands[message.channel.name]
+                    or "all" in self.editor_commands[message.channel.name]
+                    and "whitelist" not in data.flags
+                )
+                and message.author.name not in self.editors[message.channel.name]
+                and not message.author.is_broadcaster
+            ):
+                ctx = await self.get_context(message)
+                await ctx.reply("Эта команда доступна только редакторам бота - https://vk.cc/cijFyF")
+                return
             if command in self.cooldowns[channel]:
                 if self.cooldowns[channel][command]["gen"] < now > self.cooldowns[channel][command]["per"].get(user, 0):
                     (

@@ -12,6 +12,7 @@ class Help(commands.Cog):
         aliases=["commands"],
         cooldown={"per": 3, "gen": 0},
         description="Эта команда.",
+        flags=["whitelist"],
     )
     async def help(self, ctx: commands.Context):
         content = ctx.content.lstrip(self.bot.prefix).lower()
@@ -39,9 +40,16 @@ class Help(commands.Cog):
             else:
                 cooldown = f"общий {gen}с."
 
+            editor = (
+                command in self.bot.editor_commands[ctx.channel.name]
+                or "all" in self.editor_commands[ctx.channel.name]
+                and "whitelist" not in data.flags
+            )
+
             message = (
                 f'{self.bot.prefix}{command}{f" {aliases}:" if aliases else ":"} '
                 f"{data.description.format(prefix=self.bot.prefix)} Кд: {cooldown}"
+                f'{" Для редакторов бота" if editor else ""}'
             )
 
         else:

@@ -19,7 +19,9 @@ class ModBoty(commands.Bot, Cooldown):
             prefix="!",
         )
         self.admins = ["relanit"]
-        self.streams = set()
+        self.editors = {}
+        self.editor_commands = {}
+        self.streams = []
 
         for command in [path.stem for path in Path("commands").glob("*py")]:
             self.load_module(f"commands.{command}")
@@ -66,7 +68,7 @@ class ModBoty(commands.Bot, Cooldown):
         for channel in channels:
             if next((s for s in streams if s.user.name.lower() == channel), None):  # check if channel is streaming
                 if channel not in self.streams:
-                    self.streams.add(channel)
+                    self.streams.append(channel)
 
                     if (data := await db.inspects.find_one({"channel": channel})) and data["active"]:
                         await db.inspects.update_one({"channel": channel}, {"$set": {"stats": {}}})

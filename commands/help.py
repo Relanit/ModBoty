@@ -4,7 +4,7 @@ from config import db
 
 
 class Help(commands.Cog):
-    def __init__(self, bot: commands.Bot):
+    def __init__(self, bot):
         self.bot = bot
 
     @commands.command(
@@ -40,11 +40,7 @@ class Help(commands.Cog):
             else:
                 cooldown = f"общий {gen}с."
 
-            editor = (
-                command in self.bot.editor_commands[ctx.channel.name]
-                or "all" in self.editor_commands[ctx.channel.name]
-                and "whitelist" not in data.flags
-            )
+            editor = command in self.bot.editor_commands[ctx.channel.name]
 
             message = (
                 f'{self.bot.prefix}{command}{f" {aliases}:" if aliases else ":"} '
@@ -121,5 +117,5 @@ class Help(commands.Cog):
         await ctx.reply(message)
 
 
-def prepare(bot: commands.Bot):
+def prepare(bot):
     bot.add_cog(Help(bot))

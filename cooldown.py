@@ -31,11 +31,7 @@ class Cooldown:
             if not message.author.is_mod or "admin" in data.flags:
                 return
             if (
-                (
-                    command in self.editor_commands[message.channel.name]
-                    or "all" in self.editor_commands[message.channel.name]
-                    and "whitelist" not in data.flags
-                )
+                command in self.editor_commands[message.channel.name]
                 and message.author.name not in self.editors[message.channel.name]
                 and not message.author.is_broadcaster
             ):

@@ -32,7 +32,7 @@ def most_common_substring(strings: list[str]) -> tuple[str, int]:
 
 
 class MassBan(commands.Cog):
-    def __init__(self, bot: commands.Bot):
+    def __init__(self, bot):
         self.bot = bot
         self.ban_phrases = {}
         self.queue = {}
@@ -215,5 +215,5 @@ class MassBan(commands.Cog):
             await asyncio.sleep(0.1)
 
 
-def prepare(bot: commands.Bot):
+def prepare(bot):
     bot.add_cog(MassBan(bot))

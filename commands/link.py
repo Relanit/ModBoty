@@ -8,7 +8,7 @@ from config import db
 
 
 class Link(commands.Cog):
-    def __init__(self, bot: commands.Bot):
+    def __init__(self, bot):
         self.bot = bot
         self.links = {}
         self.links_aliases = {}
@@ -395,5 +395,5 @@ class Link(commands.Cog):
             self.mod_cooldowns[document["channel"]] = 0
 
 
-def prepare(bot: commands.Bot):
+def prepare(bot):
     bot.add_cog(Link(bot))

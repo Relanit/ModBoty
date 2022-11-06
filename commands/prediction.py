@@ -10,7 +10,7 @@ from config import db, fernet
 
 
 class Predictions(commands.Cog):
-    def __init__(self, bot: commands.Bot):
+    def __init__(self, bot):
         self.bot = bot
 
     @commands.command(
@@ -161,5 +161,5 @@ class Predictions(commands.Cog):
         await ctx.reply("Ставка заблокирована")
 
 
-def prepare(bot: commands.Bot):
+def prepare(bot):
     bot.add_cog(Predictions(bot))

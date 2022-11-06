@@ -10,7 +10,7 @@ reason = "Спам (от ModBoty)"
 
 
 class Inspect(commands.Cog):
-    def __init__(self, bot: commands.Bot):
+    def __init__(self, bot):
         self.bot = bot
         self.limits = {}
         self.timeouts = {}
@@ -342,5 +342,5 @@ class Inspect(commands.Cog):
         del self.message_log[channel]
 
 
-def prepare(bot: commands.Bot):
+def prepare(bot):
     bot.add_cog(Inspect(bot))

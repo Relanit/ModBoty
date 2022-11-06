@@ -8,7 +8,7 @@ from config import db
 
 
 class Timer(commands.Cog):
-    def __init__(self, bot: commands.Bot):
+    def __init__(self, bot):
         self.bot = bot
         self.timers = {}
         self.offline = {}
@@ -304,5 +304,5 @@ class Timer(commands.Cog):
             self.offline[document["channel"]] = document["offline"]
 
 
-def prepare(bot: commands.Bot):
+def prepare(bot):
     bot.add_cog(Timer(bot))

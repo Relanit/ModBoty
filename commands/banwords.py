@@ -10,7 +10,7 @@ reason = "Сообщение, содержащее запрещённую фра
 
 
 class Banwords(commands.Cog):
-    def __init__(self, bot: commands.Bot):
+    def __init__(self, bot):
         self.bot = bot
         self.banwords = {}
         self.mutewords = {}
@@ -275,5 +275,5 @@ class Banwords(commands.Cog):
                 self.mutewords[document["channel"]] = document["mutewords"]
 
 
-def prepare(bot: commands.Bot):
+def prepare(bot):
     bot.add_cog(Banwords(bot))

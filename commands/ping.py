@@ -2,7 +2,7 @@ from twitchio.ext import commands
 
 
 class Ping(commands.Cog):
-    def __init__(self, bot: commands.Bot):
+    def __init__(self, bot):
         self.bot = bot
 
     @commands.command(name="ping", cooldown={"per": 0, "gen": 5}, description="Проверка бота.", flags=["whitelist"])
@@ -10,5 +10,5 @@ class Ping(commands.Cog):
         await ctx.reply("Pong.")
 
 
-def prepare(bot: commands.Bot):
+def prepare(bot):
     bot.add_cog(Ping(bot))

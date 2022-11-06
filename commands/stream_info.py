@@ -17,7 +17,7 @@ def similarity(s1: str, s2: str) -> float:
 
 
 class StreamInfo(commands.Cog):
-    def __init__(self, bot: commands.Bot):
+    def __init__(self, bot):
         self.bot = bot
         self.games = {}
         self.aliases = {}
@@ -238,5 +238,5 @@ class StreamInfo(commands.Cog):
             self.cooldowns[document["channel"]] = 0
 
 
-def prepare(bot: commands.Bot):
+def prepare(bot):
     bot.add_cog(StreamInfo(bot))

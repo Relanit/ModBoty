@@ -21,44 +21,43 @@ class Cooldown:
         Returns True if successful else None
         """
 
-        now = time.time()
         data = self.get_command(command)
-
-        channel = message.channel.name
 
         if not admin:
             user = message.author.name
             if not message.author.is_mod or "admin" in data.flags:
                 return
             if (
-                command in self.editor_commands[message.channel.name]
-                and message.author.name not in self.editors[message.channel.name]
+                (command in self.editor_commands.get(message.channel.name, []) or "editor" in data.flags)
+                and message.author.name not in self.editors.get(message.channel.name, [])
                 and not message.author.is_broadcaster
             ):
-                ctx = await self.get_context(message)
-                await ctx.reply("Эта команда доступна только редакторам бота - https://vk.cc/cijFyF")
                 return
-            if command in self.cooldowns[channel]:
-                if self.cooldowns[channel][command]["gen"] < now > self.cooldowns[channel][command]["per"].get(user, 0):
+            if command in self.cooldowns[message.channel.name]:
+                if (
+                    self.cooldowns[message.channel.name][command]["gen"]
+                    < time.time()
+                    > self.cooldowns[message.channel.name][command]["per"].get(user, 0)
+                ):
                     (
-                        self.cooldowns[channel][command]["per"][user],
-                        self.cooldowns[channel][command]["gen"],
+                        self.cooldowns[message.channel.name][command]["per"][user],
+                        self.cooldowns[message.channel.name][command]["gen"],
                     ) = get_cooldown_end(data.cooldown)
                     return True
 
                 return
 
             per_end, gen_end = get_cooldown_end(data.cooldown)
-            self.cooldowns[channel][command] = {"per": {user: per_end}, "gen": gen_end}
+            self.cooldowns[message.channel.name][command] = {"per": {user: per_end}, "gen": gen_end}
             return True
 
         if "admin" in data.flags:
             return True
 
-        if command in self.cooldowns[channel]:
-            _, self.cooldowns[channel][command]["gen"] = get_cooldown_end(data.cooldown)
+        if command in self.cooldowns[message.channel.name]:
+            _, self.cooldowns[message.channel.name][command]["gen"] = get_cooldown_end(data.cooldown)
             return True
 
         _, gen_end = get_cooldown_end(data.cooldown)
-        self.cooldowns[channel][command] = {"per": {}, "gen": gen_end}
+        self.cooldowns[message.channel.name][command] = {"per": {}, "gen": gen_end}
         return True

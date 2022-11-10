@@ -17,8 +17,8 @@ class Polls(commands.Cog):
         description="Создание и завершение опросов. Полное описание - https://vk.cc/chVYL4",
     )
     async def command(self, ctx: commands.Context):
-        user = await ctx.channel.user()
-        if user.broadcaster_type == BroadcasterTypeEnum.none:
+        channel = await ctx.channel.user()
+        if channel.broadcaster_type == BroadcasterTypeEnum.none:
             await ctx.reply("Эта команда доступна только компаньонам и партнёрам твича")
             return
 
@@ -30,7 +30,7 @@ class Polls(commands.Cog):
         token = fernet.decrypt(data["user_tokens"][0]["access_token"].encode()).decode()
 
         try:
-            polls = await user.fetch_polls(token)
+            polls = await channel.fetch_polls(token)
         except twitchio.errors.Unauthorized:
             await ctx.reply("Для работы этой команды стримеру нужно пройти авторизацию - https://vk.cc/chZxeI")
             return
@@ -39,15 +39,15 @@ class Polls(commands.Cog):
             if polls[0].status == "ACTIVE":
                 await ctx.reply("На канале уже есть активный вопрос")
                 return
-            await self.poll(ctx, user, token)
+            await self.poll(ctx, channel, token)
         else:
             if polls[0].status != "ACTIVE":
                 await ctx.reply("На канале нет активных опросов")
                 return
-            await self.delpoll(ctx, user, token, polls[0])
+            await self.delpoll(ctx, channel, token, polls[0])
 
     @staticmethod
-    async def poll(ctx: commands.Context, user: User, token: str):
+    async def poll(ctx: commands.Context, channel: User, token: str):
         content_split = ctx.content.split("/")
         if len(content_split) < 3:
             await ctx.reply("Недостаточно значений - https://vk.cc/chVYL4")
@@ -89,12 +89,12 @@ class Polls(commands.Cog):
             await ctx.reply("Максимальное количество вариантов - 5")
             return
 
-        await user.create_poll(token, title, choices, duration)
+        await channel.create_poll(token, title, choices, duration)
         await ctx.reply(f"Создан опрос - {title}")
 
     @staticmethod
-    async def delpoll(ctx: commands.Context, user: User, token: str, poll: Poll):
-        await user.end_poll(token, poll.id, "TERMINATED")
+    async def delpoll(ctx: commands.Context, channel: User, token: str, poll: Poll):
+        await channel.end_poll(token, poll.id, "TERMINATED")
         await ctx.reply("Опрос удалён")
 
 

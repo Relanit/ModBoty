@@ -49,12 +49,12 @@ class StreamInfo(commands.Cog):
                     await ctx.reply("Для работы этой команды стримеру нужно пройти авторизацию - https://vk.cc/chZxeI")
                     return
 
-                user = await ctx.channel.user()
+                channel = await ctx.channel.user()
                 token = fernet.decrypt(data["user_tokens"][0]["access_token"].encode()).decode()
                 game_id = self.aliases[message.channel.name][content]
                 game = [Game({"id": game_id, "name": self.games[ctx.channel.name][game_id], "box_art_url": ""})]
                 self.cooldowns[message.channel.name] = time.time() + 3
-                await self.g(ctx, user, token, game)
+                await self.g(ctx, channel, token, game)
 
     @commands.command(
         name="t",
@@ -74,12 +74,12 @@ class StreamInfo(commands.Cog):
 
         token = fernet.decrypt(data["user_tokens"][0]["access_token"].encode()).decode()
 
-        user = await ctx.channel.user()
+        channel = await ctx.channel.user()
 
         if ctx.command_alias == "t":
-            await self.t(ctx, user, token)
+            await self.t(ctx, channel, token)
         elif ctx.command_alias == "g":
-            await self.g(ctx, user, token)
+            await self.g(ctx, channel, token)
         elif ctx.command_alias == "addg":
             await self.addg(ctx)
         elif ctx.command_alias == "delg":
@@ -88,16 +88,16 @@ class StreamInfo(commands.Cog):
             await self.list_games(ctx)
 
     @staticmethod
-    async def t(ctx: commands.Context, user: User, token: str):
+    async def t(ctx: commands.Context, channel: User, token: str):
         try:
-            await user.modify_stream(token, title=ctx.content[:140])
+            await channel.modify_stream(token, title=ctx.content[:140])
         except twitchio.errors.Unauthorized:
             await ctx.reply("Для работы этой команды стримеру нужно пройти авторизацию - https://vk.cc/chZxeI")
             return
 
         await ctx.reply(f"Установлено название стрима - {ctx.content[:140]}")
 
-    async def g(self, ctx: commands.Context, user: User, token: str, game: Optional[list[Game]] = None):
+    async def g(self, ctx: commands.Context, channel: User, token: str, game: Optional[list[Game]] = None):
         game = game or await self.bot.fetch_games(names=[ctx.content])
 
         if not game:
@@ -116,7 +116,7 @@ class StreamInfo(commands.Cog):
             game = [new_game]
 
         try:
-            await user.modify_stream(token, game[0].id)
+            await channel.modify_stream(token, game[0].id)
         except twitchio.errors.Unauthorized:
             await ctx.reply("Для работы этой команды стримеру нужно пройти авторизацию - https://vk.cc/chZxeI")
             return

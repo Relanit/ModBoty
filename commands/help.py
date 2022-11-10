@@ -40,7 +40,7 @@ class Help(commands.Cog):
             else:
                 cooldown = f"общий {gen}с."
 
-            editor = command in self.bot.editor_commands[ctx.channel.name]
+            editor = command in self.bot.editor_commands.get(ctx.channel.name, []) or "editor" in data.flags
 
             message = (
                 f'{self.bot.prefix}{command}{f" {aliases}:" if aliases else ":"} '

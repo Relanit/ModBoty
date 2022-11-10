@@ -88,7 +88,9 @@ class Editors(commands.Cog):
                 self.bot.editor_commands[ctx.channel.name] = [
                     command
                     for command in self.bot.commands.keys()
-                    if "whitelist" not in (flags := self.bot.get_command(command).flags) and "admin" not in flags
+                    if "whitelist" not in (flags := self.bot.get_command(command).flags)
+                    and "admin" not in flags
+                    and "editor" not in flags
                 ]
 
                 await db.editors.update_one(
@@ -106,7 +108,7 @@ class Editors(commands.Cog):
             await ctx.reply("Команда не найдена")
             return
 
-        if command in self.bot.editor_commands.get(ctx.channel.name, []):
+        if command in self.bot.editor_commands.get(ctx.channel.name, []) or "editor" in flags:
             await ctx.reply("Команда уже ограничена")
             return
 
@@ -140,6 +142,10 @@ class Editors(commands.Cog):
                 await ctx.reply("Теперь все команды доступны модераторам канала")
                 return
             await ctx.reply("Команда не найдена")
+            return
+
+        if "editor" in flags:
+            await ctx.reply("Для этой команды нельзя снять ограничения")
             return
 
         if command not in self.bot.editor_commands.get(ctx.channel.name, []):

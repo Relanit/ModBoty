@@ -12,7 +12,7 @@ class Limits(TypedDict):
     first_limit: dict[str, int | float]
     second_limit: dict[str, int | float]
     percent_limit: int
-    timeouts: int
+    timeouts: list[int]
     stats: dict[str, int]
     active: bool
     offline: bool

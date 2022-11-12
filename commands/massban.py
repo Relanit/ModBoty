@@ -1,12 +1,14 @@
 import asyncio
 import os
 import time
-from typing import Generator
+from typing import Generator, TypedDict
 
-from twitchio.ext import commands
+from twitchio.ext.commands import Cog, command, Context
 from twitchio import Message
 
 reason = 'Сообщение, содержащее запрещённую фразу: "%s" (от ModBoty). Начато %s'
+
+LoggedMessage = TypedDict("LoggedMessage", {"author": str, "content": str, "first-msg": str, "time": float})
 
 
 def most_common_substring(strings: list[str]) -> tuple[str, int]:
@@ -31,14 +33,14 @@ def most_common_substring(strings: list[str]) -> tuple[str, int]:
     return max(top, key=lambda x: len(x[0]))
 
 
-class MassBan(commands.Cog):
+class MassBan(Cog):
     def __init__(self, bot):
         self.bot = bot
-        self.ban_phrases = {}
-        self.queue = {}
-        self.message_history = {channel: [] for channel in os.getenv("CHANNELS").split("&")}
+        self.ban_phrases: dict[str, str] = {}
+        self.queue: dict[str, list[str]] = {}
+        self.message_history: dict[str, list[LoggedMessage]] = {channel: [] for channel in os.getenv("CHANNELS").split("&")}
 
-    @commands.Cog.event()
+    @Cog.event()
     async def event_message(self, message: Message):
         if message.echo:
             return
@@ -76,13 +78,13 @@ class MassBan(commands.Cog):
         ):
             self.queue[message.channel.name].append(message.author.name)
 
-    @commands.command(
+    @command(
         name="mb",
         aliases=["mt", "m"],
         cooldown={"per": 0, "gen": 60},
         description="Бан/мут пользователей, написавших сообщение с указанной фразой. Полное описание - https://vk.cc/chCfLq ",
     )
-    async def mass_ban(self, ctx: commands.Context):
+    async def mass_ban(self, ctx: Context):
         if not ctx.channel.bot_is_mod:
             await ctx.reply("Боту необходима модерка для работы этой команды")
             return

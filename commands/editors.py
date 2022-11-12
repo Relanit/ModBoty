@@ -1,21 +1,22 @@
-from twitchio.ext import commands, routines
+from twitchio.ext.commands import Cog, command, Context
+from twitchio.ext.routines import routine
 
 from config import db
 
 
-class Editors(commands.Cog):
+class Editors(Cog):
     def __init__(self, bot):
         self.bot = bot
         self.get_editors.start(stop_on_error=False)
 
-    @commands.command(
+    @command(
         name="editor",
         aliases=["editors", "dele", "unban", "ban"],
         cooldown={"per": 0, "gen": 3},
         description="Настройка редакторов бота и управление доступом к командам. Полное описание - https://vk.cc/cijFyF ",
         flags=["whitelist"],
     )
-    async def command(self, ctx: commands.Context):
+    async def command(self, ctx: Context):
         if not ctx.content and ctx.command_alias != "editors":
             await ctx.reply("Недостаточно значений - https://vk.cc/cijFyF")
             return
@@ -35,7 +36,7 @@ class Editors(commands.Cog):
         else:
             await self.dele(ctx)
 
-    async def editor(self, ctx: commands.Context):
+    async def editor(self, ctx: Context):
         login = ctx.content.lower()
         user = await self.bot.fetch_users(names=[login])
         if not user:
@@ -54,7 +55,7 @@ class Editors(commands.Cog):
         )
         await ctx.reply(f"Добавлен редактор: {login}")
 
-    async def editors(self, ctx: commands.Context):
+    async def editors(self, ctx: Context):
         editors = ", ".join(self.bot.editors.get(ctx.channel.name, []))
 
         if not editors:
@@ -63,7 +64,7 @@ class Editors(commands.Cog):
 
         await ctx.reply(f"Редакторы бота на канале {ctx.channel.name}: {editors}")
 
-    async def dele(self, ctx: commands.Context):
+    async def dele(self, ctx: Context):
         if not self.bot.editors.get(ctx.channel.name):
             await ctx.reply("На вашем канале нет редакторов")
             return
@@ -77,18 +78,18 @@ class Editors(commands.Cog):
         await db.editors.update_one({"channel": ctx.channel.name}, {"$pull": {"editors": {"login": login}}})
         await ctx.reply(f"Удалён редактор: {login}")
 
-    async def ban(self, ctx: commands.Context):
-        command = ctx.content.lower().lstrip(self.bot.prefix)
+    async def ban(self, ctx: Context):
+        command_name = ctx.content.lower().lstrip(self.bot.prefix)
         if (
-            not (command := self.bot.get_command_name(command))
-            or (flags := self.bot.get_command(command).flags)
+            not (command_name := self.bot.get_command_name(command_name))
+            or (flags := self.bot.get_command(command_name).flags)
             and "admin" in flags
         ):
             if ctx.content.lower() == "all":
                 self.bot.editor_commands[ctx.channel.name] = [
-                    command
-                    for command in self.bot.commands.keys()
-                    if "whitelist" not in (flags := self.bot.get_command(command).flags)
+                    command_name
+                    for command_name in self.bot.commands.keys()
+                    if "whitelist" not in (flags := self.bot.get_command(command_name).flags)
                     and "admin" not in flags
                     and "editor" not in flags
                 ]
@@ -98,7 +99,9 @@ class Editors(commands.Cog):
                     {
                         "$setOnInsert": {"channel": ctx.channel.name},
                         "$set": {
-                            "banned": [{"name": command} for command in self.bot.editor_commands[ctx.channel.name]]
+                            "banned": [
+                                {"name": command_name} for command_name in self.bot.editor_commands[ctx.channel.name]
+                            ]
                         },
                     },
                     upsert=True,
@@ -108,7 +111,7 @@ class Editors(commands.Cog):
             await ctx.reply("Команда не найдена")
             return
 
-        if command in self.bot.editor_commands.get(ctx.channel.name, []) or "editor" in flags:
+        if command_name in self.bot.editor_commands.get(ctx.channel.name, []) or "editor" in flags:
             await ctx.reply("Команда уже ограничена")
             return
 
@@ -116,20 +119,20 @@ class Editors(commands.Cog):
             await ctx.reply("Для этой команды нельзя ограничить доступ")
             return
 
-        self.bot.editor_commands[ctx.channel.name] = self.bot.editor_commands.get(ctx.channel.name, []) + [command]
+        self.bot.editor_commands[ctx.channel.name] = self.bot.editor_commands.get(ctx.channel.name, []) + [command_name]
         await db.editors.update_one(
             {"channel": ctx.channel.name},
-            {"$setOnInsert": {"channel": ctx.channel.name}, "$addToSet": {"banned": {"name": command}}},
+            {"$setOnInsert": {"channel": ctx.channel.name}, "$addToSet": {"banned": {"name": command_name}}},
             upsert=True,
         )
-        message = f"Команда {self.bot.prefix}{command} теперь доступна только для редакторов бота"
+        message = f"Команда {self.bot.prefix}{command_name} теперь доступна только для редакторов бота"
         await ctx.reply(message)
 
-    async def unban(self, ctx: commands.Context):
-        command = ctx.content.lower().lstrip(self.bot.prefix)
+    async def unban(self, ctx: Context):
+        command_name = ctx.content.lower().lstrip(self.bot.prefix)
         if (
-            not (command := self.bot.get_command_name(command))
-            or (flags := self.bot.get_command(command).flags)
+            not (command_name := self.bot.get_command_name(command_name))
+            or (flags := self.bot.get_command(command_name).flags)
             and "admin" in flags
         ):
             if ctx.content.lower() == "all":
@@ -156,11 +159,11 @@ class Editors(commands.Cog):
         await db.editors.update_one({"channel": ctx.channel.name}, {"$pull": {"banned": {"name": command}}})
         await ctx.reply(f"Теперь команда {self.bot.prefix}{command} доступна всем модераторам")
 
-    @routines.routine(iterations=1)
+    @routine(iterations=1)
     async def get_editors(self):
         async for document in db.editors.find():
             self.bot.editors[document["channel"]] = [editor["login"] for editor in document.get("editors", [])]
-            self.bot.editor_commands[document["channel"]] = [command["name"] for command in document.get("banned", [])]
+            self.bot.editor_commands[document["channel"]] = [c["name"] for c in document.get("banned", [])]
 
 
 def prepare(bot):

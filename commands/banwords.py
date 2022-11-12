@@ -1,7 +1,8 @@
 import asyncio
 import os
 
-from twitchio.ext import commands, routines
+from twitchio.ext.routines import routine
+from twitchio.ext.commands import Cog, command, Context
 from twitchio import Message
 
 from config import db
@@ -9,14 +10,15 @@ from config import db
 reason = "Сообщение, содержащее запрещённую фразу (от ModBoty)"
 
 
-class Banwords(commands.Cog):
+class Banwords(Cog):
     def __init__(self, bot):
         self.bot = bot
-        self.banwords = {}
-        self.mutewords = {}
+        self.banwords: dict[str, list[str]] = {}
+        self.mutewords: dict[str, list[dict[str, str | int]]] = {}
+
         self.get_banwords.start(stop_on_error=False)
 
-    @commands.Cog.event()
+    @Cog.event()
     async def event_message(self, message: Message):
         if message.echo:
             return
@@ -39,13 +41,13 @@ class Banwords(commands.Cog):
             if timeout:
                 await message.channel.send(f"/timeout {message.author.name} {timeout} {reason}")
 
-    @commands.command(
+    @command(
         name="bword",
         aliases=["mword", "delb", "delm", "bwords", "mwords"],
         cooldown={"per": 0, "gen": 3},
         description="Запрещённые слова, за отправку которых пользователь получает бан/мут. Полное описание - https://vk.cc/chCfIC ",
     )
-    async def command(self, ctx: commands.Context):
+    async def command(self, ctx: Context):
         if not ctx.channel.bot_is_mod:
             await ctx.reply("Боту необходима модерка для работы этой команды")
             return
@@ -67,7 +69,7 @@ class Banwords(commands.Cog):
         else:
             await self.mwords(ctx)
 
-    async def bword(self, ctx: commands.Context):
+    async def bword(self, ctx: Context):
         if len(self.banwords.get(ctx.channel.name, [])) + len(self.mutewords.get(ctx.channel.name, [])) == 30:
             await ctx.reply("Достигнут лимит банвордов и мутвордов - 30")
             return
@@ -101,7 +103,7 @@ class Banwords(commands.Cog):
         )
         await ctx.reply("Добавлено")
 
-    async def delb(self, ctx: commands.Context):
+    async def delb(self, ctx: Context):
         banword = ctx.content.lower()
 
         if banword not in self.banwords.get(ctx.channel.name, []):
@@ -112,7 +114,7 @@ class Banwords(commands.Cog):
         await db.banwords.update_one({"channel": ctx.channel.name}, {"$pull": {"banwords": banword}})
         await ctx.reply("Удалено")
 
-    async def mword(self, ctx: commands.Context):
+    async def mword(self, ctx: Context):
         if len(self.banwords.get(ctx.channel.name, [])) + len(self.mutewords.get(ctx.channel.name, [])) == 30:
             await ctx.reply("Достигнут лимит банвордов и мутвордов - 30")
             return
@@ -170,7 +172,7 @@ class Banwords(commands.Cog):
         self.mutewords[ctx.channel.name].append({"muteword": muteword, "timeout": timeout})
         await ctx.reply(message)
 
-    async def delm(self, ctx: commands.Context):
+    async def delm(self, ctx: Context):
         muteword = ctx.content.lower()
 
         found = False
@@ -190,7 +192,7 @@ class Banwords(commands.Cog):
         )
         await ctx.reply("Удалено")
 
-    async def bwords(self, ctx: commands.Context):
+    async def bwords(self, ctx: Context):
         if not self.banwords.get(ctx.channel.name):
             await ctx.reply("На вашем канале ещё нет банвордов")
         else:
@@ -225,7 +227,7 @@ class Banwords(commands.Cog):
                     message=message2,
                 )
 
-    async def mwords(self, ctx: commands.Context):
+    async def mwords(self, ctx: Context):
         if not self.mutewords.get(ctx.channel.name):
             await ctx.reply("На вашем канале ещё нет мутвордов")
         else:
@@ -266,7 +268,7 @@ class Banwords(commands.Cog):
                     message=message2,
                 )
 
-    @routines.routine(iterations=1)
+    @routine(iterations=1)
     async def get_banwords(self):
         async for document in db.banwords.find():
             if "banwords" in document:

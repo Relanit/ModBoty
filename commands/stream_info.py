@@ -3,7 +3,8 @@ import time
 from typing import Optional
 
 import twitchio
-from twitchio.ext import commands, routines
+from twitchio.ext.commands import Cog, command, Context
+from twitchio.ext.routines import routine
 from twitchio.models import Game
 from twitchio import Message, User
 
@@ -16,15 +17,16 @@ def similarity(s1: str, s2: str) -> float:
     return matcher.ratio()
 
 
-class StreamInfo(commands.Cog):
+class StreamInfo(Cog):
     def __init__(self, bot):
         self.bot = bot
-        self.games = {}
-        self.aliases = {}
-        self.cooldowns = {}
+        self.games: dict[str, dict[int, str]] = {}
+        self.aliases: dict[str, dict[str, int]] = {}
+        self.cooldowns: dict[str, float] = {}
+
         self.get_games.start(stop_on_error=False)
 
-    @commands.Cog.event()
+    @Cog.event()
     async def event_message(self, message: Message):
         if message.echo:
             return
@@ -56,13 +58,13 @@ class StreamInfo(commands.Cog):
                 self.cooldowns[message.channel.name] = time.time() + 3
                 await self.g(ctx, channel, token, game)
 
-    @commands.command(
+    @command(
         name="t",
         aliases=["g", "addg", "delg", "games"],
         cooldown={"per": 0, "gen": 3},
         description="Изменение настроек стрима. Полное описание - https://vk.cc/ciaLzx",
     )
-    async def command(self, ctx: commands.Context):
+    async def command(self, ctx: Context):
         data = await db.config.find_one({"_id": 1, "user_tokens.login": ctx.channel.name}, {"user_tokens.$": 1})
         if not data:
             await ctx.reply("Для работы этой команды стримеру нужно пройти авторизацию - https://vk.cc/chZxeI")
@@ -88,7 +90,7 @@ class StreamInfo(commands.Cog):
             await self.list_games(ctx)
 
     @staticmethod
-    async def t(ctx: commands.Context, channel: User, token: str):
+    async def t(ctx: Context, channel: User, token: str):
         try:
             await channel.modify_stream(token, title=ctx.content[:140])
         except twitchio.errors.Unauthorized:
@@ -97,7 +99,7 @@ class StreamInfo(commands.Cog):
 
         await ctx.reply(f"Установлено название стрима - {ctx.content[:140]}")
 
-    async def g(self, ctx: commands.Context, channel: User, token: str, game: Optional[list[Game]] = None):
+    async def g(self, ctx: Context, channel: User, token: str, game: Optional[list[Game]] = None):
         game = game or await self.bot.fetch_games(names=[ctx.content])
 
         if not game:
@@ -123,7 +125,7 @@ class StreamInfo(commands.Cog):
 
         await ctx.reply(f"Установлена категория {game[0].name}")
 
-    async def addg(self, ctx: commands.Context):
+    async def addg(self, ctx: Context):
         try:
             alias, name = ctx.content.lower().split(maxsplit=1)
         except ValueError:
@@ -200,7 +202,7 @@ class StreamInfo(commands.Cog):
         await db.games.update_one(key, values, upsert=True)
         await ctx.reply(message)
 
-    async def delg(self, ctx: commands.Context):
+    async def delg(self, ctx: Context):
         if not (alias := ctx.content.lower()):
             await ctx.reply("Недостаточно значений - https://vk.cc/ciaLzx")
             return
@@ -212,23 +214,23 @@ class StreamInfo(commands.Cog):
         game = self.aliases[ctx.channel.name].pop(alias)
 
         await db.games.update_one(
-            {"channel": ctx.channel.name, "games.id": game["id"]},
+            {"channel": ctx.channel.name, "games.id": game},
             {"$pull": {"games.$.aliases": alias}},
         )
         await ctx.reply(f"Удалено - {self.bot.prefix}{alias}")
 
-    async def list_games(self, ctx: commands.Context):
+    async def list_games(self, ctx: Context):
         if not self.aliases.get(ctx.channel.name):
             await ctx.reply("На вашем канале ещё нет элиасов категорий")
             return
 
         message = (
             f"Доступные элиасы категорий: {self.bot.prefix}"
-            f'{str(f" {self.bot.prefix}").join(self.aliases[ctx.channel.name])}'
+            f'{f" {self.bot.prefix}".join(self.aliases[ctx.channel.name])}'
         )
         await ctx.reply(message)
 
-    @routines.routine(iterations=1)
+    @routine(iterations=1)
     async def get_games(self):
         async for document in db.games.find():
             self.aliases[document["channel"]] = {

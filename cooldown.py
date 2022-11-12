@@ -5,15 +5,16 @@ from twitchio import Message
 
 def get_cooldown_end(cooldown: dict[str, int]) -> (float, float):
     """Returns personal and general cooldown ends"""
-    now = time.time()
-    per_end = now + cooldown["per"]
-    gen_end = now + cooldown["gen"]
+    per_end = time.time() + cooldown["per"]
+    gen_end = time.time() + cooldown["gen"]
     return per_end, gen_end
 
 
 class Cooldown:
     def __init__(self, channels: list[str]):
-        self.cooldowns = {channel: {} for channel in channels}
+        self.cooldowns: dict[str, dict[str, dict[str, float | dict[str, float]]]] = {
+            channel: {} for channel in channels
+        }
 
     async def check_command(self, command: str, message: Message, admin: bool = False) -> bool | None:
         """

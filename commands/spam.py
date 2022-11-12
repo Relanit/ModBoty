@@ -1,18 +1,18 @@
 import asyncio
 
-from twitchio.ext import commands
+from twitchio.ext.commands import Cog, command, Context
 
 
-class Spam(commands.Cog):
+class Spam(Cog):
     def __init__(self, bot):
         self.bot = bot
 
-    @commands.command(
+    @command(
         name="spam",
         cooldown={"per": 0, "gen": 10},
         description="Спам текстом указанное количество раз (до 15).",
     )
-    async def send(self, ctx):
+    async def send(self, ctx: Context):
         if not (ctx.channel.bot_is_vip or ctx.channel.bot_is_mod):
             await ctx.reply("Боту необходима випка или модерка для работы этой команды")
             return

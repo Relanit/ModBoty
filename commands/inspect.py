@@ -1,23 +1,37 @@
+from typing import TypedDict
 import asyncio
 import time
 
-from twitchio.ext import commands
+from twitchio.ext.commands import Cog, command, Context
 from twitchio import Message
 
 from config import db
 
-reason = "Спам (от ModBoty)"
+
+class Limits(TypedDict):
+    first_limit: dict[str, int | float]
+    second_limit: dict[str, int | float]
+    percent_limit: int
+    timeouts: int
+    stats: dict[str, int]
+    active: bool
+    offline: bool
 
 
-class Inspect(commands.Cog):
+class LoggedMessage(TypedDict):
+    time: float
+    author: str
+
+
+class Inspect(Cog):
     def __init__(self, bot):
         self.bot = bot
-        self.limits = {}
-        self.timeouts = {}
-        self.warned_users = {}
-        self.message_log = {}
+        self.limits: dict[str, Limits] = {}
+        self.timeouts: dict[str, list[int]] = {}
+        self.warned_users: dict[str, dict[str, int]] = {}
+        self.message_log: dict[str, list[LoggedMessage]] = {}
 
-    @commands.Cog.event()
+    @Cog.event()
     async def event_message(self, message: Message):
         if message.echo:
             return
@@ -98,7 +112,7 @@ class Inspect(commands.Cog):
 
                     while message.channel.limited:
                         await asyncio.sleep(0.1)
-                    await message.channel.send(f"/timeout {message.author.name} {timeout} {reason}")
+                    await message.channel.send(f"/timeout {message.author.name} {timeout} Спам (от ModBoty)")
                 else:
                     self.warned_users[message.channel.name][message.author.name] = 0
                     ctx = await self.bot.get_context(message)
@@ -106,14 +120,14 @@ class Inspect(commands.Cog):
 
                     while ctx.limited:
                         await asyncio.sleep(0.1)
-                    await ctx.send(f"/timeout {message.author.name} 10 {reason}")
+                    await ctx.send(f"/timeout {message.author.name} 10 Спам (от ModBoty)")
 
-    @commands.command(
+    @command(
         name="inspect",
         cooldown={"per": 0, "gen": 3},
         description="Лимиты на количество отправленных сообщений. Полное описание - https://vk.cc/chCfJI ",
     )
-    async def inspect(self, ctx: commands.Context):
+    async def inspect(self, ctx: Context):
         if not ctx.channel.bot_is_mod:
             await ctx.reply("Боту необходима модерка для работы этой команды")
             return

@@ -1,22 +1,24 @@
 import asyncio
 import time
 
-from twitchio.ext import commands, routines
+from twitchio.ext.commands import Cog, command, Context
 from twitchio import Message
+from twitchio.ext.routines import routine
 
 from config import db
 
 
-class Link(commands.Cog):
+class Link(Cog):
     def __init__(self, bot):
         self.bot = bot
-        self.links = {}
-        self.links_aliases = {}
-        self.cooldowns = {}
-        self.mod_cooldowns = {}
+        self.links: dict[str, list[str]] = {}
+        self.links_aliases: dict[str, dict[str, str]] = {}
+        self.cooldowns: dict[str, dict[str, float]] = {}
+        self.mod_cooldowns: dict[str, float] = {}
+
         self.get_links.start(stop_on_error=False)
 
-    @commands.Cog.event()
+    @Cog.event()
     async def event_message(self, message: Message):
         if message.echo:
             return
@@ -94,13 +96,13 @@ class Link(commands.Cog):
                         ctx = await self.bot.get_context(message)
                         await ctx.reply(text)
 
-    @commands.command(
+    @command(
         name="link",
         aliases=["links", "del", "aliases", "public", "announce"],
         cooldown={"per": 0, "gen": 3},
         description="Кастомные команды для спама (от модераторов) или вызова пользователями. Полное описание - https://vk.cc/chCfKt ",
     )
-    async def command(self, ctx: commands.Context):
+    async def command(self, ctx: Context):
         if not (ctx.channel.bot_is_vip or ctx.channel.bot_is_mod):
             await ctx.reply("Боту необходима випка или модерка для работы этой команды")
             return
@@ -118,7 +120,7 @@ class Link(commands.Cog):
         else:
             await self.announce(ctx)
 
-    async def link(self, ctx: commands.Context):
+    async def link(self, ctx: Context):
         content = ctx.content.split()
         if len(content) < 2:
             await ctx.reply("Недостаточно значений - https://vk.cc/chCfKt")
@@ -171,13 +173,13 @@ class Link(commands.Cog):
                     values["$set"]["links.$.text"] = text
             else:
                 message = f"Добавлено {self.bot.prefix}{link}"
-                self.links[ctx.channel.name].add(link)
+                self.links[ctx.channel.name].append(link)
                 values = {"$addToSet": {"links": {"name": link, "text": text}}}
                 if private is not None:
                     values["$addToSet"]["links"]["private"] = private
         else:
             message = f"Добавлено {self.bot.prefix}{link}"
-            self.links[ctx.channel.name] = {link}
+            self.links[ctx.channel.name] = [link]
             self.cooldowns[ctx.channel.name] = {link: 0}
             self.mod_cooldowns[ctx.channel.name] = 0
             values = {
@@ -194,7 +196,7 @@ class Link(commands.Cog):
         await db.links.update_one(key, values, upsert=True)
         await ctx.reply(message)
 
-    async def list_links(self, ctx: commands.Context):
+    async def list_links(self, ctx: Context):
         if not self.links.get(ctx.channel.name, None):
             await ctx.reply("На вашем канале ещё нет ссылок")
             return
@@ -226,7 +228,7 @@ class Link(commands.Cog):
 
         await ctx.reply(message)
 
-    async def delete(self, ctx: commands.Context):
+    async def delete(self, ctx: Context):
         content = ctx.content.split()
         if not content:
             await ctx.reply("Недостаточно значений - https://vk.cc/chCfKt")
@@ -259,7 +261,7 @@ class Link(commands.Cog):
         await db.links.update_one({"channel": ctx.channel.name}, {"$pull": {"links": {"name": link}}})
         await ctx.reply(message)
 
-    async def aliases(self, ctx: commands.Context):
+    async def aliases(self, ctx: Context):
         content = ctx.content.lower().split()
         if len(content) < 1:
             await ctx.reply("Напишите элиасы к команде через пробел")
@@ -324,7 +326,7 @@ class Link(commands.Cog):
         await ctx.reply(message)
 
     @staticmethod
-    async def public(ctx: commands.Context):
+    async def public(ctx: Context):
         if (content := ctx.content.lower()) in ("on", "off"):
             values = {}
             if content == "on":
@@ -343,7 +345,7 @@ class Link(commands.Cog):
         await db.links.update_one({"channel": ctx.channel.name}, values, upsert=True)
         await ctx.reply(message)
 
-    async def announce(self, ctx: commands.Context):
+    async def announce(self, ctx: Context):
         if not self.links.get(ctx.channel.name, None):
             await ctx.reply("На вашем канале ещё нет ссылок")
             return
@@ -384,10 +386,10 @@ class Link(commands.Cog):
         await db.links.update_one(key, values)
         await ctx.reply(message)
 
-    @routines.routine(iterations=1)
+    @routine(iterations=1)
     async def get_links(self):
         async for document in db.links.find():
-            self.links[document["channel"]] = {link["name"] for link in document["links"]}
+            self.links[document["channel"]] = [link["name"] for link in document["links"]]
             self.links_aliases[document["channel"]] = {
                 alias: link["name"] for link in document["links"] if "aliases" in link for alias in link["aliases"]
             }

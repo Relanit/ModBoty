@@ -3,23 +3,23 @@ import os
 import aiohttp
 import twitchio
 from twitchio import BroadcasterTypeEnum, User
-from twitchio.ext import commands
+from twitchio.ext.commands import Cog, command, Context
 from twitchio.models import Prediction
 
 from config import db, fernet
 
 
-class Predictions(commands.Cog):
+class Predictions(Cog):
     def __init__(self, bot):
         self.bot = bot
 
-    @commands.command(
+    @command(
         name="pred",
         aliases=["endpred", "delpred", "lockpred"],
         cooldown={"per": 0, "gen": 3},
         description="Создание и редактирование ставок. Полное описание - https://vk.cc/chZLJH",
     )
-    async def command(self, ctx: commands.Context):
+    async def command(self, ctx: Context):
         channel = await ctx.channel.user()
         if channel.broadcaster_type == BroadcasterTypeEnum.none:
             await ctx.reply("Эта команда доступна только компаньонам и партнёрам твича")
@@ -56,7 +56,7 @@ class Predictions(commands.Cog):
                 await self.lockpred(ctx, channel, token, predictions[0])
 
     @staticmethod
-    async def pred(ctx: commands.Context, channel: User, token: str):
+    async def pred(ctx: Context, channel: User, token: str):
         content_split = ctx.content.split("/")
         if len(content_split) < 3:
             await ctx.reply("Недостаточно значений - https://vk.cc/chZLJH")
@@ -126,7 +126,7 @@ class Predictions(commands.Cog):
         await ctx.reply(f"Создана ставка - {title}")
 
     @staticmethod
-    async def endpred(ctx: commands.Context, channel: User, token: str, prediction: Prediction):
+    async def endpred(ctx: Context, channel: User, token: str, prediction: Prediction):
         if not ctx.content:
             await ctx.reply("Введите номер верного исхода")
             return
@@ -151,12 +151,12 @@ class Predictions(commands.Cog):
         await ctx.reply("Ставка завершена")
 
     @staticmethod
-    async def delpred(ctx: commands.Context, channel: User, token: str, prediction: Prediction):
+    async def delpred(ctx: Context, channel: User, token: str, prediction: Prediction):
         await channel.end_prediction(token, prediction.prediction_id, "CANCELED")
         await ctx.reply("Ставка удалена")
 
     @staticmethod
-    async def lockpred(ctx: commands.Context, channel: User, token: str, prediction: Prediction):
+    async def lockpred(ctx: Context, channel: User, token: str, prediction: Prediction):
         await channel.end_prediction(token, prediction.prediction_id, "LOCKED")
         await ctx.reply("Ставка заблокирована")
 

@@ -1,14 +1,14 @@
 import asyncio
 
-from twitchio.ext import commands
+from twitchio.ext.commands import Cog, command, Context
 
 
-class Mail(commands.Cog):
+class Mail(Cog):
     def __init__(self, bot):
         self.bot = bot
 
-    @commands.command(name="mail", flags=["admin"])
-    async def mail(self, ctx: commands.Context):
+    @command(name="mail", flags=["admin"])
+    async def mail(self, ctx: Context):
         if not ctx.content.lstrip("/announce"):
             await ctx.reply("Укажите текст")
             return

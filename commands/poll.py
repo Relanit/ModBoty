@@ -1,22 +1,22 @@
 import twitchio.errors
 from twitchio import BroadcasterTypeEnum, User
-from twitchio.ext import commands
+from twitchio.ext.commands import Cog, command, Context
 from twitchio.models import Poll
 
 from config import db, fernet
 
 
-class Polls(commands.Cog):
+class Polls(Cog):
     def __init__(self, bot):
         self.bot = bot
 
-    @commands.command(
+    @command(
         name="poll",
         aliases=["delpoll"],
         cooldown={"per": 0, "gen": 3},
         description="Создание и завершение опросов. Полное описание - https://vk.cc/chVYL4",
     )
-    async def command(self, ctx: commands.Context):
+    async def command(self, ctx: Context):
         channel = await ctx.channel.user()
         if channel.broadcaster_type == BroadcasterTypeEnum.none:
             await ctx.reply("Эта команда доступна только компаньонам и партнёрам твича")
@@ -47,7 +47,7 @@ class Polls(commands.Cog):
             await self.delpoll(ctx, channel, token, polls[0])
 
     @staticmethod
-    async def poll(ctx: commands.Context, channel: User, token: str):
+    async def poll(ctx: Context, channel: User, token: str):
         content_split = ctx.content.split("/")
         if len(content_split) < 3:
             await ctx.reply("Недостаточно значений - https://vk.cc/chVYL4")
@@ -93,7 +93,7 @@ class Polls(commands.Cog):
         await ctx.reply(f"Создан опрос - {title}")
 
     @staticmethod
-    async def delpoll(ctx: commands.Context, channel: User, token: str, poll: Poll):
+    async def delpoll(ctx: Context, channel: User, token: str, poll: Poll):
         await channel.end_poll(token, poll.id, "TERMINATED")
         await ctx.reply("Опрос удалён")
 

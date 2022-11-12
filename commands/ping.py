@@ -1,12 +1,12 @@
-from twitchio.ext import commands
+from twitchio.ext.commands import Cog, command, Context
 
 
-class Ping(commands.Cog):
+class Ping(Cog):
     def __init__(self, bot):
         self.bot = bot
 
-    @commands.command(name="ping", cooldown={"per": 0, "gen": 5}, description="Проверка бота.", flags=["whitelist"])
-    async def ping(self, ctx: commands.Context):
+    @command(name="ping", cooldown={"per": 0, "gen": 5}, description="Проверка бота.", flags=["whitelist"])
+    async def ping(self, ctx: Context):
         await ctx.reply("Pong.")
 
 

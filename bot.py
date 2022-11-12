@@ -3,31 +3,32 @@ import time
 from pathlib import Path
 
 import aiohttp
-from twitchio.ext import commands, routines
-from twitchio.ext.commands import Context, CommandNotFound
+from twitchio.ext.commands import Bot, Context, CommandNotFound
+from twitchio.ext.routines import routine
 from twitchio import Message
 
 from config import db, fernet
 from cooldown import Cooldown
 
 
-class ModBoty(commands.Bot, Cooldown):
+class ModBoty(Bot, Cooldown):
     def __init__(self):
         super().__init__(
             token=os.getenv("TOKEN"),
             initial_channels=os.getenv("CHANNELS").split("&"),
             prefix="!",
         )
-        self.admins = ["relanit"]
-        self.editors = {}
-        self.editor_commands = {}
-        self.streams = []
+        self.admins: list[str] = ["relanit"]
+        self.editors: dict[str, list[str]] = {}
+        self.editor_commands: dict[str, list[str]] = {}
+        self.streams: list[str] = []
 
         for command in [path.stem for path in Path("commands").glob("*py")]:
             self.load_module(f"commands.{command}")
 
         self.check_streams.start(stop_on_error=False)
         self.refresh_tokens.start(stop_on_error=False)
+
         Cooldown.__init__(self, os.getenv("CHANNELS").split("&"))
 
     async def event_ready(self):
@@ -60,7 +61,7 @@ class ModBoty(commands.Bot, Cooldown):
         if isinstance(error, CommandNotFound):
             return
 
-    @routines.routine(minutes=1.0, iterations=0)
+    @routine(minutes=1.0, iterations=0)
     async def check_streams(self):
         channels = os.getenv("CHANNELS").split("&")
         streams = await self.fetch_streams(user_logins=channels)
@@ -92,7 +93,7 @@ class ModBoty(commands.Bot, Cooldown):
                 if data and data["active"] and data["offline"]:
                     await self.cogs["Inspect"].set(channel)
 
-    @routines.routine(minutes=5, iterations=0)
+    @routine(minutes=5, iterations=0)
     async def refresh_tokens(self):
         data = await db.config.find_one({"_id": 1})
 

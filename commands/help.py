@@ -1,28 +1,28 @@
-from twitchio.ext import commands
+from twitchio.ext.commands import Cog, command, Context
 
 from config import db
 
 
-class Help(commands.Cog):
+class Help(Cog):
     def __init__(self, bot):
         self.bot = bot
 
-    @commands.command(
+    @command(
         name="help",
         aliases=["commands"],
         cooldown={"per": 3, "gen": 0},
         description="Эта команда.",
         flags=["whitelist"],
     )
-    async def help(self, ctx: commands.Context):
+    async def help(self, ctx: Context):
         content = ctx.content.lstrip(self.bot.prefix).lower()
         if not content:
             message = f"Документация - https://vk.cc/chCevV | Напишите {self.bot.prefix}help [команда], чтобы узнать описание команды"
             await ctx.reply(message)
             return
 
-        if command := self.bot.get_command_name(content.split()[0]):
-            data = self.bot.get_command(command)
+        if command_name := self.bot.get_command_name(content.split()[0]):
+            data = self.bot.get_command(command_name)
             if "admin" in data.flags:
                 await ctx.reply("Несуществующая команда")
                 return
@@ -40,25 +40,25 @@ class Help(commands.Cog):
             else:
                 cooldown = f"общий {gen}с."
 
-            editor = command in self.bot.editor_commands.get(ctx.channel.name, []) or "editor" in data.flags
+            editor = command_name in self.bot.editor_commands.get(ctx.channel.name, []) or "editor" in data.flags
 
             message = (
-                f'{self.bot.prefix}{command}{f" {aliases}:" if aliases else ":"} '
+                f'{self.bot.prefix}{command_name}{f" {aliases}:" if aliases else ":"} '
                 f"{data.description.format(prefix=self.bot.prefix)} Кд: {cooldown}"
                 f'{" Для редакторов бота" if editor else ""}'
             )
 
         else:
-            command = content.split()[0]
+            command_name = content.split()[0]
             cog = self.bot.get_cog("Link")
 
             if (
-                command not in cog.links.get(ctx.channel.name, [])
-                and command not in cog.links_aliases.get(ctx.channel.name, []).keys()
+                command_name not in cog.links.get(ctx.channel.name, [])
+                and command_name not in cog.links_aliases.get(ctx.channel.name, []).keys()
             ):  # check if command is game alias
                 cog = self.bot.get_cog("StreamInfo")
-                if command in cog.aliases.get(ctx.channel.name, []):
-                    game_id = cog.aliases[ctx.channel.name][command]
+                if command_name in cog.aliases.get(ctx.channel.name, []):
+                    game_id = cog.aliases[ctx.channel.name][command_name]
                     name = cog.games[ctx.channel.name][game_id]
                     aliases = [
                         alias
@@ -80,12 +80,12 @@ class Help(commands.Cog):
                 else:
                     await ctx.reply("Несуществующая команда")
                     return
-            elif command in cog.links_aliases.get(ctx.channel.name, []):
-                command = cog.links_aliases[ctx.channel.name][command]
+            elif command_name in cog.links_aliases.get(ctx.channel.name, []):
+                command_name = cog.links_aliases[ctx.channel.name][command_name]
 
             data = await db.links.find_one(
                 {"channel": ctx.channel.name},
-                {"links": {"$elemMatch": {"name": command}}, "private": 1},
+                {"links": {"$elemMatch": {"name": command_name}}, "private": 1},
             )
 
             aliases = data["links"][0]["aliases"] if "aliases" in data["links"][0] else []
@@ -98,10 +98,10 @@ class Help(commands.Cog):
             timer = ""
             cog = self.bot.get_cog("Timer")
 
-            if command in cog.timers.get(ctx.channel.name, []):
+            if command_name in cog.timers.get(ctx.channel.name, []):
                 offline_raw = await db.timers.find_one({"channel": ctx.channel.name}, {"offline": 1})
                 offline = offline_raw["offline"]
-                timer = cog.timers[ctx.channel.name][command]
+                timer = cog.timers[ctx.channel.name][command_name]
                 timer = (
                     f'Установлен {"активный" if timer.get("active", True) else "неактивный"} таймер: '
                     f'{timer["number"]} сообщений раз в {timer["interval"]}м'
@@ -110,7 +110,7 @@ class Help(commands.Cog):
                 )
 
             message = (
-                f'{self.bot.prefix}{command}{f" {aliases}." if aliases else "."} Доступ: '
+                f'{self.bot.prefix}{command_name}{f" {aliases}." if aliases else "."} Доступ: '
                 f'{"приватный" if private else "публичный"}. Кд: общий 3с. {timer}'
             )
 

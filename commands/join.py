@@ -1,16 +1,16 @@
 import os
 
-from twitchio.ext import commands
+from twitchio.ext.commands import Cog, command, Context
 
 from config import db
 
 
-class JoinChannel(commands.Cog):
+class JoinChannel(Cog):
     def __init__(self, bot):
         self.bot = bot
 
-    @commands.command(name="mjoin", aliases=["mpart"], flags=["admin"])
-    async def join_channel(self, ctx: commands.Context):
+    @command(name="mjoin", aliases=["mpart"], flags=["admin"])
+    async def join_channel(self, ctx: Context):
         channel = ctx.content.lower()
         if ctx.command_alias == "mjoin":
             user = await self.bot.fetch_users(names=[channel])

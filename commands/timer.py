@@ -1,35 +1,47 @@
 import asyncio
 import time
 from random import shuffle
+from typing import TypedDict
 
-from twitchio.ext import commands, routines
+from twitchio.ext.commands import Cog, command, Context
+from twitchio.ext.routines import routine
 
 from config import db
 
 
-class Timer(commands.Cog):
+class Timer(TypedDict):
+    interval: int
+    number: int
+    active: bool
+    cooldown: float
+    announce: bool
+    offline: bool
+
+
+class Timers(Cog):
     def __init__(self, bot):
         self.bot = bot
-        self.timers = {}
-        self.offline = {}
-        self.messages_from_timer = {}
+        self.timers: dict[str, dict[str, Timer]] = {}
+        self.offline: dict[str, bool] = {}
+        self.messages_from_timer: dict[str, int] = {}
+
         self.get_timers.start(stop_on_error=False)
         self.check_timers.start(stop_on_error=False)
 
-    @commands.Cog.event()
+    @Cog.event()
     async def event_message(self, message):
         if message.echo or message.channel.name not in self.timers:
             return
 
         self.messages_from_timer[message.channel.name] += 1
 
-    @commands.command(
+    @command(
         name="timer",
         aliases=["delt", "timers"],
         cooldown={"per": 0, "gen": 3},
         description="Автоматическая отправка команд с определённым интервалом. Полное описание - https://vk.cc/chCfMF ",
     )
-    async def command(self, ctx: commands.Context):
+    async def command(self, ctx: Context):
         if not (ctx.channel.bot_is_vip or ctx.channel.bot_is_mod):
             await ctx.reply("Боту необходима випка или модерка для работы этой команды")
             return
@@ -58,7 +70,7 @@ class Timer(commands.Cog):
         elif ctx.command_alias == "timers":
             await self.list_timers(ctx)
 
-    async def timer(self, ctx: commands.Context, link: str):
+    async def timer(self, ctx: Context, link: str):
         key = {"channel": ctx.channel.name}
         content = ctx.content.lower().split()
         interval = 0
@@ -201,7 +213,7 @@ class Timer(commands.Cog):
         await db.timers.update_one(key, values, upsert=True)
         await ctx.reply(message)
 
-    async def delt(self, ctx: commands.Context, link: str):
+    async def delt(self, ctx: Context, link: str):
         del self.timers[ctx.channel.name][link]
         await db.timers.update_one({"channel": ctx.channel.name}, {"$pull": {"timers": {"link": link}}})
         await ctx.reply(f"Удалён таймер {self.bot.prefix}{link}")
@@ -224,7 +236,7 @@ class Timer(commands.Cog):
 
         await ctx.reply(message)
 
-    @routines.routine(seconds=11, iterations=0)
+    @routine(seconds=11, iterations=0)
     async def check_timers(self):
         for channel in self.timers:
             timers = list(self.timers[channel])
@@ -290,7 +302,7 @@ class Timer(commands.Cog):
 
                         self.messages_from_timer[channel] = 0
 
-    @routines.routine(iterations=1)
+    @routine(iterations=1)
     async def get_timers(self):
         async for document in db.timers.find():
             timers = {}
@@ -305,4 +317,4 @@ class Timer(commands.Cog):
 
 
 def prepare(bot):
-    bot.add_cog(Timer(bot))
+    bot.add_cog(Timers(bot))

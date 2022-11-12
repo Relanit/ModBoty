@@ -4,7 +4,8 @@ from datetime import datetime
 import twitchio
 from pytz import timezone
 from twitchio import BroadcasterTypeEnum, User
-from twitchio.ext import commands, routines
+from twitchio.ext.commands import Cog, command, Context
+from twitchio.ext.routines import routine
 from pytimeparse2 import parse
 import parsedatetime
 
@@ -32,19 +33,19 @@ def display_time(seconds: int, granularity: int = 2) -> str:
     return ", ".join(result[:granularity])
 
 
-class Vips(commands.Cog):
+class Vips(Cog):
     def __init__(self, bot):
         self.bot = bot
         self.check_unvips.start(stop_on_error=False)
 
-    @commands.command(
+    @command(
         name="vip",
         aliases=["unvip", "unvips", "delunvip"],
         cooldown={"per": 0, "gen": 5},
         description="Управление випами на канале. Полное описание - https://vk.cc/ciufvM",
         flags=["editor"],
     )
-    async def command(self, ctx: commands.Context):
+    async def command(self, ctx: Context):
         if ctx.command_alias not in ("unvips", "delunvip"):
             channel = await ctx.channel.user()
             if channel.broadcaster_type == BroadcasterTypeEnum.none:
@@ -96,7 +97,7 @@ class Vips(commands.Cog):
             await self.delunvip(ctx)
 
     @staticmethod
-    async def vip(ctx: commands.Context, channel: User, token: str, user_id: int):
+    async def vip(ctx: Context, channel: User, token: str, user_id: int):
         try:
             await channel.add_channel_vip(token, user_id)
         except twitchio.errors.HTTPException:
@@ -105,7 +106,7 @@ class Vips(commands.Cog):
 
         await ctx.reply(f"Добавлен VIP: {ctx.content.lstrip('@')}")
 
-    async def unvip(self, ctx: commands.Context, channel: User, token: str, user_id: int):
+    async def unvip(self, ctx: Context, channel: User, token: str, user_id: int):
         content = ctx.content.lower().split(maxsplit=1)
         login = content[0].lstrip("@")
         if len(content) == 1:
@@ -204,7 +205,45 @@ class Vips(commands.Cog):
 
         await ctx.reply(message)
 
-    @routines.routine(minutes=1.0)
+    async def unvips(self, ctx: Context):
+        unvips = await db.unvips.find_one({"channel": ctx.channel.name})
+        if not ctx.content:
+            unvips = [vip["login"] for vip in unvips.get("unvips", [])]
+
+            if not unvips:
+                await ctx.reply("На вашем канале нет отложенных анвипов")
+                return
+
+            await ctx.reply(f"Отложенные анвипы: {', '.join(unvips)}")
+        else:
+            login = ctx.content.lower()
+            unvip = [vip for vip in unvips.get("unvips", []) if vip["login"] == login]
+            if not unvip:
+                await ctx.reply(f"Анвип {login} не найден")
+                return
+
+            if time.time() > unvip[0]["unvip_time"] and unvip[0]["offline"] and ctx.channel.name in self.bot.streams:
+                await ctx.reply(f"{login} будет анвипнут после окончания стрима")
+                return
+
+            unvip_datetime = datetime.fromtimestamp(unvip[0]["unvip_time"], timezone("Europe/Moscow"))
+            date = f"{unvip_datetime:%Y.%m.%d %H:%M}"
+            await ctx.reply(f"Дата анвипа {login}: {date} по МСК{', вне стрима' if unvip[0]['offline'] else ''}")
+
+    @staticmethod
+    async def delunvip(ctx: Context):
+        login = ctx.content.lower()
+        found = await db.unvips.find_one({"channel": ctx.channel.name, "unvips.login": login}, {"unvips.$": 1})
+        if found:
+            await db.unvips.update_one(
+                {"channel": ctx.channel.name},
+                {"$pull": {"unvips": {"login": login}}},
+            )
+            await ctx.reply(f"Анвип {login} отменён")
+        else:
+            await ctx.reply(f"Анвип {login} не найден")
+
+    @routine(minutes=1.0)
     async def check_unvips(self):
         tokens = None
         async for document in db.unvips.find():
@@ -252,41 +291,6 @@ class Vips(commands.Cog):
                 await messageable.send(
                     f"Анвипнут{'ы' if len(unvips.values()) > 1 else ''}: {', '.join(unvips.values())}"
                 )
-
-    @staticmethod
-    async def unvips(ctx: commands.Context):
-        unvips = await db.unvips.find_one({"channel": ctx.channel.name})
-        if not ctx.content:
-            unvips = [vip["login"] for vip in unvips.get("unvips", [])]
-
-            if not unvips:
-                await ctx.reply("На вашем канале нет отложенных анвипов")
-                return
-
-            await ctx.reply(f"Отложенные анвипы: {', '.join(unvips)}")
-        else:
-            login = ctx.content.lower()
-            unvip = [vip for vip in unvips.get("unvips", []) if vip["login"] == login]
-            if not unvip:
-                await ctx.reply(f"Анвип {login} не найден")
-                return
-
-            unvip_datetime = datetime.fromtimestamp(unvip[0]["unvip_time"], timezone("Europe/Moscow"))
-            date = f"{unvip_datetime:%Y.%m.%d %H:%M}"
-            await ctx.reply(f"Дата анвипа {login}: {date} по МСК{', вне стрима' if unvip[0]['offline'] else ''}")
-
-    @staticmethod
-    async def delunvip(ctx: commands.Context):
-        login = ctx.content.lower()
-        found = await db.unvips.find_one({"channel": ctx.channel.name, "unvips.login": login}, {"unvips.$": 1})
-        if found:
-            await db.unvips.update_one(
-                {"channel": ctx.channel.name},
-                {"$pull": {"unvips": {"login": login}}},
-            )
-            await ctx.reply(f"Анвип {login} отменён")
-        else:
-            await ctx.reply(f"Анвип {login} не найден")
 
 
 def prepare(bot):

@@ -140,32 +140,44 @@ class Inspect(Cog):
                 await ctx.reply("Сначала настройте наблюдение - https://vk.cc/chCfJI ")
                 return
 
-            first_limit = data["first_limit"] if "first_limit" in data else False
-            second_limit = data["second_limit"] if "second_limit" in data else False
-            percent_limit = (
-                f'Лимит от всех сообщений в чате:  {data["percent_limit"]}%.' if "percent_limit" in data else False
+            await self.view_settings(ctx, data)
+        elif content in ("off", "in"):
+            await self.switch(ctx, data)
+        elif content.startswith("stats"):
+            await self.stats(ctx, data)
+        else:
+            await self.edit(ctx, data)
+
+    @staticmethod
+    async def view_settings(ctx: Context, data: dict):
+        first_limit = data.get("first_limit")
+        second_limit = data.get("second_limit")
+        percent_limit = (
+            f'Лимит от всех сообщений в чате:  {data["percent_limit"]}%.' if "percent_limit" in data else False
+        )
+
+        if first_limit:
+            first_limit = (
+                f'{first_limit["messages"]}/'
+                f'{first_limit["time_unit"] if first_limit["time_unit"] % 1 != 0 else int(first_limit["time_unit"])}'
+                f'{", " if second_limit else ""}'
+            )
+        if second_limit:
+            second_limit = (
+                f' {second_limit["messages"]}//'
+                f'{second_limit["time_unit"] if second_limit["time_unit"] % 1 != 0 else int(second_limit["time_unit"])}.'
             )
 
-            if first_limit:
-                first_limit = (
-                    f'{first_limit["messages"]}/'
-                    f'{first_limit["time_unit"] if first_limit["time_unit"] % 1 != 0 else int(first_limit["time_unit"])}'
-                    f'{", " if second_limit else ""}'
-                )
-            if second_limit:
-                second_limit = (
-                    f' {second_limit["messages"]}//'
-                    f'{second_limit["time_unit"] if second_limit["time_unit"] % 1 != 0 else int(second_limit["time_unit"])}.'
-                )
+        message = (
+            f'Статус: {"включено" if data["active"] else "выключено"}. '
+            f'Лимиты: {first_limit or ""}{second_limit or "."} {percent_limit or ""} '
+            f'Таймауты: {", ".join(map(str, data["timeouts"]))}. {"" if data["offline"] else "Только на стриме."}'
+        )
 
-            message = (
-                f'Статус: {"включено" if data["active"] else "выключено"}. '
-                f'Лимиты: {first_limit or ""}{second_limit or "."} {percent_limit or ""} '
-                f'Таймауты: {", ".join(map(str, data["timeouts"]))}. {"" if data["offline"] else "Только на стриме."}'
-            )
+        await ctx.reply(message)
 
-            await ctx.reply(message)
-        elif content == "on":
+    async def switch(self, ctx: Context, data: dict):
+        if ctx.content.lower() == "on":
             if data:
                 if ctx.channel.name not in self.limits and (ctx.channel.name in self.bot.streams or data["offline"]):
                     await self.set(ctx.channel.name)
@@ -173,15 +185,18 @@ class Inspect(Cog):
                 await ctx.reply("✅ Включено")
             else:
                 await ctx.reply("Сначала настройте наблюдение - https://vk.cc/chCfJI ")
-        elif content == "off":
-            if data:
-                if ctx.channel.name in self.limits:
-                    self.unset(ctx.channel.name)
-                await db.inspects.update_one({"channel": ctx.channel.name}, {"$set": {"active": False}})
-                await ctx.reply("❌ Выключено")
-            else:
-                await ctx.reply("Сначала настройте наблюдение - https://vk.cc/chCfJI ")
-        elif content == "stats":
+        elif data:
+            if ctx.channel.name in self.limits:
+                self.unset(ctx.channel.name)
+            await db.inspects.update_one({"channel": ctx.channel.name}, {"$set": {"active": False}})
+            await ctx.reply("❌ Выключено")
+        else:
+            await ctx.reply("Сначала настройте наблюдение - https://vk.cc/chCfJI ")
+
+    @staticmethod
+    async def stats(ctx: Context, data: dict):
+        content = ctx.content.lower()
+        if content == "stats":
             if not data or not data.get("stats"):
                 await ctx.reply("Статистика не найдена")
                 return
@@ -196,7 +211,7 @@ class Inspect(Cog):
                 top.append(f'{place}. {name} - {user[1]}{" отстранений" if place == 1 else ""}')
 
             await ctx.reply(f'Всего отстранено: {number}. Топ спамеров за стрим: {", ".join(top)}')
-        elif content.startswith("stats"):
+        else:
             if not data.get("stats"):
                 await ctx.reply("Статистика не найдена")
                 return
@@ -216,118 +231,117 @@ class Inspect(Cog):
                     break
 
             await ctx.reply(f"{place} место ({timeouts} отстранений)")
-        else:
-            content = content.split()
-            values = {"$set": {}, "$unset": {}}
 
-            for value in content:
-                if "/" in value:
-                    split, limit = ("//", "second_limit") if "//" in value else ("/", "first_limit")
+    async def edit(self, ctx: Context, data: dict):
+        content = ctx.content.lower().split()
+        values = {"$set": {}, "$unset": {}}
 
-                    if value.replace("/", ""):
-                        try:
-                            messages, time_unit = value.replace(",", ".").split(split)
-                            messages = int(messages)
-                            time_unit = round(float(time_unit), 1)
-                        except ValueError:
-                            await ctx.reply("Неверная запись времени или количества сообщений - https://vk.cc/chCfJI")
-                            return
+        for value in content:
+            if "/" in value:
+                split, limit = ("//", "second_limit") if "//" in value else ("/", "first_limit")
 
-                        if not 1 <= time_unit <= 60:
-                            await ctx.reply("Время не должно быть меньше 1 или больше 60 секунд")
-                            return
-                        if not 1 <= messages <= 60:
-                            await ctx.reply("Количество сообщений не должно быть меньше 1 или больше 60.")
-                            return
-
-                        values["$set"][limit] = {
-                            "messages": messages,
-                            "time_unit": time_unit,
-                        }
-                    elif (
-                        data
-                        and "first_limit" in data
-                        and "second_limit" in data
-                        and "first_limit" not in values["$unset"]
-                        and "second_limit" not in values["$unset"]
-                    ):
-                        values["$unset"][limit] = 1
-                    else:
-                        await ctx.reply("Чтобы удалить лимит, должен быть установлен другой")
-                        return
-                elif value.endswith("%"):
-                    percent_limit = value.strip("%")
-
-                    if percent_limit:
-                        try:
-                            percent_limit = int(percent_limit)
-                        except ValueError:
-                            await ctx.reply("Неверная запись лимита в процентах - https://vk.cc/chCfJI")
-                            return
-
-                        if not 0 <= percent_limit < 100:
-                            await ctx.reply("Неверная запись лимита в процентах - https://vk.cc/chCfJI")
-                            return
-
-                    if not percent_limit:
-                        values["$unset"]["percent_limit"] = 1
-                    else:
-                        values["$set"]["percent_limit"] = percent_limit
-                elif value == "online":
-                    values["$set"]["offline"] = False
-                elif value == "always":
-                    values["$set"]["offline"] = True
-                else:
+                if value.replace("/", ""):
                     try:
-                        timeout = int(value)
-                        values["$set"]["timeouts"] = (
-                            [] if "timeouts" not in values["$set"] else values["$set"]["timeouts"]
-                        )
-                        values["$set"]["timeouts"].append(timeout)
+                        messages, time_unit = value.replace(",", ".").split(split)
+                        messages = int(messages)
+                        time_unit = round(float(time_unit), 1)
                     except ValueError:
-                        await ctx.reply("Неверная запись таймаутов или команды - https://vk.cc/chCfJI")
+                        await ctx.reply("Неверная запись времени или количества сообщений - https://vk.cc/chCfJI")
                         return
 
-                    if not 1 <= timeout <= 1209600:
-                        await ctx.reply("Неверное значение таймаута")
+                    if not 1 <= time_unit <= 60:
+                        await ctx.reply("Время не должно быть меньше 1 или больше 60 секунд")
+                        return
+                    if not 1 <= messages <= 60:
+                        await ctx.reply("Количество сообщений не должно быть меньше 1 или больше 60.")
                         return
 
-            first_unit = values["$set"].get("first_limit", data.get("first_limit", {})).get("time_unit", 0)
-            second_unit = values["$set"].get("second_limit", data.get("second_limit", {})).get("time_unit", 0)
-            if first_unit and first_unit == second_unit:
-                await ctx.reply("Не должно быть двух лимитов с одинаковым временем")
-                return
-            elif first_unit > 15 and second_unit > 15:
-                await ctx.reply("Не должно быть больше одного лимита с временем более 15 секунд")
-                return
+                    values["$set"][limit] = {
+                        "messages": messages,
+                        "time_unit": time_unit,
+                    }
+                elif (
+                    data
+                    and "first_limit" in data
+                    and "second_limit" in data
+                    and "first_limit" not in values["$unset"]
+                    and "second_limit" not in values["$unset"]
+                ):
+                    values["$unset"][limit] = 1
+                else:
+                    await ctx.reply("Чтобы удалить лимит, должен быть установлен другой")
+                    return
+            elif value.endswith("%"):
+                percent_limit = value.strip("%")
 
-            on_insert = {"channel": ctx.channel.name, "active": False}
-            if not data:
-                if "first_limit" not in values["$set"] and "second_limit" not in values["$set"]:
-                    await ctx.reply("Для начала установите сообщения и время")
+                if percent_limit:
+                    try:
+                        percent_limit = int(percent_limit)
+                    except ValueError:
+                        await ctx.reply("Неверная запись лимита в процентах - https://vk.cc/chCfJI")
+                        return
+
+                    if not 0 <= percent_limit < 100:
+                        await ctx.reply("Неверная запись лимита в процентах - https://vk.cc/chCfJI")
+                        return
+
+                if not percent_limit:
+                    values["$unset"]["percent_limit"] = 1
+                else:
+                    values["$set"]["percent_limit"] = percent_limit
+            elif value == "online":
+                values["$set"]["offline"] = False
+            elif value == "always":
+                values["$set"]["offline"] = True
+            else:
+                try:
+                    timeout = int(value)
+                    values["$set"]["timeouts"] = [] if "timeouts" not in values["$set"] else values["$set"]["timeouts"]
+                    values["$set"]["timeouts"].append(timeout)
+                except ValueError:
+                    await ctx.reply("Неверная запись таймаутов или команды - https://vk.cc/chCfJI")
                     return
 
-                if "timeouts" not in values["$set"]:
-                    values["$set"]["timeouts"] = [60, 300, 600]
-                if "offline" not in values["$set"]:
-                    on_insert["offline"] = False
-            await db.inspects.update_one(
-                {"channel": ctx.channel.name},
-                {"$setOnInsert": on_insert, **values},
-                upsert=True,
-            )
+                if not 1 <= timeout <= 1209600:
+                    await ctx.reply("Неверное значение таймаута")
+                    return
 
-            if ctx.channel.name not in self.bot.streams:
-                if values["$set"].get("offline", data.get("offline")) and data.get("active"):
-                    await self.set(ctx.channel.name)
-                elif ctx.channel.name in self.limits:
-                    self.unset(ctx.channel.name)
-            elif ctx.channel.name in self.limits:
+        first_unit = values["$set"].get("first_limit", data.get("first_limit", {})).get("time_unit", 0)
+        second_unit = values["$set"].get("second_limit", data.get("second_limit", {})).get("time_unit", 0)
+        if first_unit and first_unit == second_unit:
+            await ctx.reply("Не должно быть двух лимитов с одинаковым временем")
+            return
+        elif first_unit > 15 and second_unit > 15:
+            await ctx.reply("Не должно быть больше одного лимита с временем более 15 секунд")
+            return
+
+        on_insert = {"channel": ctx.channel.name, "active": False}
+        if not data:
+            if "first_limit" not in values["$set"] and "second_limit" not in values["$set"]:
+                await ctx.reply("Для начала установите сообщения и время")
+                return
+
+            if "timeouts" not in values["$set"]:
+                values["$set"]["timeouts"] = [60, 300, 600]
+            if "offline" not in values["$set"]:
+                on_insert["offline"] = False
+        await db.inspects.update_one(
+            {"channel": ctx.channel.name},
+            {"$setOnInsert": on_insert, **values},
+            upsert=True,
+        )
+
+        if ctx.channel.name not in self.bot.streams:
+            if values["$set"].get("offline", data.get("offline")) and data.get("active"):
                 await self.set(ctx.channel.name)
+            elif ctx.channel.name in self.limits:
+                self.unset(ctx.channel.name)
+        elif ctx.channel.name in self.limits:
+            await self.set(ctx.channel.name)
 
-            await ctx.reply("Готово.")
+        await ctx.reply("Готово.")
 
-    async def set(self, channel: str) -> None:
+    async def set(self, channel: str):
         data = await db.inspects.find_one({"channel": channel})
         self.limits[channel] = {}
         self.timeouts[channel] = data["timeouts"]
@@ -349,7 +363,7 @@ class Inspect(Cog):
         if "percent_limit" in data:
             self.limits[channel]["percent_limit"] = data["percent_limit"]
 
-    def unset(self, channel: str) -> None:
+    def unset(self, channel: str):
         del self.limits[channel]
         del self.timeouts[channel]
         del self.warned_users[channel]

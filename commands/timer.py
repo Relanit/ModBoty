@@ -68,7 +68,7 @@ class Timers(Cog):
         elif ctx.command_alias == "delt":
             await self.delt(ctx, link)
         elif ctx.command_alias == "timers":
-            await self.list_timers(ctx)
+            await self.view_timers(ctx)
 
     async def timer(self, ctx: Context, link: str):
         key = {"channel": ctx.channel.name}
@@ -218,7 +218,7 @@ class Timers(Cog):
         await db.timers.update_one({"channel": ctx.channel.name}, {"$pull": {"timers": {"link": link}}})
         await ctx.reply(f"Удалён таймер {self.bot.prefix}{link}")
 
-    async def list_timers(self, ctx):
+    async def view_timers(self, ctx):
         if not self.timers.get(ctx.channel.name):
             message = "На вашем канале ещё нет таймеров"
         elif not ctx.content:

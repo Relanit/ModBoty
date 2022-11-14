@@ -110,7 +110,7 @@ class Link(Cog):
         if ctx.command_alias == "link":
             await self.link(ctx)
         elif ctx.command_alias == "links":
-            await self.list_links(ctx)
+            await self.view_links(ctx)
         elif ctx.command_alias == "del":
             await self.delete(ctx)
         elif ctx.command_alias == "aliases":
@@ -196,7 +196,7 @@ class Link(Cog):
         await db.links.update_one(key, values, upsert=True)
         await ctx.reply(message)
 
-    async def list_links(self, ctx: Context):
+    async def view_links(self, ctx: Context):
         if not self.links.get(ctx.channel.name, None):
             await ctx.reply("На вашем канале ещё нет ссылок")
             return

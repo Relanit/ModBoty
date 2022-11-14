@@ -135,11 +135,11 @@ class Inspect(Cog):
         content = ctx.content.lower()
         data = await db.inspects.find_one({"channel": ctx.channel.name}) or {}
 
-        if not content:
-            if not data:
-                await ctx.reply("Сначала настройте наблюдение - https://vk.cc/chCfJI ")
-                return
+        if (not content or content in ("on", "off") or content.startswith("stats")) and not data:
+            await ctx.reply("Сначала настройте наблюдение - https://vk.cc/chCfJI ")
+            return
 
+        if not content:
             await self.view_settings(ctx, data)
         elif content in ("off", "in"):
             await self.switch(ctx, data)
@@ -178,29 +178,24 @@ class Inspect(Cog):
 
     async def switch(self, ctx: Context, data: dict):
         if ctx.content.lower() == "on":
-            if data:
-                if ctx.channel.name not in self.limits and (ctx.channel.name in self.bot.streams or data["offline"]):
-                    await self.set(ctx.channel.name)
-                await db.inspects.update_one({"channel": ctx.channel.name}, {"$set": {"active": True}})
-                await ctx.reply("✅ Включено")
-            else:
-                await ctx.reply("Сначала настройте наблюдение - https://vk.cc/chCfJI ")
-        elif data:
+            if ctx.channel.name not in self.limits and (ctx.channel.name in self.bot.streams or data["offline"]):
+                await self.set(ctx.channel.name)
+            await db.inspects.update_one({"channel": ctx.channel.name}, {"$set": {"active": True}})
+            await ctx.reply("✅ Включено")
+        else:
             if ctx.channel.name in self.limits:
                 self.unset(ctx.channel.name)
             await db.inspects.update_one({"channel": ctx.channel.name}, {"$set": {"active": False}})
             await ctx.reply("❌ Выключено")
-        else:
-            await ctx.reply("Сначала настройте наблюдение - https://vk.cc/chCfJI ")
 
     @staticmethod
     async def stats(ctx: Context, data: dict):
         content = ctx.content.lower()
-        if content == "stats":
-            if not data or not data.get("stats"):
-                await ctx.reply("Статистика не найдена")
-                return
+        if not data.get("stats"):
+            await ctx.reply("Статистика не найдена")
+            return
 
+        if content == "stats":
             items = data["stats"].items()
             sorted_users = sorted(items, key=lambda x: x[1], reverse=True)
             number = len(sorted_users)
@@ -212,10 +207,6 @@ class Inspect(Cog):
 
             await ctx.reply(f'Всего отстранено: {number}. Топ спамеров за стрим: {", ".join(top)}')
         else:
-            if not data.get("stats"):
-                await ctx.reply("Статистика не найдена")
-                return
-
             user = content.split()[1]
             if user not in data["stats"]:
                 await ctx.reply("У пользователя 0 отстранений")

@@ -1,14 +1,16 @@
 import asyncio
 import os
 import time
-from typing import Generator, TypedDict
+from typing import Generator, TypedDict, Literal
 
 from twitchio.ext.commands import Cog, command, Context
 from twitchio import Message
 
 reason = 'Сообщение, содержащее запрещённую фразу: "%s" (от ModBoty). Начато %s'
 
-LoggedMessage = TypedDict("LoggedMessage", {"author": str, "content": str, "first-msg": str, "time": float})
+LoggedMessage = TypedDict(
+    "LoggedMessage", {"author": str, "content": str, "first-msg": Literal["0", "1"], "time": float}
+)
 
 
 def most_common_substring(strings: list[str]) -> tuple[str, int]:
@@ -38,7 +40,9 @@ class MassBan(Cog):
         self.bot = bot
         self.ban_phrases: dict[str, str] = {}
         self.queue: dict[str, list[str]] = {}
-        self.message_history: dict[str, list[LoggedMessage]] = {channel: [] for channel in os.getenv("CHANNELS").split("&")}
+        self.message_history: dict[str, list[LoggedMessage]] = {
+            channel: [] for channel in os.getenv("CHANNELS").split("&")
+        }
 
     @Cog.event()
     async def event_message(self, message: Message):

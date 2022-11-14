@@ -18,7 +18,7 @@ class ModBoty(Bot, Cooldown):
             initial_channels=os.getenv("CHANNELS").split("&"),
             prefix="!",
         )
-        self.admins: list[str] = ["relanit"]
+        self.admins = ["relanit"]
         self.editors: dict[str, list[str]] = {}
         self.editor_commands: dict[str, list[str]] = {}
         self.streams: list[str] = []

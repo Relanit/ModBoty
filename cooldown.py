@@ -1,21 +1,22 @@
 import time
+from typing import Literal
 
 from twitchio import Message
 
 
-def get_cooldown_end(cooldown: dict[str, int]) -> (float, float):
+def get_cooldown_end(cooldown: dict[Literal["per", "gen"], int]) -> (float, float):
     """Returns personal and general cooldown ends"""
     per_end = time.time() + cooldown["per"]
     gen_end = time.time() + cooldown["gen"]
     return per_end, gen_end
 
 
-cooldown = dict[str, float | dict[str, float]]
+cd = dict[str, float | dict[str, float]]
 
 
 class Cooldown:
     def __init__(self, channels: list[str]):
-        self.cooldowns: dict[str, dict[str, cooldown]] = {channel: {} for channel in channels}
+        self.cooldowns: dict[str, dict[str, cd]] = {channel: {} for channel in channels}
 
     async def check_command(self, command: str, message: Message, admin: bool = False) -> bool | None:
         """

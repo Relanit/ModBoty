@@ -154,12 +154,12 @@ class Timers(Cog):
                 return
         elif timer.get("active") and self.timers[ctx.channel.name].get(link):
             timers = 0
-            t = self.timers[ctx.channel.name][link]
-            if t["interval"] < 3:
-                if t["number"] > 3:
+            current_timer = self.timers[ctx.channel.name][link]
+            if current_timer["interval"] < 3:
+                if current_timer["number"] > 3:
                     await ctx.reply("Таймеры с периодом меньше трёх минут могут отправлять не более трёх сообщений")
                     return
-                if not t.get("active", True):
+                if not current_timer.get("active", True):
                     timers = 1
             for l, t in self.timers.get(ctx.channel.name, {}).items():
                 if t["interval"] < 3 and t.get("active", True) and l != link:
@@ -169,7 +169,7 @@ class Timers(Cog):
                 return
 
             timers = 0
-            if t["number"] > 5 and not t.get("active", True):
+            if current_timer["number"] > 5 and not current_timer.get("active", True):
                 timers = 1
             for l, t in self.timers.get(ctx.channel.name, {}).items():
                 if t["number"] > 5 and t.get("active", True) and l != link:

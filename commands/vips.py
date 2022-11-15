@@ -23,7 +23,7 @@ intervals = (
 
 
 def display_time(seconds: int, granularity: int = 2) -> str:
-    """ "Returns human-readable time from number of seconds"""
+    """Returns human-readable time from number of seconds"""
     result = []
 
     for name, count in intervals:

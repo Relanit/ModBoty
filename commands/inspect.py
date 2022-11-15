@@ -141,7 +141,7 @@ class Inspect(Cog):
 
         if not content:
             await self.view_settings(ctx, data)
-        elif content in ("off", "in"):
+        elif content in ("off", "on"):
             await self.switch(ctx, data)
         elif content.startswith("stats"):
             await self.stats(ctx, data)

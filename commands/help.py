@@ -96,8 +96,7 @@ class Help(Cog):
             private = data["links"][0]["private"] if "private" in data["links"][0] else data["private"]
 
             timer = ""
-            cog = self.bot.get_cog("Timer")
-
+            cog = self.bot.get_cog("Timers")
             if command_name in cog.timers.get(ctx.channel.name, []):
                 offline_raw = await db.timers.find_one({"channel": ctx.channel.name}, {"offline": 1})
                 offline = offline_raw["offline"]
@@ -108,7 +107,6 @@ class Help(Cog):
                     f'{", с announce" if timer.get("announce", False) in timer else ""}'
                     f'{"." if timer.get("offline", offline) else ", только на стриме."}'
                 )
-
             message = (
                 f'{self.bot.prefix}{command_name}{f" {aliases}." if aliases else "."} Доступ: '
                 f'{"приватный" if private else "публичный"}. Кд: общий 3с. {timer}'

@@ -107,6 +107,7 @@ class Link(Cog):
         aliases=["links", "del", "aliases", "public", "announce"],
         cooldown={"per": 0, "gen": 3},
         description="Кастомные команды для спама (от модераторов) или вызова пользователями. Полное описание - https://vk.cc/chCfKt ",
+        flags=["bot-vip"],
     )
     async def command(self, ctx: Context):
         if not (ctx.channel.bot_is_vip or ctx.channel.bot_is_mod):
@@ -382,8 +383,8 @@ class Link(Cog):
                 values["$unset"] = {"links.$.announce": 1}
             key["links.name"] = link
 
-        elif content_split[0] in ["blue", "green", "orange", "purple", "primary"]:
-            values["$set"] = {"announce": content_split[0]}
+        elif ctx.content.lower() in ["blue", "green", "orange", "purple", "primary"]:
+            values["$set"] = {"announce": ctx.content.lower()}
             message = "Изменён цвет announce"
         else:
             await ctx.reply("Неверный цвет или название ссылки, доступные цвета: blue, green, orange, purple, primary")

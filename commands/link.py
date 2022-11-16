@@ -40,7 +40,11 @@ class Link(Cog):
             if link in self.links.get(message.channel.name, []) or (
                 link := self.links_aliases.get(message.channel.name, {}).get(link, "")
             ):
-                if not message.author.is_mod and time.time() < self.cooldowns[message.channel.name].get(link, 0):
+                if (
+                    (message.author.is_mod and time.time() < self.cooldowns[message.channel.name].get(link, 0) - 2)
+                    or not message.author.is_mod
+                    and time.time() < self.cooldowns[message.channel.name].get(link, 0)
+                ):
                     return
 
                 data = await db.links.find_one(
@@ -71,6 +75,8 @@ class Link(Cog):
 
                         self.mod_cooldowns[message.channel.name] = time.time() + 3
                         self.cooldowns[message.channel.name][link] = time.time() + 5
+                    elif time.time() < self.cooldowns[message.channel.name].get(link, 0) - 2:
+                        return
                     else:
                         self.cooldowns[message.channel.name][link] = time.time() + 3
 
@@ -185,7 +191,7 @@ class Link(Cog):
             values = {
                 "$setOnInsert": {
                     "channel": ctx.channel.name,
-                    "private": True,
+                    "private": False,
                     "announce": "primary",
                 },
                 "$addToSet": {"links": {"name": link, "text": text}},
@@ -246,7 +252,7 @@ class Link(Cog):
                 }  # remove aliases of link
 
             self.cooldowns.get(ctx.channel.name, {}).pop(link, None)
-            cog = self.bot.get_cog("Timer")
+            cog = self.bot.get_cog("Timers")
 
             if link in cog.timers.get(ctx.channel.name, []):
                 await db.timers.update_one({"channel": ctx.channel.name}, {"$pull": {"timers": {"link": link}}})

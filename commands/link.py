@@ -389,7 +389,7 @@ class Link(Cog):
             await ctx.reply("Неверный цвет, доступные цвета: blue, green, orange, purple, primary")
             return
         else:
-            await ctx.reply(f"Команда {content_split[1]} не найдена")
+            await ctx.reply(f"Команда {content_split[0]} не найдена")
             return
 
         await db.links.update_one(key, values)

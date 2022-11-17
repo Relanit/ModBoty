@@ -1,4 +1,5 @@
 import time
+import traceback
 from datetime import datetime
 
 import twitchio
@@ -63,8 +64,8 @@ class Vips(Cog):
 
             token = fernet.decrypt(data["user_tokens"][0]["access_token"].encode()).decode()
 
-            content = ctx.content.lower().lstrip("@")
-            user = await self.bot.fetch_users(names=[content])
+            username = ctx.content.split(maxsplit=1)[0].lstrip("@")
+            user = await self.bot.fetch_users(names=[username])
 
             if not user:
                 await ctx.reply("Пользователь не найден")
@@ -78,18 +79,19 @@ class Vips(Cog):
 
             if ctx.command_alias == "vip":
                 if vip:
-                    await ctx.reply(f"{content} уже VIP")
+                    await ctx.reply(f"{username} уже VIP")
                     return
 
                 mod = await channel.fetch_moderators(token, userids=[user[0].id])
                 if mod:
-                    await ctx.reply(f"{content} уже модератор")
+                    await ctx.reply(f"{username} уже модератор")
                     return
                 await self.vip(ctx, channel, token, user[0].id)
             else:
                 if not vip:
-                    await ctx.reply(f"{content} не VIP")
+                    await ctx.reply(f"{username} не VIP")
                     return
+
                 await self.unvip(ctx, channel, token, user[0].id)
         elif ctx.command_alias == "unvips":
             await self.unvips(ctx)
@@ -202,7 +204,6 @@ class Vips(Cog):
                     },
                 },
             )
-
         await ctx.reply(message)
 
     async def unvips(self, ctx: Context):

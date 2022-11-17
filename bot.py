@@ -99,15 +99,13 @@ class ModBoty(Bot, Cooldown):
         data = await db.config.find_one({"_id": 1})
 
         if data["expire_time"] - time.time() < 900:  # refresh bot user token
-            url = f'https://id.twitch.tv/oauth2/token?client_id={config["Twitch"]["client_id"]}&client_secret={config["Twitch"]["client_secret"]}&refresh_token={config["Twitch"]["refresh_token"]}&grant_type=refresh_token'
+            url = f'https://id.twitch.tv/oauth2/token?client_id={config["Twitch"]["client_id"]}&client_secret={config["Twitch"]["client_secret"]}&refresh_token={config["Bot"]["refresh_token"]}&grant_type=refresh_token'
 
             async with aiohttp.ClientSession() as session:
                 async with session.post(url, headers={"Content-Type": "application/x-www-form-urlencoded"}) as response:
                     response = await response.json()
 
-            self._http.token = response["access_token"]
-            self._connection._token = response["access_token"]
-            config["Bot"]["access_token"] = response["access_token"]
+            self._http.token = self._connection._token = config["Bot"]["access_token"] = response["access_token"]
             config["Bot"]["refresh_token"] = response["refresh_token"]
             enc_token = fernet.encrypt(response["access_token"].encode()).decode()
             enc_refresh = fernet.encrypt(response["refresh_token"].encode()).decode()

@@ -248,10 +248,7 @@ class Vips(Cog):
     async def check_unvips(self):
         tokens = None
         async for document in db.unvips.find():
-            messageable = None
-            channel = None
-            token = None
-            vips = None
+            messageable = channel = token = vips = None
             unvips = {}
             already_unvipped = []
             for unvip in document["unvips"]:

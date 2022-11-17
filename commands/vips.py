@@ -256,17 +256,20 @@ class Vips(Cog):
                     (unvip["offline"] and document["channel"] not in self.bot.streams) or not unvip["offline"]
                 ):
                     if not messageable:
+                        if not tokens:
+                            data = await db.config.find_one({"_id": 1})
+                            tokens = {user["login"]: user["access_token"] for user in data["user_tokens"]}
+
+                        if document["channel"] not in tokens:
+                            break
+
+                        token = fernet.decrypt(tokens[document["channel"]].encode()).decode()
+
                         messageable = self.bot.get_channel(document["channel"])
                         try:
                             channel = await messageable.user()
                         except AttributeError:
                             break
-
-                        if not tokens:
-                            data = await db.config.find_one({"_id": 1})
-                            tokens = {user["login"]: user["access_token"] for user in data["user_tokens"]}
-
-                        token = fernet.decrypt(tokens[document["channel"]].encode()).decode()
 
                         try:
                             vips = await channel.fetch_channel_vips(token, first=100)

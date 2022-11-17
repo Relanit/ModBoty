@@ -36,8 +36,12 @@ class Predictions(Cog):
             await ctx.reply("Для работы этой команды стримеру нужно пройти авторизацию - https://vk.cc/chZxeI")
             return
 
+        if not predictions and ctx.command_alias in ("reppred", "endpred", "delpred", "lockpred"):
+            await ctx.reply("На вашем канале ещё не было ставок")
+            return
+
         if ctx.command_alias == "pred":
-            if predictions[0].ended_at is None:
+            if predictions and predictions[0].ended_at is None:
                 await ctx.reply("Ставка уже активна")
                 return
             await self.pred(ctx, channel, token)

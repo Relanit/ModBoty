@@ -1,11 +1,10 @@
 import asyncio
-import os
 
 from twitchio.ext.routines import routine
 from twitchio.ext.commands import Cog, command, Context
 from twitchio import Message
 
-from config import db
+from config import db, config
 
 reason = "Сообщение, содержащее запрещённую фразу (от ModBoty)"
 
@@ -46,12 +45,9 @@ class Banwords(Cog):
         aliases=["mword", "delb", "delm", "bwords", "mwords"],
         cooldown={"per": 0, "gen": 3},
         description="Запрещённые слова, за отправку которых пользователь получает бан/мут. Полное описание - https://vk.cc/chCfIC ",
+        flags=["bot-mod"],
     )
     async def command(self, ctx: Context):
-        if not ctx.channel.bot_is_mod:
-            await ctx.reply("Боту необходима модерка для работы этой команды")
-            return
-
         if not ctx.content and ctx.command_alias not in ("bwords", "mwords"):
             await ctx.reply("Недостаточно значений - https://vk.cc/chCfIC")
             return
@@ -213,7 +209,7 @@ class Banwords(Cog):
             user = await ctx.author.user()
             await ctx.reply("Список банвордов отправлен в личные сообщения")
             await user.send_whisper(
-                token=os.getenv("TOKEN"),
+                token=config["Bot"]["access_token"],
                 from_user_id=self.bot.user_id,
                 to_user_id=user.id,
                 message=message,
@@ -221,7 +217,7 @@ class Banwords(Cog):
             if message2:
                 await asyncio.sleep(1)
                 await user.send_whisper(
-                    token=os.getenv("TOKEN"),
+                    token=config["Bot"]["access_token"],
                     from_user_id=self.bot.user_id,
                     to_user_id=user.id,
                     message=message2,
@@ -254,7 +250,7 @@ class Banwords(Cog):
             user = await ctx.author.user()
             await ctx.reply("Список мутвордов отправлен в личные сообщения")
             await user.send_whisper(
-                token=os.getenv("TOKEN"),
+                token=config["Bot"]["access_token"],
                 from_user_id=self.bot.user_id,
                 to_user_id=user.id,
                 message=message,
@@ -262,7 +258,7 @@ class Banwords(Cog):
             if message2:
                 await asyncio.sleep(1)
                 await user.send_whisper(
-                    token=os.getenv("TOKEN"),
+                    token=config["Bot"]["access_token"],
                     from_user_id=self.bot.user_id,
                     to_user_id=user.id,
                     message=message2,

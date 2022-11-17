@@ -1,12 +1,10 @@
-import os
-
 import aiohttp
 import twitchio
 from twitchio import BroadcasterTypeEnum, User
 from twitchio.ext.commands import Cog, command, Context
 from twitchio.models import Prediction
 
-from config import db, fernet
+from config import db, fernet, config
 
 
 class Predictions(Cog):
@@ -15,7 +13,7 @@ class Predictions(Cog):
 
     @command(
         name="pred",
-        aliases=["endpred", "delpred", "lockpred"],
+        aliases=["endpred", "delpred", "lockpred", "reppred"],
         cooldown={"per": 0, "gen": 3},
         description="Создание и редактирование ставок. Полное описание - https://vk.cc/chZLJH",
     )
@@ -43,6 +41,11 @@ class Predictions(Cog):
                 await ctx.reply("Ставка уже активна")
                 return
             await self.pred(ctx, channel, token)
+        elif ctx.command_alias == "reppred":
+            if predictions[0].ended_at is None:
+                await ctx.reply("Ставка уже активна")
+                return
+            await self.reppred(ctx, channel, token, predictions[0])
         else:
             if predictions[0].ended_at is not None:
                 await ctx.reply("Нет активных ставок")
@@ -103,7 +106,7 @@ class Predictions(Cog):
             url = "https://api.twitch.tv/helix/predictions"
             headers = {
                 "Authorization": f"Bearer {token}",
-                "Client-Id": os.getenv("CLIENT_ID"),
+                "Client-Id": config["Twitch"]["client_id"],
                 "Content-Type": "application/json",
             }
 
@@ -118,9 +121,6 @@ class Predictions(Cog):
 
         if response.get("status") == 403:
             await ctx.reply("На вашем канале недоступны баллы канала")
-            return
-        elif response.get("status") == 401:
-            await ctx.reply("Для работы этой команды стримеру нужно пройти авторизацию - https://vk.cc/chZxeI")
             return
 
         await ctx.reply(f"Создана ставка - {title}")
@@ -159,6 +159,31 @@ class Predictions(Cog):
     async def lockpred(ctx: Context, channel: User, token: str, prediction: Prediction):
         await channel.end_prediction(token, prediction.prediction_id, "LOCKED")
         await ctx.reply("Ставка заблокирована")
+
+    @staticmethod
+    async def reppred(ctx: Context, channel: User, token: str, prediction: Prediction):
+        async with aiohttp.ClientSession() as session:
+            url = "https://api.twitch.tv/helix/predictions"
+            headers = {
+                "Authorization": f"Bearer {token}",
+                "Client-Id": config["Twitch"]["client_id"],
+                "Content-Type": "application/json",
+            }
+
+            json = {
+                "broadcaster_id": str(channel.id),
+                "title": prediction.title,
+                "outcomes": [{"title": outcome.title} for outcome in prediction.outcomes],
+                "prediction_window": prediction.prediction_window,
+            }
+            async with session.post(url, headers=headers, json=json) as response:
+                response = await response.json()
+
+            if response.get("status") == 403:
+                await ctx.reply("На вашем канале недоступны баллы канала")
+                return
+
+        await ctx.reply(f"Создана ставка - {prediction.title}")
 
 
 def prepare(bot):

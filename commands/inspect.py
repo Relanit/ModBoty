@@ -126,12 +126,9 @@ class Inspect(Cog):
         name="inspect",
         cooldown={"per": 0, "gen": 3},
         description="Лимиты на количество отправленных сообщений. Полное описание - https://vk.cc/chCfJI ",
+        flags=["bot-mod"],
     )
     async def inspect(self, ctx: Context):
-        if not ctx.channel.bot_is_mod:
-            await ctx.reply("Боту необходима модерка для работы этой команды")
-            return
-
         content = ctx.content.lower()
         data = await db.inspects.find_one({"channel": ctx.channel.name}) or {}
 

@@ -1,4 +1,5 @@
 import asyncio
+import time
 
 from twitchio.ext.commands import Cog, command, Context
 
@@ -11,12 +12,9 @@ class Spam(Cog):
         name="spam",
         cooldown={"per": 0, "gen": 10},
         description="Спам текстом указанное количество раз (до 15).",
+        flags=["bot-vip"],
     )
     async def send(self, ctx: Context):
-        if not (ctx.channel.bot_is_vip or ctx.channel.bot_is_mod):
-            await ctx.reply("Боту необходима випка или модерка для работы этой команды")
-            return
-
         content_split = ctx.content.split()
         if not content_split:
             await ctx.reply("Введите текст")

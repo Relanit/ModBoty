@@ -41,7 +41,10 @@ class Link(Cog):
                 link := self.links_aliases.get(message.channel.name, {}).get(link, "")
             ):
                 if (
-                    (message.author.is_mod and time.time() < self.cooldowns[message.channel.name].get(link, 0) - 2)
+                    (
+                        (message.author.is_mod or message.author.name in self.bot.admins)
+                        and time.time() < self.cooldowns[message.channel.name].get(link, 0) - 2
+                    )
                     or not message.author.is_mod
                     and time.time() < self.cooldowns[message.channel.name].get(link, 0)
                 ):
@@ -54,7 +57,7 @@ class Link(Cog):
                 private = data["private"] if "private" not in data["links"][0] else data["links"][0]["private"]
                 text = data["links"][0]["text"]
 
-                if message.author.is_mod:
+                if message.author.is_mod or message.author.name in self.bot.admins:
                     content = " ".join(content.split()[1:3])
                     announce = ""
 
@@ -110,10 +113,6 @@ class Link(Cog):
         flags=["bot-vip"],
     )
     async def command(self, ctx: Context):
-        if not (ctx.channel.bot_is_vip or ctx.channel.bot_is_mod):
-            await ctx.reply("Боту необходима випка или модерка для работы этой команды")
-            return
-
         if ctx.command_alias == "link":
             await self.link(ctx)
         elif ctx.command_alias == "links":
@@ -386,8 +385,11 @@ class Link(Cog):
         elif ctx.content.lower() in ["blue", "green", "orange", "purple", "primary"]:
             values["$set"] = {"announce": ctx.content.lower()}
             message = "Изменён цвет announce"
+        elif len(content_split) == 1:
+            await ctx.reply("Неверный цвет, доступные цвета: blue, green, orange, purple, primary")
+            return
         else:
-            await ctx.reply("Неверный цвет или название ссылки, доступные цвета: blue, green, orange, purple, primary")
+            await ctx.reply(f"Команда {content_split[1]} не найдена")
             return
 
         await db.links.update_one(key, values)

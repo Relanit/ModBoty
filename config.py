@@ -1,22 +1,25 @@
-import os
 import time
+import configparser
 
 import aiohttp
 import motor.motor_asyncio
 from cryptography.fernet import Fernet
 
 
-client = motor.motor_asyncio.AsyncIOMotorClient(os.getenv("MONGO"))
+config = configparser.ConfigParser()
+config.read("config.ini")
+
+client = motor.motor_asyncio.AsyncIOMotorClient(config["Mongo"]["mongo"])
 db = client.modboty
 
-fernet = Fernet(os.getenv("KEY").encode())
+fernet = Fernet(config["Mongo"]["key"].encode())
 
 
 async def get_config():
     data = await db.config.find_one({"_id": 1})
     access_token = fernet.decrypt(data["access_token"].encode()).decode()
     refresh_token = fernet.decrypt(data["refresh_token"].encode()).decode() if "refresh_token" in data else None
-    os.environ["CHANNELS"] = "&".join(data["channels"])
+    config["Bot"]["channels"] = config["Bot"]["channels"] or "&".join(data["channels"])
 
     url = "https://id.twitch.tv/oauth2/validate"
     headers = {"Authorization": f"OAuth {access_token}"}
@@ -24,7 +27,7 @@ async def get_config():
     async with aiohttp.ClientSession() as session:
         async with session.get(url, headers=headers) as resp:
             if resp.status == 401:
-                url = f'https://id.twitch.tv/oauth2/token?client_id={os.getenv("CLIENT_ID")}&client_secret={os.getenv("CLIENT_SECRET")}&refresh_token={refresh_token}&grant_type=refresh_token'
+                url = f'https://id.twitch.tv/oauth2/token?client_id={config["Twitch"]["client_id"]}&client_secret={config["Twitch"]["client_secret"]}&refresh_token={refresh_token}&grant_type=refresh_token'
 
                 async with session.post(
                     url,
@@ -47,8 +50,8 @@ async def get_config():
                     },
                 )
 
-    os.environ["REFRESH_TOKEN"] = refresh_token
-    os.environ["TOKEN"] = access_token
+    config["Bot"]["refresh_token"] = refresh_token
+    config["Bot"]["access_token"] = access_token
 
 
 loop = client.get_io_loop()

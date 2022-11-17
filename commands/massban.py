@@ -1,10 +1,11 @@
 import asyncio
-import os
 import time
 from typing import Generator, TypedDict, Literal
 
 from twitchio.ext.commands import Cog, command, Context
 from twitchio import Message
+
+from config import config
 
 reason = 'Сообщение, содержащее запрещённую фразу: "%s" (от ModBoty). Начато %s'
 
@@ -41,7 +42,7 @@ class MassBan(Cog):
         self.ban_phrases: dict[str, str] = {}
         self.queue: dict[str, list[str]] = {}
         self.message_history: dict[str, list[LoggedMessage]] = {
-            channel: [] for channel in os.getenv("CHANNELS").split("&")
+            channel: [] for channel in config["Bot"]["channels"].split("&")
         }
 
     @Cog.event()
@@ -49,7 +50,9 @@ class MassBan(Cog):
         if message.echo:
             return
 
-        if message.channel.name in self.ban_phrases and message.author.is_mod:
+        if message.channel.name in self.ban_phrases and (
+            message.author.is_mod or message.author.name in self.bot.admins
+        ):
             if message.content.startswith(self.bot.prefix):
                 content = message.content.lstrip(self.bot.prefix)
                 if not content:
@@ -87,12 +90,9 @@ class MassBan(Cog):
         aliases=["mt", "m"],
         cooldown={"per": 0, "gen": 60},
         description="Бан/мут пользователей, написавших сообщение с указанной фразой. Полное описание - https://vk.cc/chCfLq ",
+        flags=["bot-mod"],
     )
     async def mass_ban(self, ctx: Context):
-        if not ctx.channel.bot_is_mod:
-            await ctx.reply("Боту необходима модерка для работы этой команды")
-            return
-
         content = ban_phrase = ctx.content.lower()
 
         if not content and ctx.command_alias in ("mt", "m"):

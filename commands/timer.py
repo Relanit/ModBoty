@@ -40,12 +40,9 @@ class Timers(Cog):
         aliases=["delt", "timers"],
         cooldown={"per": 0, "gen": 3},
         description="Автоматическая отправка команд с определённым интервалом. Полное описание - https://vk.cc/chCfMF ",
+        flags=["bot-vip"],
     )
     async def command(self, ctx: Context):
-        if not (ctx.channel.bot_is_vip or ctx.channel.bot_is_mod):
-            await ctx.reply("Боту необходима випка или модерка для работы этой команды")
-            return
-
         if ctx.command_alias != "timers":
             content = ctx.content.split(maxsplit=1)
             if not content:

@@ -1,4 +1,3 @@
-import os
 import time
 from pathlib import Path
 
@@ -7,15 +6,17 @@ from twitchio.ext.commands import Bot, Context, CommandNotFound
 from twitchio.ext.routines import routine
 from twitchio import Message
 
-from config import db, fernet
+from config import config, db, fernet
 from cooldown import Cooldown
+
+time.sleep(30)
 
 
 class ModBoty(Bot, Cooldown):
     def __init__(self):
         super().__init__(
-            token=os.getenv("TOKEN"),
-            initial_channels=os.getenv("CHANNELS").split("&"),
+            token=config["Bot"]["access_token"],
+            initial_channels=config["Bot"]["channels"].split("&"),
             prefix="!",
         )
         self.admins = ["relanit"]
@@ -29,7 +30,7 @@ class ModBoty(Bot, Cooldown):
         self.check_streams.start(stop_on_error=False)
         self.refresh_tokens.start(stop_on_error=False)
 
-        Cooldown.__init__(self, os.getenv("CHANNELS").split("&"))
+        Cooldown.__init__(self, config["Bot"]["channels"].split("&"))
 
     async def event_ready(self):
         print(f"Logged in as {self.nick}")
@@ -63,7 +64,7 @@ class ModBoty(Bot, Cooldown):
 
     @routine(minutes=1.0, iterations=0)
     async def check_streams(self):
-        channels = os.getenv("CHANNELS").split("&")
+        channels = config["Bot"]["channels"].split("&")
         streams = await self.fetch_streams(user_logins=channels)
 
         for channel in channels:
@@ -89,8 +90,8 @@ class ModBoty(Bot, Cooldown):
                 channel not in self.cogs["Inspect"].limits or time.time() % 36000 < 60
             ):  # set or refresh inspect data in offline chat if enabled
                 data = await db.inspects.find_one({"channel": channel})
-
                 if data and data["active"] and data["offline"]:
+
                     await self.cogs["Inspect"].set(channel)
 
     @routine(minutes=5, iterations=0)
@@ -98,7 +99,7 @@ class ModBoty(Bot, Cooldown):
         data = await db.config.find_one({"_id": 1})
 
         if data["expire_time"] - time.time() < 900:  # refresh bot user token
-            url = f'https://id.twitch.tv/oauth2/token?client_id={os.getenv("CLIENT_ID")}&client_secret={os.getenv("CLIENT_SECRET")}&refresh_token={os.getenv("REFRESH_TOKEN")}&grant_type=refresh_token'
+            url = f'https://id.twitch.tv/oauth2/token?client_id={config["Twitch"]["client_id"]}&client_secret={config["Twitch"]["client_secret"]}&refresh_token={config["Twitch"]["refresh_token"]}&grant_type=refresh_token'
 
             async with aiohttp.ClientSession() as session:
                 async with session.post(url, headers={"Content-Type": "application/x-www-form-urlencoded"}) as response:
@@ -106,8 +107,8 @@ class ModBoty(Bot, Cooldown):
 
             self._http.token = response["access_token"]
             self._connection._token = response["access_token"]
-            os.environ["TOKEN"] = response["access_token"]
-            os.environ["REFRESH_TOKEN"] = response["refresh_token"]
+            config["Bot"]["access_token"] = response["access_token"]
+            config["Bot"]["refresh_token"] = response["refresh_token"]
             enc_token = fernet.encrypt(response["access_token"].encode()).decode()
             enc_refresh = fernet.encrypt(response["refresh_token"].encode()).decode()
             await db.config.update_one(
@@ -124,7 +125,7 @@ class ModBoty(Bot, Cooldown):
         for user in data.get("user_tokens", []):  # refresh channels' user tokens
             if user["expire_time"] - time.time() < 900:
                 refresh_token = fernet.decrypt(user["refresh_token"].encode()).decode()
-                url = f'https://id.twitch.tv/oauth2/token?client_id={os.getenv("CLIENT_ID")}&client_secret={os.getenv("CLIENT_SECRET")}&refresh_token={refresh_token}&grant_type=refresh_token'
+                url = f'https://id.twitch.tv/oauth2/token?client_id={config["Twitch"]["client_id"]}&client_secret={config["Twitch"]["client_secret"]}&refresh_token={refresh_token}&grant_type=refresh_token'
 
                 async with aiohttp.ClientSession() as session:
                     async with session.post(

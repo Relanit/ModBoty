@@ -1,8 +1,6 @@
-import os
-
 from twitchio.ext.commands import Cog, command, Context
 
-from config import db
+from config import db, config
 
 
 class JoinChannel(Cog):
@@ -17,7 +15,7 @@ class JoinChannel(Cog):
             if not user:
                 await ctx.reply("Канал не найден")
                 return
-            elif channel in os.environ["CHANNELS"]:
+            elif channel in config["Bot"]["channels"]:
                 await ctx.reply("Канал уже подключён")
                 return
 
@@ -26,7 +24,7 @@ class JoinChannel(Cog):
             cog.message_history[channel] = []
             await db.config.update_one({"_id": 1}, {"$addToSet": {"channels": channel}})
             await self.bot.join_channels([channel])
-            os.environ["CHANNELS"] = os.environ["CHANNELS"] + "&" + channel
+            config["Bot"]["channels"] = config["Bot"]["channels"] + "&" + channel
             await ctx.reply("✅ Добавлен")
         else:
             if not channel:
@@ -43,9 +41,9 @@ class JoinChannel(Cog):
             cog.message_history.pop(channel)
             await db.config.update_one({"_id": 1}, {"$pull": {"channels": channel}})
             await self.bot.part_channels([channel])
-            channels = os.environ["CHANNELS"].split("&")
+            channels = config["Bot"]["channels"].split("&")
             channels.remove(channel)
-            os.environ["CHANNELS"] = "&".join(channels)
+            config["Bot"]["channels"] = "&".join(channels)
             await ctx.reply("✅ Удалён")
 
 

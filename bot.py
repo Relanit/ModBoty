@@ -19,6 +19,8 @@ class ModBoty(Bot, Cooldown):
             initial_channels=config["Bot"]["channels"].split("&"),
             prefix="!",
         )
+        Cooldown.__init__(self, config["Bot"]["channels"].split("&"))
+
         self.admins = ["relanit"]
         self.editors: dict[str, list[str]] = {}
         self.editor_commands: dict[str, list[str]] = {}
@@ -27,10 +29,9 @@ class ModBoty(Bot, Cooldown):
         for command in [path.stem for path in Path("commands").glob("*py")]:
             self.load_module(f"commands.{command}")
 
+        self.clear_data.start(stop_on_error=False)
         self.check_streams.start(stop_on_error=False)
         self.refresh_tokens.start(stop_on_error=False)
-
-        Cooldown.__init__(self, config["Bot"]["channels"].split("&"))
 
     async def event_ready(self):
         print(f"Logged in as {self.nick}")
@@ -39,14 +40,8 @@ class ModBoty(Bot, Cooldown):
         if message.echo:
             return
 
-        content = message.content
-        if message.content.startswith("@"):
-            content = (
-                message.content.split(maxsplit=1)[1] if len(message.content.split(maxsplit=1)) > 1 else message.content
-            )
-
-        if content.startswith(self.prefix):
-            content = content.lstrip(self.prefix)
+        if message.content.startswith(self.prefix):
+            content = message.content.lstrip(self.prefix)
             if not content:
                 return
 
@@ -62,7 +57,7 @@ class ModBoty(Bot, Cooldown):
         if isinstance(error, CommandNotFound):
             return
 
-    @routine(minutes=1.0, iterations=0)
+    @routine(minutes=1.0)
     async def check_streams(self):
         channels = config["Bot"]["channels"].split("&")
         streams = await self.fetch_streams(user_logins=channels)
@@ -86,19 +81,26 @@ class ModBoty(Bot, Cooldown):
                     await self.cogs["Inspect"].set(channel)
                 elif data and data["active"]:
                     self.cogs["Inspect"].unset(channel)
-            elif (
-                channel not in self.cogs["Inspect"].limits or time.time() % 36000 < 60
-            ):  # set or refresh inspect data in offline chat if enabled
+
+    @routine(hours=5)
+    async def clear_data(self):
+        channels = config["Bot"]["channels"].split("&")
+
+        for channel in channels:
+            if channel not in self.streams and channel not in self.cogs["Inspect"].limits:
                 data = await db.inspects.find_one({"channel": channel})
                 if data and data["active"] and data["offline"]:
-
                     await self.cogs["Inspect"].set(channel)
 
-    @routine(minutes=5, iterations=0)
+            self.cooldowns[channel] = {}
+            if channel in self.cogs["Link"].cooldowns:
+                self.cogs["Link"].cooldowns[channel] = {}
+
+    @routine(minutes=5)
     async def refresh_tokens(self):
         data = await db.config.find_one({"_id": 1})
 
-        if data["expire_time"] - time.time() < 900:  # refresh bot user token
+        if config["Bot"]["refresh_token"] and data["expire_time"] - time.time() < 900:  # refresh bot user token
             url = f'https://id.twitch.tv/oauth2/token?client_id={config["Twitch"]["client_id"]}&client_secret={config["Twitch"]["client_secret"]}&refresh_token={config["Bot"]["refresh_token"]}&grant_type=refresh_token'
 
             async with aiohttp.ClientSession() as session:

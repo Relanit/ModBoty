@@ -132,8 +132,8 @@ class StreamInfo(Cog):
             await ctx.reply("Недостаточно значений - https://vk.cc/ciaLzx")
             return
 
-        if len(self.aliases.get(ctx.channel.name, {})) == 30:
-            await ctx.reply("Достигнут лимит по количеству элиасов категорий - 30")
+        if len(self.aliases.get(ctx.channel.name, {})) == 20:
+            await ctx.reply("Достигнут лимит по количеству элиасов категорий - 20")
             return
 
         if len(alias) > 15:
@@ -156,12 +156,12 @@ class StreamInfo(Cog):
             return
 
         cog = self.bot.get_cog("Link")
-        if alias in cog.links.get(ctx.channel.name, []) or alias in cog.links_aliases.get(ctx.channel.name, []):
-            await ctx.reply(f"Элиас {self.bot.prefix}{alias} уже занят командой")
+        if cog.get_link_name(ctx.channel.name, alias):
+            await ctx.reply(f"Элиас {self.bot.prefix}{alias} уже занят ссылкой")
             return
 
         if self.bot.get_command_name(alias):
-            await ctx.reply(f"Элиас {self.bot.prefix}{alias} уже занят командой")
+            await ctx.reply(f"Элиас {self.bot.prefix}{alias} уже занят командой бота")
             return
 
         key = {"channel": ctx.channel.name}

@@ -27,7 +27,9 @@ class Link(Cog):
         reply = ""
         if message.content.startswith("@"):
             reply, content = (
-                message.content.split(" ", 1) if len(message.content.split(" ", 1)) > 1 else ("", message.content)
+                message.content.split(maxsplit=1)
+                if len(message.content.split(maxsplit=1)) > 1
+                else ("", message.content)
             )
 
         if content.startswith(self.bot.prefix):
@@ -37,9 +39,7 @@ class Link(Cog):
 
             link = content.split(maxsplit=1)[0].lower()
 
-            if link in self.links.get(message.channel.name, []) or (
-                link := self.links_aliases.get(message.channel.name, {}).get(link, "")
-            ):
+            if link := self.get_link_name(message.channel.name, link):
                 if (
                     (
                         (message.author.is_mod or message.author.name in self.bot.admins)
@@ -127,18 +127,19 @@ class Link(Cog):
             await self.announce(ctx)
 
     async def link(self, ctx: Context):
-        content = ctx.content.split()
+        content = ctx.content.lower().split()
         if len(content) < 2:
             await ctx.reply("Недостаточно значений - https://vk.cc/chCfKt")
             return
-        elif len(self.links.get(ctx.channel.name, [])) == 40:
+
+        link = content[0].lstrip(self.bot.prefix)
+        found = self.get_link_name(ctx.channel.name, link)
+
+        if len(self.links.get(ctx.channel.name, [])) == 40 and not found:
             await ctx.reply("Достигнут лимит количества ссылок - 40")
             return
 
-        link = content[0].lower().lstrip(self.bot.prefix)
-
-        if name := self.links_aliases.get(ctx.channel.name, {}).get(link, ""):
-            link = name
+        link = found or link
 
         private = None
         if content[1].lower() == "private":
@@ -146,30 +147,29 @@ class Link(Cog):
         elif content[1].lower() == "public":
             private = False
 
-        cog = self.bot.get_cog("StreamInfo")
-        if link in cog.aliases.get(ctx.channel.name, []):
-            name = cog.games[ctx.channel.name][cog.aliases[ctx.channel.name][link]]
-            await ctx.reply(f"Название {self.bot.prefix}{link} уже занято категорией {name}")
-            return
-        if self.bot.get_command_name(link) or link in ["public", "private"]:
-            await ctx.reply(f"Название {self.bot.prefix}{link} уже занято командой")
-            return
-        elif len(link) > 15:
-            await ctx.reply("Нельзя создать ссылку с названием длиной более 15 символов")
-            return
+        if not found:
+            cog = self.bot.get_cog("StreamInfo")
+            if link in cog.aliases.get(ctx.channel.name, []):
+                name = cog.games[ctx.channel.name][cog.aliases[ctx.channel.name][link]]
+                await ctx.reply(f"Название {self.bot.prefix}{link} уже занято категорией {name}")
+                return
+            if self.bot.get_command_name(link) or link in ["public", "private"]:
+                await ctx.reply(f"Название {self.bot.prefix}{link} уже занято командой бота")
+                return
+            elif len(link) > 15:
+                await ctx.reply("Нельзя создать ссылку с названием длиной более 15 символов")
+                return
 
         offset = 1 if private is not None else 0
         text = " ".join(content[1 + offset :]) if content[1 + offset :] else ""
 
-        if not (text or link in self.links.get(ctx.channel.name, [])) or (
-            (text.startswith(".") or text.startswith("/")) and len(text.split()) == 1
-        ):
+        if not (text or found) or ((text.startswith(".") or text.startswith("/")) and len(text.split()) == 1):
             await ctx.reply("Недостаточно значений - https://vk.cc/chCfKt")
             return
 
         key = {"channel": ctx.channel.name}
         if ctx.channel.name in self.links:
-            if link in self.links[ctx.channel.name]:
+            if found:
                 message = f"Изменено {self.bot.prefix}{link}"
                 key["links.name"] = link
                 values = {"$set": {}}
@@ -207,15 +207,24 @@ class Link(Cog):
             await ctx.reply("На вашем канале ещё нет ссылок")
             return
 
+        def truncate(content, length=450, suffix="..."):
+            if len(content) <= length:
+                return content, ""
+            else:
+                return (
+                    content[:length].rsplit(" ", 1)[0] + suffix,
+                    content[:length].rsplit(" ", 1)[1] + content[length:],
+                )
+
         links = await db.links.find_one({"channel": ctx.channel.name}, {"links": 1, "private": 1})
         if not ctx.content:
-            message = (
+            message, message2 = truncate(
                 f'Доступные ссылки: {self.bot.prefix}{str(f" {self.bot.prefix}").join(self.links[ctx.channel.name])}'
             )
 
         elif ctx.content.lower() == "public":
             links = [link["name"] for link in links["links"] if not link.get("private", links["private"])]
-            message = (
+            message, message2 = truncate(
                 f'Публичные ссылки: {self.bot.prefix}{str(f" {self.bot.prefix}").join(links)}'
                 if links
                 else "Публичные ссылки отсутствуют"
@@ -223,16 +232,18 @@ class Link(Cog):
 
         elif ctx.content.lower() == "private":
             links = [link["name"] for link in links["links"] if link.get("private", links["private"])]
-            message = (
+            message, message2 = truncate(
                 f'Приватные ссылки: {self.bot.prefix}{str(f" {self.bot.prefix}").join(links)}'
                 if links
                 else "Приватные ссылки отсутствуют"
             )
 
         else:
-            message = "Неверный ввод"
+            message, message2 = "Неверный ввод - https://vk.cc/chCfKt", ""
 
         await ctx.reply(message)
+        if message2:
+            await ctx.reply(message2)
 
     async def delete(self, ctx: Context):
         content = ctx.content.split()
@@ -241,9 +252,7 @@ class Link(Cog):
             return
 
         link = content[0].lower().lstrip(self.bot.prefix)
-        if link in self.links.get(ctx.channel.name, []) or (
-            link := self.links_aliases.get(ctx.channel.name, {}).get(link, "")
-        ):
+        if link := self.get_link_name(ctx.channel.name, link):
             self.links[ctx.channel.name].remove(link)
 
             if self.links_aliases.get(ctx.channel.name, {}):
@@ -288,16 +297,16 @@ class Link(Cog):
                     await ctx.reply(f"Название {self.bot.prefix}{alias} уже занято категорией {name}")
                     return
                 if alias in self.links.get(ctx.channel.name, []):
-                    await ctx.reply(f"Нельзя указывать названия существующих ссылок - {alias}")
+                    await ctx.reply(f"Нельзя указывать названия существующих ссылок - {self.bot.prefix}{alias}")
                     return
                 if self.links_aliases.get(ctx.channel.name, {}).get(alias, link) != link:
-                    await ctx.reply(f"Нельзя указывать элиасы существующих ссылок - {alias}")
+                    await ctx.reply(f"Нельзя указывать элиасы существующих ссылок - {self.bot.prefix}{alias}")
                     return
                 if len(alias) > 15:
-                    await ctx.reply(f"Нельзя создать элиас длиной более 15 символов - {alias}")
+                    await ctx.reply(f"Нельзя создать элиас длиной более 15 символов - {self.bot.prefix}{alias}")
                     return
                 aliases.add(alias)
-        elif link := self.links_aliases.get(ctx.channel.name, {}).get(link, ""):
+        elif link := self.get_link_name(ctx.channel.name, link):
             await ctx.reply(f"Ссылка не найдена, возможно вы имели в виду {self.bot.prefix}{link}")
             return
         else:
@@ -366,7 +375,7 @@ class Link(Cog):
         values = {}
         key = {"channel": ctx.channel.name}
 
-        if link in self.links[ctx.channel.name] or (link := self.links_aliases.get(ctx.channel.name, {}).get(link, "")):
+        if link := self.get_link_name(ctx.channel.name, link):
             if len(content_split) == 2:
                 color = content_split[1]
 
@@ -394,6 +403,14 @@ class Link(Cog):
 
         await db.links.update_one(key, values)
         await ctx.reply(message)
+
+    def get_link_name(self, channel: str, alias: str) -> str | None:
+        """Retrieves link name if found"""
+        if alias in self.links.get(channel, []):
+            return alias
+        elif alias in self.links_aliases.get(channel, []):
+            return self.links_aliases[channel][alias]
+        return
 
     @routine(iterations=1)
     async def get_links(self):

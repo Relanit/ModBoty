@@ -37,6 +37,10 @@ class Editors(Cog):
             await self.dele(ctx)
 
     async def editor(self, ctx: Context):
+        if len(self.bot.editors.get(ctx.channel.name, [])) == 10:
+            await ctx.reply("На канале может быть не более 10 редакторов")
+            return
+
         login = ctx.content.lower()
         user = await self.bot.fetch_users(names=[login])
         if not user:
@@ -50,7 +54,7 @@ class Editors(Cog):
         self.bot.editors[ctx.channel.name] = self.bot.editors.get(ctx.channel.name, []) + [login]
         await db.editors.update_one(
             {"channel": ctx.channel.name},
-            {"$setOnInsert": {"channel": ctx.channel.name}, "$addToSet": {"editors": {"login": login}}},
+            {"$setOnInsert": {"channel": ctx.channel.name}, "$addToSet": {"editors": login}},
             upsert=True,
         )
         await ctx.reply(f"Добавлен редактор: {login}")
@@ -75,7 +79,7 @@ class Editors(Cog):
             return
 
         self.bot.editors[ctx.channel.name].remove(login)
-        await db.editors.update_one({"channel": ctx.channel.name}, {"$pull": {"editors": {"login": login}}})
+        await db.editors.update_one({"channel": ctx.channel.name}, {"$pull": {"editors": login}})
         await ctx.reply(f"Удалён редактор: {login}")
 
     async def ban(self, ctx: Context):
@@ -98,14 +102,11 @@ class Editors(Cog):
                     {"channel": ctx.channel.name},
                     {
                         "$setOnInsert": {"channel": ctx.channel.name},
-                        "$set": {
-                            "banned": [
-                                {"name": command_name} for command_name in self.bot.editor_commands[ctx.channel.name]
-                            ]
-                        },
+                        "$set": {"banned": self.bot.editor_commands[ctx.channel.name]},
                     },
                     upsert=True,
                 )
+
                 await ctx.reply("Теперь все команды доступны только редакторам бота")
                 return
             await ctx.reply("Команда не найдена")
@@ -122,7 +123,7 @@ class Editors(Cog):
         self.bot.editor_commands[ctx.channel.name] = self.bot.editor_commands.get(ctx.channel.name, []) + [command_name]
         await db.editors.update_one(
             {"channel": ctx.channel.name},
-            {"$setOnInsert": {"channel": ctx.channel.name}, "$addToSet": {"banned": {"name": command_name}}},
+            {"$setOnInsert": {"channel": ctx.channel.name}, "$addToSet": {"banned": command_name}},
             upsert=True,
         )
         message = f"Команда {self.bot.prefix}{command_name} теперь доступна только для редакторов бота"
@@ -156,14 +157,14 @@ class Editors(Cog):
             return
 
         self.bot.editor_commands[ctx.channel.name].remove(command)
-        await db.editors.update_one({"channel": ctx.channel.name}, {"$pull": {"banned": {"name": command}}})
+        await db.editors.update_one({"channel": ctx.channel.name}, {"$pull": {"banned": command}})
         await ctx.reply(f"Теперь команда {self.bot.prefix}{command} доступна всем модераторам")
 
     @routine(iterations=1)
     async def get_editors(self):
         async for document in db.editors.find():
-            self.bot.editors[document["channel"]] = [editor["login"] for editor in document.get("editors", [])]
-            self.bot.editor_commands[document["channel"]] = [c["name"] for c in document.get("banned", [])]
+            self.bot.editors[document["channel"]] = document.get("editors", [])
+            self.bot.editor_commands[document["channel"]] = document.get("banned", [])
 
 
 def prepare(bot):

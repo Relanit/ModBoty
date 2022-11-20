@@ -25,7 +25,7 @@ class JoinChannel(Cog):
             await db.config.update_one({"_id": 1}, {"$addToSet": {"channels": channel}})
             await self.bot.join_channels([channel])
             config["Bot"]["channels"] = config["Bot"]["channels"] + "&" + channel
-            await ctx.reply("✅ Добавлен")
+            await ctx.reply("Добавлен")
         else:
             if not channel:
                 channel = ctx.channel.name
@@ -44,7 +44,7 @@ class JoinChannel(Cog):
             channels = config["Bot"]["channels"].split("&")
             channels.remove(channel)
             config["Bot"]["channels"] = "&".join(channels)
-            await ctx.reply("✅ Удалён")
+            await ctx.reply("Удалён")
 
 
 def prepare(bot):

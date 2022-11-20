@@ -46,18 +46,13 @@ class Timers(Cog):
         if ctx.command_alias != "timers":
             content = ctx.content.split(maxsplit=1)
             if not content:
-                await ctx.reply("Неверный ввод")
+                await ctx.reply("Недостаточно значений - https://vk.cc/chCfMF")
                 return
 
             link = content[0].lstrip(self.bot.prefix)
-            cog = self.bot.get_cog("Link")
-
-            if link in cog.links.get(ctx.channel.name, []):
-                pass
-            elif link in cog.links_aliases.get(ctx.channel.name, []):
-                link = cog.links_aliases[ctx.channel.name][link]
-            else:
-                await ctx.reply("Ссылка не найдена")
+            link = self.bot.get_cog("Link").get_link_name(ctx.channel.name, link)
+            if not link:
+                await ctx.reply(f"Ссылка {self.bot.prefix}{link} не найдена")
                 return
 
         if ctx.command_alias == "timer":
@@ -95,7 +90,7 @@ class Timers(Cog):
                         return
                     timer["interval"] = interval
                 except ValueError:
-                    await ctx.reply("Ошибка ввода")
+                    await ctx.reply("Интервал должен быть числом от 1 до 60 - https://vk.cc/chCfMF")
                     return
             else:
                 try:
@@ -105,14 +100,14 @@ class Timers(Cog):
                         return
                     timer["number"] = messages
                 except ValueError:
-                    await ctx.reply("Ошибка ввода")
+                    await ctx.reply("Количество сообщений должно быть числом от 1 до 10 - https://vk.cc/chCfMF")
                     return
 
         if link not in self.timers.get(ctx.channel.name, []) and not interval and not messages:
-            await ctx.reply("Не указан интервал (в минутах) или количество сообщений")
+            await ctx.reply("Не указан интервал (в минутах) или количество сообщений - https://vk.cc/chCfMF")
             return
         elif interval and not messages:
-            await ctx.reply("Не указано количество сообщений")
+            await ctx.reply("Не указано количество сообщений - https://vk.cc/chCfMF")
             return
         elif interval and interval < 3:
             if messages > 3:
@@ -229,11 +224,11 @@ class Timers(Cog):
             message = "Теперь таймеры будут работать и вне стрима"
             self.offline[ctx.channel.name] = True
         else:
-            message = "Неверный ввод"
+            message = "Неверный ввод - https://vk.cc/chCfMF"
 
         await ctx.reply(message)
 
-    @routine(seconds=11, iterations=0)
+    @routine(seconds=15)
     async def check_timers(self):
         for channel in self.timers:
             timers = list(self.timers[channel])
@@ -271,7 +266,6 @@ class Timers(Cog):
                         if self.timers[channel][timer].get("announce"):
                             announce = data["links"][0].get("announce") or data["announce"]
 
-                        cog = self.bot.get_cog("Link")
                         messageable = self.bot.get_channel(channel)
 
                         cog.cooldowns[channel][timer] = time.time() + 3

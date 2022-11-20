@@ -9,6 +9,16 @@ from config import db, config
 reason = "Сообщение, содержащее запрещённую фразу (от ModBoty)"
 
 
+def truncate(content: str, length: int = 450, suffix: str = "..."):
+    if len(content) <= length:
+        return content, ""
+    else:
+        return (
+            content[:length].rsplit(" | ", 1)[0] + suffix,
+            content[:length].rsplit(" | ", 1)[1] + content[length:],
+        )
+
+
 class Banwords(Cog):
     def __init__(self, bot):
         self.bot = bot
@@ -66,8 +76,8 @@ class Banwords(Cog):
             await self.mwords(ctx)
 
     async def bword(self, ctx: Context):
-        if len(self.banwords.get(ctx.channel.name, [])) + len(self.mutewords.get(ctx.channel.name, [])) == 30:
-            await ctx.reply("Достигнут лимит банвордов и мутвордов - 30")
+        if len(self.banwords.get(ctx.channel.name, [])) + len(self.mutewords.get(ctx.channel.name, [])) == 50:
+            await ctx.reply("Достигнут лимит банвордов и мутвордов - 50")
             return
 
         banword = ctx.content.lower()
@@ -111,30 +121,12 @@ class Banwords(Cog):
         await ctx.reply("Удалено")
 
     async def mword(self, ctx: Context):
-        if len(self.banwords.get(ctx.channel.name, [])) + len(self.mutewords.get(ctx.channel.name, [])) == 30:
-            await ctx.reply("Достигнут лимит банвордов и мутвордов - 30")
-            return
-
         content = ctx.content.split()
         if len(content) < 2:
             await ctx.reply("Укажите время мута в секундах и фразу")
             return
 
-        try:
-            timeout = int(content[0])
-        except ValueError:
-            await ctx.reply("Укажите время мута в секундах")
-            return
-
-        if not 1 <= timeout <= 1209600:
-            await ctx.reply("Неверное время мута")
-            return
-
         muteword = " ".join(content[1:]).lower()
-
-        if len(muteword) > 20:
-            await ctx.reply("Длина мутворда не должна превышать 20 символов")
-            return
 
         found = False
         for item in self.mutewords.get(ctx.channel.name, []):
@@ -144,6 +136,27 @@ class Banwords(Cog):
             elif item["muteword"] in muteword:
                 await ctx.reply("Часть фразы уже есть в списке мутвордов канала")
                 return
+
+        if (
+            len(self.banwords.get(ctx.channel.name, [])) + len(self.mutewords.get(ctx.channel.name, [])) == 50
+            and not found
+        ):
+            await ctx.reply("Достигнут лимит банвордов и мутвордов - 50")
+            return
+
+        try:
+            timeout = int(content[0])
+        except ValueError:
+            await ctx.reply("Укажите время мута в секундах")
+            return
+
+        if not 1 <= timeout <= 1209600:
+            await ctx.reply("Допустимая длительность мута от 1 до 1209600 секунд")
+            return
+
+        if len(muteword) > 20:
+            await ctx.reply("Длина мутворда не должна превышать 20 символов")
+            return
 
         message = "Добавлено"
         if found:
@@ -192,77 +205,67 @@ class Banwords(Cog):
         if not self.banwords.get(ctx.channel.name):
             await ctx.reply("На вашем канале ещё нет банвордов")
         else:
-            message = f"Банворды канала {ctx.channel.name}: " + " | ".join(self.banwords[ctx.channel.name])
-            message2 = ""
-
-            if len(message) > 500:
-                message = f"Банворды канала {ctx.channel.name}: "
-
-                for banword in self.banwords[ctx.channel.name]:
-                    banword = f"{banword} | " if banword != self.banwords[ctx.channel.name][-1] else banword
-
-                    if len(message + banword) < 500:
-                        message += banword
-                    else:
-                        message2 += banword
-
-            user = await ctx.author.user()
-            await ctx.reply("Список банвордов отправлен в личные сообщения")
-            await user.send_whisper(
-                token=config["Bot"]["access_token"],
-                from_user_id=self.bot.user_id,
-                to_user_id=user.id,
-                message=message,
+            message, message2 = truncate(
+                f"Банворды канала {ctx.channel.name}: " + " | ".join(self.banwords[ctx.channel.name])
             )
-            if message2:
-                await asyncio.sleep(1)
+
+            if config["Bot"]["refresh_token"]:
+                user = await ctx.author.user()
                 await user.send_whisper(
                     token=config["Bot"]["access_token"],
                     from_user_id=self.bot.user_id,
                     to_user_id=user.id,
-                    message=message2,
+                    message=message,
                 )
+                if message2:
+                    await asyncio.sleep(1)
+                    await user.send_whisper(
+                        token=config["Bot"]["access_token"],
+                        from_user_id=self.bot.user_id,
+                        to_user_id=user.id,
+                        message=message2,
+                    )
+                await ctx.reply("Список банвордов отправлен в личные сообщения")
+            else:
+                await ctx.reply(message)
+                if message2:
+                    await ctx.reply(message2)
 
     async def mwords(self, ctx: Context):
         if not self.mutewords.get(ctx.channel.name):
             await ctx.reply("На вашем канале ещё нет мутвордов")
         else:
-            message = f"Мутворды канала {ctx.channel.name}: " + " | ".join(
-                [muteword["muteword"] + " " + str(muteword["timeout"]) for muteword in self.mutewords[ctx.channel.name]]
+            message, message2 = truncate(
+                f"Мутворды канала {ctx.channel.name}: "
+                + " | ".join(
+                    [
+                        muteword["muteword"] + " " + str(muteword["timeout"])
+                        for muteword in self.mutewords[ctx.channel.name]
+                    ]
+                )
             )
-            message2 = ""
 
-            if len(message) > 500:
-                message = f"Мутворды канала {ctx.channel.name}: "
-
-                for muteword in self.mutewords[ctx.channel.name]:
-                    muteword = (
-                        muteword["muteword"] + " " + str(muteword["timeout"]) + " | "
-                        if muteword != self.mutewords[ctx.channel.name][-1]
-                        else muteword["muteword"] + " " + str(muteword["timeout"])
-                    )
-
-                    if len(message + muteword) < 500:
-                        message += muteword
-                    else:
-                        message2 += muteword
-
-            user = await ctx.author.user()
-            await ctx.reply("Список мутвордов отправлен в личные сообщения")
-            await user.send_whisper(
-                token=config["Bot"]["access_token"],
-                from_user_id=self.bot.user_id,
-                to_user_id=user.id,
-                message=message,
-            )
-            if message2:
-                await asyncio.sleep(1)
+            if config["Bot"]["refresh_token"]:
+                user = await ctx.author.user()
                 await user.send_whisper(
                     token=config["Bot"]["access_token"],
                     from_user_id=self.bot.user_id,
                     to_user_id=user.id,
-                    message=message2,
+                    message=message,
                 )
+                if message2:
+                    await asyncio.sleep(1)
+                    await user.send_whisper(
+                        token=config["Bot"]["access_token"],
+                        from_user_id=self.bot.user_id,
+                        to_user_id=user.id,
+                        message=message2,
+                    )
+                await ctx.reply("Список мутвордов отправлен в личные сообщения")
+            else:
+                await ctx.reply(message)
+                if message2:
+                    await ctx.reply(message2)
 
     @routine(iterations=1)
     async def get_banwords(self):

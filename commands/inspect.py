@@ -238,10 +238,10 @@ class Inspect(Cog):
                         return
 
                     if not 1 <= time_unit <= 60:
-                        await ctx.reply("Время не должно быть меньше 1 или больше 60 секунд")
+                        await ctx.reply("Допустимое время: от 1 до 60 секунд")
                         return
                     if not 1 <= messages <= 60:
-                        await ctx.reply("Количество сообщений не должно быть меньше 1 или больше 60.")
+                        await ctx.reply("Допустимое количество сообщений: от 1 до 60")
                         return
 
                     values["$set"][limit] = {
@@ -257,7 +257,9 @@ class Inspect(Cog):
                 ):
                     values["$unset"][limit] = 1
                 else:
-                    await ctx.reply("Чтобы удалить лимит, должен быть установлен другой")
+                    await ctx.reply(
+                        f"Чтобы удалить лимит, должен быть установлен другой. {self.bot.prefix}inspect off для выключения наблюдения"
+                    )
                     return
             elif value.endswith("%"):
                 percent_limit = value.strip("%")
@@ -266,11 +268,11 @@ class Inspect(Cog):
                     try:
                         percent_limit = int(percent_limit)
                     except ValueError:
-                        await ctx.reply("Неверная запись лимита в процентах - https://vk.cc/chCfJI")
+                        await ctx.reply("Неверная запись процентного лимита - https://vk.cc/chCfJI")
                         return
 
                     if not 0 <= percent_limit < 100:
-                        await ctx.reply("Неверная запись лимита в процентах - https://vk.cc/chCfJI")
+                        await ctx.reply("Допустимое количество процентов: от 0 до 100")
                         return
 
                 if not percent_limit:
@@ -291,7 +293,7 @@ class Inspect(Cog):
                     return
 
                 if not 1 <= timeout <= 1209600:
-                    await ctx.reply("Неверное значение таймаута")
+                    await ctx.reply("Допустимая длительность мута от 1 до 1209600 секунд")
                     return
 
         first_unit = values["$set"].get("first_limit", data.get("first_limit", {})).get("time_unit", 0)
@@ -306,7 +308,7 @@ class Inspect(Cog):
         on_insert = {"channel": ctx.channel.name, "active": False}
         if not data:
             if "first_limit" not in values["$set"] and "second_limit" not in values["$set"]:
-                await ctx.reply("Для начала установите сообщения и время")
+                await ctx.reply("Для начала установите сообщения и время - https://vk.cc/chCfJI")
                 return
 
             if "timeouts" not in values["$set"]:

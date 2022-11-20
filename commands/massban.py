@@ -107,7 +107,7 @@ class MassBan(Cog):
                     await ctx.send("Введите мутфразу")
                     return
                 if not 1 <= timeout <= 1209600:
-                    await ctx.reply("Неверное значение таймаута")
+                    await ctx.reply("Допустимая длительность мута от 1 до 1209600 секунд")
                     return
                 ban_phrase = content_split[1]
             except ValueError:

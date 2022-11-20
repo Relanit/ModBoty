@@ -68,7 +68,7 @@ class Vips(Cog):
             user = await self.bot.fetch_users(names=[username])
 
             if not user:
-                await ctx.reply("Пользователь не найден")
+                await ctx.reply(f"Пользователь {username} не найден")
                 return
 
             try:

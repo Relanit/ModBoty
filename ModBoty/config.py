@@ -19,7 +19,7 @@ async def get_config():
     data = await db.config.find_one({"_id": 1})
     access_token = config["Bot"]["access_token"] or fernet.decrypt(data["access_token"].encode()).decode()
     refresh_token = fernet.decrypt(data["refresh_token"].encode()).decode() if "refresh_token" in data else ""
-    config["Bot"]["channels"] = config["Bot"]["channels"] or "&".join(data["channels"])
+    config["Bot"]["channels"] = config["Bot"]["channels"] or " ".join(data["channels"])
 
     if refresh_token:
         url = "https://id.twitch.tv/oauth2/validate"

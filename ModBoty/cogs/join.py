@@ -1,6 +1,6 @@
 from twitchio.ext.commands import Cog, command, Context
 
-from ModBoty.config import db, config
+from config import db, config
 
 
 class JoinChannel(Cog):

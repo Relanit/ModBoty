@@ -4,7 +4,7 @@ from twitchio.ext.routines import routine
 from twitchio.ext.commands import Cog, command, Context
 from twitchio import Message
 
-from ModBoty.config import db, config
+from config import db, config
 
 reason = "Сообщение, содержащее запрещённую фразу (от ModBoty)"
 

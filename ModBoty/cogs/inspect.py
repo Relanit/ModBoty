@@ -5,7 +5,7 @@ import time
 from twitchio.ext.commands import Cog, command, Context
 from twitchio import Message
 
-from ModBoty.config import db
+from config import db
 
 
 class Limits(TypedDict):

@@ -9,7 +9,7 @@ from twitchio.ext.routines import routine
 from pytimeparse2 import parse
 import parsedatetime
 
-from ModBoty.config import db, fernet
+from config import db, fernet
 
 intervals = (
     ("y", 31536000),

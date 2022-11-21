@@ -5,7 +5,7 @@ from twitchio.ext.commands import Cog, command, Context
 from twitchio import Message
 from twitchio.ext.routines import routine
 
-from ModBoty.config import db
+from config import db
 
 
 class Link(Cog):

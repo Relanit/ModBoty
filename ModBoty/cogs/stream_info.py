@@ -8,7 +8,7 @@ from twitchio.ext.routines import routine
 from twitchio.models import Game
 from twitchio import Message, User
 
-from ModBoty.config import db, fernet
+from config import db, fernet
 
 
 def similarity(s1: str, s2: str) -> float:

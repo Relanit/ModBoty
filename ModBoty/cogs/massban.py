@@ -5,7 +5,7 @@ from typing import Generator, TypedDict, Literal
 from twitchio.ext.commands import Cog, command, Context
 from twitchio import Message
 
-from ModBoty.config import config
+from config import config
 
 reason = 'Сообщение, содержащее запрещённую фразу: "%s" (от ModBoty). Начато %s'
 

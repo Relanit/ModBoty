@@ -9,8 +9,6 @@ from twitchio import Message
 from config import config, db, fernet
 from cooldown import Cooldown
 
-time.sleep(30)
-
 
 class ModBoty(Bot, Cooldown):
     def __init__(self):

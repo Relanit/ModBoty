@@ -1,6 +1,6 @@
 from twitchio.ext.commands import Cog, command, Context
 
-from config import db, config
+from ModBoty.config import db, config
 
 
 class JoinChannel(Cog):
@@ -41,7 +41,7 @@ class JoinChannel(Cog):
             cog.message_history.pop(channel)
             await db.config.update_one({"_id": 1}, {"$pull": {"channels": channel}})
             await self.bot.part_channels([channel])
-            channels = config["Bot"]["channels"].split("&")
+            channels = config["Bot"]["channels"].split()
             channels.remove(channel)
             config["Bot"]["channels"] = "&".join(channels)
             await ctx.reply("Удалён")

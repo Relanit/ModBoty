@@ -3,7 +3,7 @@ from twitchio import BroadcasterTypeEnum, User
 from twitchio.ext.commands import Cog, command, Context
 from twitchio.models import Poll
 
-from config import db, fernet
+from ModBoty.config import db, fernet
 
 
 class Polls(Cog):

@@ -1,6 +1,6 @@
 from twitchio.ext.commands import Cog, command, Context
 
-from config import db
+from ModBoty.config import db
 
 
 class Help(Cog):

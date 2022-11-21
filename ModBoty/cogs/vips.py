@@ -1,5 +1,4 @@
 import time
-import traceback
 from datetime import datetime
 
 import twitchio
@@ -10,7 +9,7 @@ from twitchio.ext.routines import routine
 from pytimeparse2 import parse
 import parsedatetime
 
-from config import db, fernet
+from ModBoty.config import db, fernet
 
 intervals = (
     ("y", 31536000),

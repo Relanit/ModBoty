@@ -4,12 +4,12 @@ from twitchio.ext.routines import routine
 from twitchio.ext.commands import Cog, command, Context
 from twitchio import Message
 
-from config import db, config
+from ModBoty.config import db, config
 
 reason = "Сообщение, содержащее запрещённую фразу (от ModBoty)"
 
 
-def truncate(content: str, length: int = 450, suffix: str = "..."):
+def truncate(content: str, length: int = 450, suffix: str = "...") -> (str, str):
     if len(content) <= length:
         return content, ""
     else:

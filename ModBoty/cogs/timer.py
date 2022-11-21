@@ -6,7 +6,7 @@ from typing import TypedDict
 from twitchio.ext.commands import Cog, command, Context
 from twitchio.ext.routines import routine
 
-from config import db
+from ModBoty.config import db
 
 
 class Timer(TypedDict):

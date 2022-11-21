@@ -9,25 +9,25 @@ from twitchio import Message
 from config import config, db, fernet
 from cooldown import Cooldown
 
-time.sleep(30)
+# time.sleep(30)
 
 
 class ModBoty(Bot, Cooldown):
     def __init__(self):
         super().__init__(
             token=config["Bot"]["access_token"],
-            initial_channels=config["Bot"]["channels"].split("&"),
-            prefix="!",
+            initial_channels=config["Bot"]["channels"].split(),
+            prefix=config["Bot"]["prefix"],
         )
-        Cooldown.__init__(self, config["Bot"]["channels"].split("&"))
+        Cooldown.__init__(self, config["Bot"]["channels"].split())
 
-        self.admins = ["relanit"]
+        self.admins = config["Bot"]["admins"].split()
         self.editors: dict[str, list[str]] = {}
         self.editor_commands: dict[str, list[str]] = {}
         self.streams: list[str] = []
 
-        for command in [path.stem for path in Path("commands").glob("*py")]:
-            self.load_module(f"commands.{command}")
+        for cog in [path.stem for path in Path("cogs").glob("*py")]:
+            self.load_module(f"cogs.{cog}")
 
         self.clear_data.start(stop_on_error=False)
         self.check_streams.start(stop_on_error=False)
@@ -59,7 +59,7 @@ class ModBoty(Bot, Cooldown):
 
     @routine(minutes=1.0)
     async def check_streams(self):
-        channels = config["Bot"]["channels"].split("&")
+        channels = config["Bot"]["channels"].split()
         streams = await self.fetch_streams(user_logins=channels)
 
         for channel in channels:
@@ -84,7 +84,7 @@ class ModBoty(Bot, Cooldown):
 
     @routine(hours=5)
     async def clear_data(self):
-        channels = config["Bot"]["channels"].split("&")
+        channels = config["Bot"]["channels"].split()
 
         for channel in channels:
             if channel not in self.streams and channel not in self.cogs["Inspect"].limits:

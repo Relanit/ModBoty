@@ -7,7 +7,7 @@ from cryptography.fernet import Fernet
 
 
 config = configparser.ConfigParser()
-config.read("config.ini")
+config.read("../config.ini")
 
 client = motor.motor_asyncio.AsyncIOMotorClient(config["Mongo"]["mongo"])
 db = client.modboty

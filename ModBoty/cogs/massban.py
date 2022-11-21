@@ -5,7 +5,7 @@ from typing import Generator, TypedDict, Literal
 from twitchio.ext.commands import Cog, command, Context
 from twitchio import Message
 
-from config import config
+from ModBoty.config import config
 
 reason = 'Сообщение, содержащее запрещённую фразу: "%s" (от ModBoty). Начато %s'
 
@@ -42,7 +42,7 @@ class MassBan(Cog):
         self.ban_phrases: dict[str, str] = {}
         self.queue: dict[str, list[str]] = {}
         self.message_history: dict[str, list[LoggedMessage]] = {
-            channel: [] for channel in config["Bot"]["channels"].split("&")
+            channel: [] for channel in config["Bot"]["channels"].split()
         }
 
     @Cog.event()

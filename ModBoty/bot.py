@@ -60,8 +60,9 @@ class ModBoty(Bot, Cooldown):
         channels = config["Bot"]["channels"].split()
         try:
             streams = await self.fetch_streams(user_logins=channels)
-        except aiohttp.ClientConnectorError:
+        except aiohttp.ClientConnectorError as e:
             print(time.time())
+            print(repr(e))
             return
 
         for channel in channels:

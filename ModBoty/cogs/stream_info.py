@@ -38,7 +38,7 @@ class StreamInfo(Cog):
 
             if (
                 content in self.aliases.get(message.channel.name, {})
-                and (message.author.is_mod or message.author.name in self.bot.admins)
+                and (message.author.is_mod or message.author.name == self.bot.admin)
                 and time.time() - self.cooldowns[message.channel.name] > 3
             ):
                 data = await db.config.find_one(

@@ -19,7 +19,7 @@ class ModBoty(Bot, Cooldown):
         )
         Cooldown.__init__(self, config["Bot"]["channels"].split())
 
-        self.admins = config["Bot"]["admins"].split()
+        self.admin = config["Bot"]["admin"]
         self.editors: dict[str, list[str]] = {}
         self.editor_commands: dict[str, list[str]] = {}
         self.streams: list[str] = []
@@ -48,7 +48,7 @@ class ModBoty(Bot, Cooldown):
 
             if command_name := self.get_command_name(command_lower):
                 message.content = message.content.replace(command, command_lower)
-                if await self.check_command(command_name, message, admin=message.author.name in self.admins):
+                if await self.check_command(command_name, message, admin=message.author.name == self.admin):
                     await self.handle_commands(message)
 
     async def event_command_error(self, ctx: Context, error: Exception):
@@ -58,7 +58,11 @@ class ModBoty(Bot, Cooldown):
     @routine(minutes=1.0)
     async def check_streams(self):
         channels = config["Bot"]["channels"].split()
-        streams = await self.fetch_streams(user_logins=channels)
+        try:
+            streams = await self.fetch_streams(user_logins=channels)
+        except aiohttp.ClientConnectorError:
+            print(time.time())
+            return
 
         for channel in channels:
             if next((s for s in streams if s.user.name.lower() == channel), None):  # check if channel is streaming

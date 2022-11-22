@@ -21,7 +21,7 @@ class Editors(Cog):
             await ctx.reply("Недостаточно значений - https://vk.cc/cijFyF")
             return
 
-        if ctx.command_alias != "editors" and not ctx.author.is_broadcaster and ctx.author.name not in self.bot.admins:
+        if ctx.command_alias != "editors" and not ctx.author.is_broadcaster and ctx.author.name != self.bot.admin:
             await ctx.reply("Эта команда доступна только стримеру")
             return
 

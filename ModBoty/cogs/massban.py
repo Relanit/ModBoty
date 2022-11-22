@@ -51,7 +51,7 @@ class MassBan(Cog):
             return
 
         if message.channel.name in self.ban_phrases and (
-            message.author.is_mod or message.author.name in self.bot.admins
+            message.author.is_mod or message.author.name == self.bot.admin
         ):
             if message.content.startswith(self.bot.prefix):
                 content = message.content.lstrip(self.bot.prefix)

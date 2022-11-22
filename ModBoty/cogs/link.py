@@ -42,7 +42,7 @@ class Link(Cog):
             if link := self.get_link_name(message.channel.name, link):
                 if (
                     (
-                        (message.author.is_mod or message.author.name in self.bot.admins)
+                        (message.author.is_mod or message.author.name == self.bot.admin)
                         and time.time() < self.cooldowns[message.channel.name].get(link, 0) - 2
                     )
                     or not message.author.is_mod
@@ -57,7 +57,7 @@ class Link(Cog):
                 private = data["private"] if "private" not in data["links"][0] else data["links"][0]["private"]
                 text = data["links"][0]["text"]
 
-                if message.author.is_mod or message.author.name in self.bot.admins:
+                if message.author.is_mod or message.author.name == self.bot.admin:
                     content = " ".join(content.split()[1:3])
                     announce = ""
 

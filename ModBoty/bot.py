@@ -69,6 +69,10 @@ class ModBoty(Bot, Cooldown):
             print(time.time())
             print(repr(e))
             return
+        except twitchio.HTTPException as e:
+            print(time.time())
+            print(repr(e))
+            return
 
         for channel in channels:
             if next((s for s in streams if s.user.name.lower() == channel), None):  # check if channel is streaming

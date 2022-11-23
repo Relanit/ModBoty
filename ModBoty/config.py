@@ -50,6 +50,7 @@ async def get_config():
                             }
                         },
                     )
+                    print("token refreshed")
 
     config["Bot"]["refresh_token"] = refresh_token
     config["Bot"]["access_token"] = access_token

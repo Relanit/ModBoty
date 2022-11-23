@@ -2,6 +2,7 @@ import time
 from pathlib import Path
 
 import aiohttp
+import twitchio.errors
 from twitchio.ext.commands import Bot, Context, CommandNotFound
 from twitchio.ext.routines import routine
 from twitchio import Message
@@ -61,6 +62,10 @@ class ModBoty(Bot, Cooldown):
         try:
             streams = await self.fetch_streams(user_logins=channels)
         except aiohttp.ClientConnectorError as e:
+            print(time.time())
+            print(repr(e))
+            return
+        except twitchio.errors.Unauthorized as e:
             print(time.time())
             print(repr(e))
             return

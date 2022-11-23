@@ -8,12 +8,12 @@ class Debug(Cog):
     @command(name="debug", flags=["admin"])
     async def debug(self, ctx: Context):
         try:
-            ctx.content = ctx.content.replace("\\n", "\n")
-            if "await" in ctx.content or "\n" in ctx.content:
-                exec(("async def __ex(self, ctx): " + "".join(f"\n {l}" for l in ctx.content.split("\n"))))
+            content = ctx.content.replace("\\n", "\n")
+            if "await" in content or "\n" in content:
+                exec(("async def __ex(self, ctx): " + "".join(f"\n {l}" for l in content.split("\n"))))
                 result = await locals()["__ex"](self, ctx)
             else:
-                result = eval(ctx.content)
+                result = eval(content)
         except Exception as e:
             result = repr(e)
         await ctx.reply(result)

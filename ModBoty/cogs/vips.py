@@ -41,7 +41,7 @@ class Vips(Cog):
     @command(
         name="vip",
         aliases=["unvip", "unvips", "delunvip"],
-        cooldown={"per": 0, "gen": 5},
+        cooldown={"per": 0, "gen": 3},
         description="Управление випами на канале. Полное описание - https://vk.cc/ciufvM",
         flags=["editor"],
     )

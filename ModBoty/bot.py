@@ -2,13 +2,19 @@ import time
 from pathlib import Path
 
 import aiohttp
-import twitchio.errors
+import logging
 from twitchio.ext.commands import Bot, Context, CommandNotFound
 from twitchio.ext.routines import routine
 from twitchio import Message
 
 from config import config, db, fernet
 from cooldown import Cooldown
+
+logger = logging.getLogger()
+logging.basicConfig(level=logging.ERROR)
+log_handler = logging.FileHandler("errors.log", "w")
+log_handler.setFormatter(logging.Formatter("%(asctime)s - %(message)s - %(funcName)s - line %(lineno)d"))
+logger.addHandler(log_handler)
 
 
 class ModBoty(Bot, Cooldown):
@@ -61,14 +67,8 @@ class ModBoty(Bot, Cooldown):
         channels = config["Bot"]["channels"].split()
         try:
             streams = await self.fetch_streams(user_logins=channels)
-        except aiohttp.ClientConnectorError as e:
-            print(time.time())
-            print(repr(e))
-            return
-        except twitchio.HTTPException as e:
-            print(time.time())
-            print(repr(e))
-            return
+        except Exception:
+            logger.error("Exception occurred", exc_info=True)
 
         for channel in channels:
             if next((s for s in streams if s.user.name.lower() == channel), None):  # check if channel is streaming

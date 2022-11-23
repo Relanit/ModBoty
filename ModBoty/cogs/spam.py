@@ -1,5 +1,4 @@
 import asyncio
-import time
 
 from twitchio.ext.commands import Cog, command, Context
 

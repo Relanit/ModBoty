@@ -268,7 +268,7 @@ class Inspect(Cog):
                     try:
                         percent_limit = int(percent_limit)
                     except ValueError:
-                        await ctx.reply("Неверная запись процентного лимита - https://vk.cc/chCfJI")
+                        await ctx.reply("Неверная запись процентного лимита - https://vk.cc/ciVrXF")
                         return
 
                     if not 0 <= percent_limit < 100:

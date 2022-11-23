@@ -25,8 +25,19 @@ class Timers(Cog):
         self.offline: dict[str, bool] = {}
         self.messages_from_timer: dict[str, int] = {}
 
-        self.get_timers.start(stop_on_error=False)
         self.check_timers.start(stop_on_error=False)
+
+    async def __ainit__(self):
+        async for document in db.timers.find():
+            timers = {}
+            for timer in document["timers"]:
+                link = timer.pop("link")
+                timer["cooldown"] = 0
+                timers[link] = timer
+
+            self.timers[document["channel"]] = timers
+            self.messages_from_timer[document["channel"]] = 0
+            self.offline[document["channel"]] = document["offline"]
 
     @Cog.event()
     async def event_message(self, message):
@@ -50,7 +61,7 @@ class Timers(Cog):
                 return
 
             link = content[0].lstrip(self.bot.prefix)
-            link = self.bot.get_cog("Link").get_link_name(ctx.channel.name, link)
+            link = self.bot.cogs["Links"].get_link_name(ctx.channel.name, link)
             if not link:
                 await ctx.reply(f"Ссылка {self.bot.prefix}{link} не найдена")
                 return
@@ -244,7 +255,7 @@ class Timers(Cog):
                         time.time() > self.timers[channel][timer]["cooldown"]
                         and self.messages_from_timer[channel] >= self.timers[channel][timer]["number"] + 7
                     ):
-                        cog = self.bot.get_cog("Link")
+                        cog = self.bot.get_cog("Links")
 
                         if (
                             self.timers[channel][timer]["number"] > 2
@@ -293,19 +304,7 @@ class Timers(Cog):
 
                         self.messages_from_timer[channel] = 0
 
-    @routine(iterations=1)
-    async def get_timers(self):
-        async for document in db.timers.find():
-            timers = {}
-            for timer in document["timers"]:
-                link = timer.pop("link")
-                timer["cooldown"] = 0
-                timers[link] = timer
-
-            self.timers[document["channel"]] = timers
-            self.messages_from_timer[document["channel"]] = 0
-            self.offline[document["channel"]] = document["offline"]
-
 
 def prepare(bot):
     bot.add_cog(Timers(bot))
+    bot.loop.run_until_complete(bot.cogs["Timers"].__ainit__())

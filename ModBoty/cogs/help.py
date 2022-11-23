@@ -23,7 +23,7 @@ class Help(Cog):
         alias = content.split()[0]
         if command_name := self.bot.get_command_name(alias):
             await self.command_info(ctx, command_name)
-        elif link := self.bot.get_cog("Link").get_link_name(ctx.channel.name, alias):
+        elif link := self.bot.get_cog("Links").get_link_name(ctx.channel.name, alias):
             await self.link_info(ctx, link)
         else:
             await self.game_info(ctx, alias)

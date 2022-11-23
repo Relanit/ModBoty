@@ -4,7 +4,6 @@ from typing import Optional
 
 import twitchio
 from twitchio.ext.commands import Cog, command, Context
-from twitchio.ext.routines import routine
 from twitchio.models import Game
 from twitchio import Message, User
 
@@ -24,7 +23,13 @@ class StreamInfo(Cog):
         self.aliases: dict[str, dict[str, int]] = {}
         self.cooldowns: dict[str, float] = {}
 
-        self.get_games.start(stop_on_error=False)
+    async def __ainit__(self):
+        async for document in db.games.find():
+            self.aliases[document["channel"]] = {
+                alias: game["id"] for game in document["games"] for alias in game["aliases"]
+            }
+            self.games[document["channel"]] = {game["id"]: game["name"] for game in document["games"]}
+            self.cooldowns[document["channel"]] = 0
 
     @Cog.event()
     async def event_message(self, message: Message):
@@ -155,7 +160,7 @@ class StreamInfo(Cog):
             await ctx.reply("Такой элиас уже существует")
             return
 
-        cog = self.bot.get_cog("Link")
+        cog = self.bot.get_cog("Links")
         if cog.get_link_name(ctx.channel.name, alias):
             await ctx.reply(f"Элиас {self.bot.prefix}{alias} уже занят ссылкой")
             return
@@ -230,15 +235,7 @@ class StreamInfo(Cog):
         )
         await ctx.reply(message)
 
-    @routine(iterations=1)
-    async def get_games(self):
-        async for document in db.games.find():
-            self.aliases[document["channel"]] = {
-                alias: game["id"] for game in document["games"] for alias in game["aliases"]
-            }
-            self.games[document["channel"]] = {game["id"]: game["name"] for game in document["games"]}
-            self.cooldowns[document["channel"]] = 0
-
 
 def prepare(bot):
     bot.add_cog(StreamInfo(bot))
+    bot.loop.run_until_complete(bot.cogs["StreamInfo"].__ainit__())

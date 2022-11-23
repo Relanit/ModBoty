@@ -3,12 +3,11 @@ import time
 
 from twitchio.ext.commands import Cog, command, Context
 from twitchio import Message
-from twitchio.ext.routines import routine
 
 from config import db
 
 
-class Link(Cog):
+class Links(Cog):
     def __init__(self, bot):
         self.bot = bot
         self.links: dict[str, list[str]] = {}
@@ -16,7 +15,14 @@ class Link(Cog):
         self.cooldowns: dict[str, dict[str, float]] = {}
         self.mod_cooldowns: dict[str, float] = {}
 
-        self.get_links.start(stop_on_error=False)
+    async def __ainit__(self):
+        async for document in db.links.find():
+            self.links[document["channel"]] = [link["name"] for link in document["links"]]
+            self.links_aliases[document["channel"]] = {
+                alias: link["name"] for link in document["links"] if "aliases" in link for alias in link["aliases"]
+            }
+            self.cooldowns[document["channel"]] = {}
+            self.mod_cooldowns[document["channel"]] = 0
 
     @Cog.event()
     async def event_message(self, message: Message):
@@ -351,7 +357,7 @@ class Link(Cog):
                 values["$set"] = {"private": True}
                 message = "Теперь ссылки могут быть вызваны только модераторами"
             else:
-                await ctx.reply("Ошибка")
+                await ctx.reply("Ошибка, Напишите on или off, чтобы сделать ссылки публичными или приватными")
                 return
         else:
             await ctx.reply("Напишите on или off, чтобы сделать ссылки публичными или приватными")
@@ -366,7 +372,7 @@ class Link(Cog):
             return
 
         if not ctx.content:
-            await ctx.reply("Недостаточно значений - https://vk.cc/chCfKt")
+            await ctx.reply("Недостаточно значений - https://vk.cc/ciVrFK")
             return
 
         content_split = ctx.content.lower().split()
@@ -412,16 +418,7 @@ class Link(Cog):
             return self.links_aliases[channel][alias]
         return
 
-    @routine(iterations=1)
-    async def get_links(self):
-        async for document in db.links.find():
-            self.links[document["channel"]] = [link["name"] for link in document["links"]]
-            self.links_aliases[document["channel"]] = {
-                alias: link["name"] for link in document["links"] if "aliases" in link for alias in link["aliases"]
-            }
-            self.cooldowns[document["channel"]] = {}
-            self.mod_cooldowns[document["channel"]] = 0
-
 
 def prepare(bot):
-    bot.add_cog(Link(bot))
+    bot.add_cog(Links(bot))
+    bot.loop.run_until_complete(bot.cogs["Links"].__ainit__())

@@ -1,5 +1,4 @@
 from twitchio.ext.commands import Cog, command, Context
-from twitchio.ext.routines import routine
 
 from config import db
 
@@ -7,7 +6,6 @@ from config import db
 class Editors(Cog):
     def __init__(self, bot):
         self.bot = bot
-        self.get_editors.start(stop_on_error=False)
 
     @command(
         name="editor",
@@ -160,8 +158,7 @@ class Editors(Cog):
         await db.editors.update_one({"channel": ctx.channel.name}, {"$pull": {"banned": command}})
         await ctx.reply(f"Теперь команда {self.bot.prefix}{command} доступна всем модераторам")
 
-    @routine(iterations=1)
-    async def get_editors(self):
+    async def __ainit__(self):
         async for document in db.editors.find():
             self.bot.editors[document["channel"]] = document.get("editors", [])
             self.bot.editor_commands[document["channel"]] = document.get("banned", [])
@@ -169,3 +166,4 @@ class Editors(Cog):
 
 def prepare(bot):
     bot.add_cog(Editors(bot))
+    bot.loop.run_until_complete(bot.cogs["Editors"].__ainit__())

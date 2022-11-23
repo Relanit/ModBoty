@@ -1,6 +1,5 @@
 import asyncio
 
-from twitchio.ext.routines import routine
 from twitchio.ext.commands import Cog, command, Context
 from twitchio import Message
 
@@ -25,7 +24,12 @@ class Banwords(Cog):
         self.banwords: dict[str, list[str]] = {}
         self.mutewords: dict[str, list[dict[str, str | int]]] = {}
 
-        self.get_banwords.start(stop_on_error=False)
+    async def __ainit__(self):
+        async for document in db.banwords.find():
+            if "banwords" in document:
+                self.banwords[document["channel"]] = document["banwords"]
+            if "mutewords" in document:
+                self.mutewords[document["channel"]] = document["mutewords"]
 
     @Cog.event()
     async def event_message(self, message: Message):
@@ -267,14 +271,7 @@ class Banwords(Cog):
                 if message2:
                     await ctx.reply(message2)
 
-    @routine(iterations=1)
-    async def get_banwords(self):
-        async for document in db.banwords.find():
-            if "banwords" in document:
-                self.banwords[document["channel"]] = document["banwords"]
-            if "mutewords" in document:
-                self.mutewords[document["channel"]] = document["mutewords"]
-
 
 def prepare(bot):
     bot.add_cog(Banwords(bot))
+    bot.loop.run_until_complete(bot.cogs["Banwords"].__ainit__())

@@ -144,7 +144,7 @@ class Vips(Cog):
             t = content[1].split(maxsplit=1)[1]
             t = parse(t)
             if t is None:
-                await ctx.reply("Укажите время, через которое произойдёт анвип - https://vk.cc/ciufvM")
+                await ctx.reply("Укажите время, через которое произойдёт анвип - https://vk.cc/ciVsiG")
                 return
             if t < 60:
                 await ctx.reply("Нельзя указывать прошедшую дату или близкое будущее (до минуты)")
@@ -179,7 +179,7 @@ class Vips(Cog):
             unvip_time = time.time()
             message = f"{login} будет анвипнут после окончания стрима"
         else:
-            await ctx.reply("Неверный ввод - https://vk.cc/ciufvM")
+            await ctx.reply("Неверный ввод - https://vk.cc/ciVsiG")
             return
 
         found = await db.unvips.find_one({"channel": ctx.channel.name, "unvips.user_id": user_id}, {"unvips.$": 1})

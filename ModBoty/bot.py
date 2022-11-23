@@ -65,10 +65,6 @@ class ModBoty(Bot, Cooldown):
             print(time.time())
             print(repr(e))
             return
-        except twitchio.errors.Unauthorized as e:
-            print(time.time())
-            print(repr(e))
-            return
         except twitchio.HTTPException as e:
             print(time.time())
             print(repr(e))

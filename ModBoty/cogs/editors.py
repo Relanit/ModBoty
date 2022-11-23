@@ -7,6 +7,11 @@ class Editors(Cog):
     def __init__(self, bot):
         self.bot = bot
 
+    async def __ainit__(self):
+        async for document in db.editors.find():
+            self.bot.editors[document["channel"]] = document.get("editors", [])
+            self.bot.editor_commands[document["channel"]] = document.get("banned", [])
+
     @command(
         name="editor",
         aliases=["editors", "dele", "unban", "ban"],
@@ -157,11 +162,6 @@ class Editors(Cog):
         self.bot.editor_commands[ctx.channel.name].remove(command)
         await db.editors.update_one({"channel": ctx.channel.name}, {"$pull": {"banned": command}})
         await ctx.reply(f"Теперь команда {self.bot.prefix}{command} доступна всем модераторам")
-
-    async def __ainit__(self):
-        async for document in db.editors.find():
-            self.bot.editors[document["channel"]] = document.get("editors", [])
-            self.bot.editor_commands[document["channel"]] = document.get("banned", [])
 
 
 def prepare(bot):

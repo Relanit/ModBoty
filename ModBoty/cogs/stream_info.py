@@ -108,19 +108,32 @@ class StreamInfo(Cog):
         game = game or await self.bot.fetch_games(names=[ctx.content])
 
         if not game:
+            query = ctx.content.lower()
             games = await self.bot.fetch_top_games()
             new_game = ""
             sim = 0
             for g in games:
-                if (new_sim := similarity(ctx.content.lower(), g.name.lower())) > sim:
+                if query in g.name.lower() and (new_sim := similarity(query, g.name.lower())) > sim:
                     new_game = g
                     sim = new_sim
 
-            if sim < 0.5:
-                await ctx.reply("Категория не найдена")
-                return
+            if not sim:
+                found_games = await self.bot.search_categories(query)
 
-            game = [new_game]
+                if not found_games:
+                    await ctx.reply("Категория не найдена")
+                    return
+
+                game = None
+                for game in found_games:
+                    if query in game.name.lower():
+                        game = [game]
+                        break
+
+                if not game:
+                    game = [found_games[0]]
+            else:
+                game = [new_game]
 
         try:
             await channel.modify_stream(token, game[0].id)

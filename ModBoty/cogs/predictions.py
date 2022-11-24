@@ -81,24 +81,10 @@ class Predictions(Cog):
             await ctx.reply("Продолжительность должна быть числом")
             return
 
-        if not 1 <= duration <= 1800:
-            await ctx.reply("Продолжительность должна быть от 1 до 1800 секунд")
-            return
+        duration = min(max(duration, 1), 1800)
+        title = title[:45]
 
-        if len(title) > 45:
-            await ctx.reply("Длина заголовка должна быть до 45 символов")
-            return
-
-        outcomes_raw = content_split[1:]
-        outcomes = []
-
-        for outcome in outcomes_raw:
-            if len(outcome) > 25:
-                await ctx.reply("Длина исхода должна быть до 25 символов")
-                return
-            elif outcome != "":
-                outcomes.append({"title": outcome})
-
+        outcomes = [{"title": outcome[:25]} for outcome in content_split[1:] if outcome != ""]
         if len(outcomes) < 2:
             await ctx.reply("Недостаточное количество исходов")
             return

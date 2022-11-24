@@ -65,23 +65,10 @@ class Polls(Cog):
             await ctx.reply("Продолжительность должна быть числом")
             return
 
-        if not 15 <= duration <= 1800:
-            await ctx.reply("Продолжительность должна быть от 15 до 1800 секунд")
-            return
+        duration = min(max(duration, 15), 1800)
+        title = title[:60]
 
-        if len(title) > 60:
-            await ctx.reply("Длина заголовка должна быть до 60 символов")
-            return
-
-        choices = content_split[1:]
-
-        for choice in choices:
-            if len(choice) > 25:
-                await ctx.reply("Длина варианта должна быть до 25 символов")
-                return
-            elif choice == "":
-                choices.remove(choice)
-
+        choices = [choice[:25] for choice in content_split[1:] if choice != ""]
         if len(choices) < 2:
             await ctx.reply("Недостаточно вариантов для выбора")
             return

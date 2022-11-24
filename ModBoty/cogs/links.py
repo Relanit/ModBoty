@@ -133,12 +133,12 @@ class Links(Cog):
             await self.announce(ctx)
 
     async def link(self, ctx: Context):
-        content = ctx.content.lower().split()
+        content = ctx.content.split()
         if len(content) < 2:
             await ctx.reply("Недостаточно значений - https://vk.cc/chCfKt")
             return
 
-        link = content[0].lstrip(self.bot.prefix)
+        link = content[0].lower().lstrip(self.bot.prefix)
         found = self.get_link_name(ctx.channel.name, link)
 
         if len(self.links.get(ctx.channel.name, [])) == 40 and not found:

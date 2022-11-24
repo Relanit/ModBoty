@@ -1,10 +1,16 @@
 import time
 import configparser
+import logging
 
 import aiohttp
 import motor.motor_asyncio
 from cryptography.fernet import Fernet
 
+logger = logging.getLogger()
+logging.basicConfig(level=logging.INFO)
+log_handler = logging.FileHandler("bot.log", "w")
+log_handler.setFormatter(logging.Formatter("[%(asctime)s] [%(levelname)s] [%(name)s] %(message)s"))
+logger.addHandler(log_handler)
 
 config = configparser.ConfigParser()
 config.read("../config.ini")
@@ -50,7 +56,7 @@ async def get_config():
                             }
                         },
                     )
-                    print("token refreshed")
+                    logger.info("Bot token expired, new token generated")
 
     config["Bot"]["refresh_token"] = refresh_token
     config["Bot"]["access_token"] = access_token

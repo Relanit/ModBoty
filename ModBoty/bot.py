@@ -1,8 +1,8 @@
 import time
 from pathlib import Path
+import logging
 
 import aiohttp
-import logging
 from twitchio.ext.commands import Bot, Context, CommandNotFound
 from twitchio.ext.routines import routine
 from twitchio import Message
@@ -11,10 +11,6 @@ from config import config, db, fernet
 from cooldown import Cooldown
 
 logger = logging.getLogger()
-logging.basicConfig(level=logging.ERROR)
-log_handler = logging.FileHandler("errors.log", "w")
-log_handler.setFormatter(logging.Formatter("%(asctime)s - %(message)s - %(funcName)s - line %(lineno)d"))
-logger.addHandler(log_handler)
 
 
 class ModBoty(Bot, Cooldown):
@@ -68,7 +64,8 @@ class ModBoty(Bot, Cooldown):
         try:
             streams = await self.fetch_streams(user_logins=channels)
         except Exception:
-            logger.error("Exception occurred", exc_info=True)
+            logger.exception("Exception occurred")
+            return
 
         for channel in channels:
             if next((s for s in streams if s.user.name.lower() == channel), None):  # check if channel is streaming
@@ -129,6 +126,7 @@ class ModBoty(Bot, Cooldown):
                     }
                 },
             )
+            logger.info("Bot token has been refreshed")
 
         for user in data.get("user_tokens", []):  # refresh channels' user tokens
             if user["expire_time"] - time.time() < 900:
@@ -144,6 +142,7 @@ class ModBoty(Bot, Cooldown):
 
                 if response == {"status": 400, "message": "Invalid refresh token"}:
                     await db.config.update_one({"_id": 1}, {"$pull": {"user_tokens": {"login": user["login"]}}})
+                    logger.info(f'{user["login"]} revoked authorization')
                 else:
                     token_data = {
                         "login": user["login"],

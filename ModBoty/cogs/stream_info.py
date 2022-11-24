@@ -59,7 +59,7 @@ class StreamInfo(Cog):
                 channel = await ctx.channel.user()
                 token = fernet.decrypt(data["user_tokens"][0]["access_token"].encode()).decode()
                 game_id = self.aliases[message.channel.name][content]
-                game = [Game({"id": game_id, "name": self.games[ctx.channel.name][game_id], "box_art_url": ""})]
+                game = Game({"id": game_id, "name": self.games[ctx.channel.name][game_id], "box_art_url": ""})
                 self.cooldowns[message.channel.name] = time.time() + 3
                 await self.g(ctx, channel, token, game)
 
@@ -104,20 +104,23 @@ class StreamInfo(Cog):
 
         await ctx.reply(f"Установлено название стрима - {ctx.content[:140]}")
 
-    async def g(self, ctx: Context, channel: User, token: str, game: Optional[list[Game]] = None):
+    async def g(self, ctx: Context, channel: User, token: str, game: Optional[Game] = None):
         game = game or await self.bot.fetch_games(names=[ctx.content])
+        if isinstance(game, list):
+            game = game[0] if game else ""
 
         if not game:
             query = ctx.content.lower()
-            games = await self.bot.fetch_top_games()
-            new_game = ""
-            sim = 0
-            for g in games:
+            top_games = await self.bot.fetch_top_games()
+            new_game, sim = "", 0
+            for g in top_games:
                 if query in g.name.lower() and (new_sim := similarity(query, g.name.lower())) > sim:
                     new_game = g
                     sim = new_sim
 
-            if not sim:
+            if sim:
+                game = new_game
+            else:
                 found_games = await self.bot.search_categories(query)
 
                 if not found_games:
@@ -127,21 +130,19 @@ class StreamInfo(Cog):
                 game = None
                 for game in found_games:
                     if query in game.name.lower():
-                        game = [game]
+                        game = game
                         break
 
                 if not game:
-                    game = [found_games[0]]
-            else:
-                game = [new_game]
+                    game = found_games[0]
 
         try:
-            await channel.modify_stream(token, game[0].id)
+            await channel.modify_stream(token, game.id)
         except twitchio.errors.Unauthorized:
             await ctx.reply("Для работы этой команды стримеру нужно пройти авторизацию - https://vk.cc/chZxeI")
             return
 
-        await ctx.reply(f"Установлена категория {game[0].name}")
+        await ctx.reply(f"Установлена категория {game.name}")
 
     async def addg(self, ctx: Context):
         try:
@@ -158,18 +159,20 @@ class StreamInfo(Cog):
             await ctx.reply("Маскимальная длина элисаса - 15")
             return
 
-        game = await self.bot.fetch_games(names=[name])
-        if not game:
+        games = await self.bot.fetch_games(names=[name])
+        if not games:
             await ctx.reply(f'Категория "{name}" не найдена')
             return
 
-        if (game_id := self.aliases.get(ctx.channel.name, {}).get(alias, game[0].id)) != game[0].id:
+        game = games[0]
+
+        if (game_id := self.aliases.get(ctx.channel.name, {}).get(alias, game.id)) != game.id:
             await ctx.reply(
                 f"Элиас {self.bot.prefix}{alias} уже занят категорией {self.games[ctx.channel.name][game_id]}"
             )
             return
 
-        if self.aliases.get(ctx.channel.name, {}).get(alias) == game[0].id:
+        if self.aliases.get(ctx.channel.name, {}).get(alias) == game.id:
             await ctx.reply("Такой элиас уже существует")
             return
 
@@ -186,32 +189,32 @@ class StreamInfo(Cog):
 
         message = f"Добавлено {self.bot.prefix}{alias}"
         if ctx.channel.name in self.games:
-            if game[0].id in self.games[ctx.channel.name]:
-                self.aliases[ctx.channel.name][alias] = game[0].id
-                key["games.id"] = game[0].id
+            if game.id in self.games[ctx.channel.name]:
+                self.aliases[ctx.channel.name][alias] = game.id
+                key["games.id"] = game.id
                 values = {"$addToSet": {"games.$.aliases": alias}}
             else:
-                self.games[ctx.channel.name][game[0].id] = game[0].name
-                self.aliases[ctx.channel.name][alias] = game[0].id
+                self.games[ctx.channel.name][game.id] = game.name
+                self.aliases[ctx.channel.name][alias] = game.id
                 values = {
                     "$addToSet": {
                         "games": {
-                            "name": game[0].name,
-                            "id": game[0].id,
+                            "name": game.name,
+                            "id": game.id,
                             "aliases": [alias],
                         }
                     }
                 }
         else:
-            self.games[ctx.channel.name] = {game[0].id: game[0].name}
-            self.aliases[ctx.channel.name] = {alias: game[0].id}
+            self.games[ctx.channel.name] = {game.id: game.name}
+            self.aliases[ctx.channel.name] = {alias: game.id}
             self.cooldowns[ctx.channel.name] = 0
             values = {
                 "$setOnInsert": {"channel": ctx.channel.name},
                 "$addToSet": {
                     "games": {
-                        "name": game[0].name,
-                        "id": game[0].id,
+                        "name": game.name,
+                        "id": game.id,
                         "aliases": [alias],
                     }
                 },

@@ -72,7 +72,7 @@ class Predictions(Cog):
         try:
             duration, title = content_split[0].split(maxsplit=1)
         except ValueError:
-            await ctx.reply("Недостаточно значений - https://vk.cc/chZLJH")
+            await ctx.reply("Неверный ввод команды - https://vk.cc/chZLJH")
             return
 
         try:

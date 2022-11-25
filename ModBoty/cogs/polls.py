@@ -56,7 +56,7 @@ class Polls(Cog):
         try:
             duration, title = content_split[0].split(maxsplit=1)
         except ValueError:
-            await ctx.reply("Недостаточно значений - https://vk.cc/cj2PKZ")
+            await ctx.reply("Неверный ввод команды - https://vk.cc/cj2PKZ")
             return
 
         try:

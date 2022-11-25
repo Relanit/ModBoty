@@ -43,7 +43,7 @@ class JoinChannel(Cog):
             await self.bot.part_channels([channel])
             channels = config["Bot"]["channels"].split()
             channels.remove(channel)
-            config["Bot"]["channels"] = "&".join(channels)
+            config["Bot"]["channels"] = " ".join(channels)
             await ctx.reply("Удалён")
 
 

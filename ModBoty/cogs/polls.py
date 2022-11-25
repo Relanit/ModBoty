@@ -14,7 +14,7 @@ class Polls(Cog):
         name="poll",
         aliases=["delpoll"],
         cooldown={"per": 0, "gen": 3},
-        description="Создание и завершение опросов. Полное описание - https://vk.cc/chVYL4",
+        description="Создание и завершение опросов. Полное описание - https://vk.cc/cj2PKZ",
     )
     async def command(self, ctx: Context):
         channel = await ctx.channel.user()
@@ -50,13 +50,13 @@ class Polls(Cog):
     async def poll(ctx: Context, channel: User, token: str):
         content_split = ctx.content.split("/")
         if len(content_split) < 3:
-            await ctx.reply("Недостаточно значений - https://vk.cc/chVYL4")
+            await ctx.reply("Недостаточно значений - https://vk.cc/cj2PKZ")
             return
 
         try:
             duration, title = content_split[0].split(maxsplit=1)
         except ValueError:
-            await ctx.reply("Недостаточно значений - https://vk.cc/chVYL4")
+            await ctx.reply("Недостаточно значений - https://vk.cc/cj2PKZ")
             return
 
         try:

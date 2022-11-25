@@ -46,14 +46,7 @@ class Links(Cog):
             link = content.split(maxsplit=1)[0].lower()
 
             if link := self.get_link_name(message.channel.name, link):
-                if (
-                    (
-                        (message.author.is_mod or message.author.name == self.bot.admin)
-                        and time.time() < self.cooldowns[message.channel.name].get(link, 0) - 2
-                    )
-                    or not message.author.is_mod
-                    and time.time() < self.cooldowns[message.channel.name].get(link, 0)
-                ):
+                if not message.author.is_mod and time.time() < self.cooldowns[message.channel.name].get(link, 0):
                     return
 
                 data = await db.links.find_one(
@@ -84,7 +77,7 @@ class Links(Cog):
 
                         self.mod_cooldowns[message.channel.name] = time.time() + 3
                         self.cooldowns[message.channel.name][link] = time.time() + 5
-                    elif time.time() < self.cooldowns[message.channel.name].get(link, 0) - 2:
+                    elif time.time() < self.cooldowns[message.channel.name].get(link, 0) - 1:
                         return
                     else:
                         self.cooldowns[message.channel.name][link] = time.time() + 3

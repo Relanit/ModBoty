@@ -24,7 +24,7 @@ class JoinChannel(Cog):
             cog.message_history[channel] = []
             await db.config.update_one({"_id": 1}, {"$addToSet": {"channels": channel}})
             await self.bot.join_channels([channel])
-            config["Bot"]["channels"] = config["Bot"]["channels"] + "&" + channel
+            config["Bot"]["channels"] = config["Bot"]["channels"] + " " + channel
             await ctx.reply("Добавлен")
         else:
             if not channel:

@@ -66,22 +66,23 @@ class Predictions(Cog):
     async def pred(ctx: Context, channel: User, token: str):
         content_split = ctx.content.split("/")
         if len(content_split) < 3:
-            await ctx.reply("Недостаточно значений - https://vk.cc/chZLJH")
+            await ctx.reply("Неверный ввод команды - https://vk.cc/cj2PKZ")
             return
 
         try:
             duration, title = content_split[0].split(maxsplit=1)
         except ValueError:
-            await ctx.reply("Неверный ввод команды - https://vk.cc/chZLJH")
-            return
+            duration = 60
+            title = content_split[0]
 
-        try:
-            duration = int(duration)
-        except ValueError:
-            await ctx.reply("Продолжительность должна быть числом")
-            return
+        if isinstance(duration, str):
+            try:
+                duration = int(duration)
+            except ValueError:
+                await ctx.reply("Продолжительность должна быть числом")
+                return
+            duration = min(max(duration, 15), 1800)
 
-        duration = min(max(duration, 1), 1800)
         title = title[:45]
 
         outcomes = [{"title": outcome[:25]} for outcome in content_split[1:] if outcome != ""]

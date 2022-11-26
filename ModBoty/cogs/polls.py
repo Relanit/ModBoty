@@ -50,22 +50,23 @@ class Polls(Cog):
     async def poll(ctx: Context, channel: User, token: str):
         content_split = ctx.content.split("/")
         if len(content_split) < 3:
-            await ctx.reply("Недостаточно значений - https://vk.cc/cj2PKZ")
+            await ctx.reply("Неверный ввод команды - https://vk.cc/cj2PKZ")
             return
 
         try:
             duration, title = content_split[0].split(maxsplit=1)
         except ValueError:
-            await ctx.reply("Неверный ввод команды - https://vk.cc/cj2PKZ")
-            return
+            duration = 60
+            title = content_split[0]
 
-        try:
-            duration = int(duration)
-        except ValueError:
-            await ctx.reply("Продолжительность должна быть числом")
-            return
+        if isinstance(duration, str):
+            try:
+                duration = int(duration)
+            except ValueError:
+                await ctx.reply("Продолжительность должна быть числом")
+                return
+            duration = min(max(duration, 15), 1800)
 
-        duration = min(max(duration, 15), 1800)
         title = title[:60]
 
         choices = [choice[:25] for choice in content_split[1:] if choice != ""]

@@ -44,7 +44,7 @@ class Editors(Cog):
             await ctx.reply("На канале может быть не более 10 редакторов")
             return
 
-        login = ctx.content.lower()
+        login = ctx.content.lower().lstrip("@")
         user = await self.bot.fetch_users(names=[login])
         if not user:
             await ctx.reply("Пользователь не найден")
@@ -76,7 +76,7 @@ class Editors(Cog):
             await ctx.reply("На вашем канале нет редакторов")
             return
 
-        login = ctx.content.lower()
+        login = ctx.content.lower().lstrip("@")
         if login not in self.bot.editors[ctx.channel.name]:
             await ctx.reply("Редактор не найден")
             return

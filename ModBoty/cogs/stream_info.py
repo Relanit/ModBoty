@@ -41,8 +41,10 @@ class StreamInfo(Cog):
             if not content:
                 return
 
+            alias = content.split(maxsplit=1)[0].lower()
+
             if (
-                content in self.aliases.get(message.channel.name, {})
+                alias in self.aliases.get(message.channel.name, {})
                 and (message.author.is_mod or message.author.name == self.bot.admin)
                 and time.time() - self.cooldowns[message.channel.name] > 3
             ):
@@ -58,7 +60,7 @@ class StreamInfo(Cog):
 
                 channel = await ctx.channel.user()
                 token = fernet.decrypt(data["user_tokens"][0]["access_token"].encode()).decode()
-                game_id = self.aliases[message.channel.name][content]
+                game_id = self.aliases[message.channel.name][alias]
                 game = Game({"id": game_id, "name": self.games[ctx.channel.name][game_id], "box_art_url": ""})
                 self.cooldowns[message.channel.name] = time.time() + 3
                 await self.g(ctx, channel, token, game)
@@ -73,10 +75,6 @@ class StreamInfo(Cog):
         data = await db.config.find_one({"_id": 1, "user_tokens.login": ctx.channel.name}, {"user_tokens.$": 1})
         if not data:
             await ctx.reply("Для работы этой команды стримеру нужно пройти авторизацию - https://vk.cc/chZxeI")
-            return
-
-        if not ctx.content and ctx.command_alias != "games":
-            await ctx.reply("Недостаточно значений - https://vk.cc/ciaLzx")
             return
 
         token = fernet.decrypt(data["user_tokens"][0]["access_token"].encode()).decode()
@@ -94,8 +92,12 @@ class StreamInfo(Cog):
         else:
             await self.list_games(ctx)
 
-    @staticmethod
-    async def t(ctx: Context, channel: User, token: str):
+    async def t(self, ctx: Context, channel: User, token: str):
+        if not ctx.content:
+            channel_info = await self.bot.fetch_channel(ctx.channel.name)
+            await ctx.reply(f"Заголовок стрима - {channel_info.title}")
+            return
+
         try:
             await channel.modify_stream(token, title=ctx.content[:140])
         except twitchio.errors.Unauthorized:
@@ -105,6 +107,11 @@ class StreamInfo(Cog):
         await ctx.reply(f"Установлено название стрима - {ctx.content[:140]}")
 
     async def g(self, ctx: Context, channel: User, token: str, game: Optional[Game] = None):
+        if not game and not ctx.content:
+            channel_info = await self.bot.fetch_channel(ctx.channel.name)
+            await ctx.reply(f"Текущая категория - {channel_info.game_name}")
+            return
+
         game = game or await self.bot.fetch_games(names=[ctx.content])
         if isinstance(game, list):
             game = game[0] if game else ""

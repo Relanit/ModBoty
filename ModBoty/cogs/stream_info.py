@@ -37,7 +37,7 @@ class StreamInfo(Cog):
             return
 
         if message.content.startswith(self.bot.prefix):
-            content = message.content.lower().lstrip(self.bot.prefix)
+            content = message.content.lstrip(self.bot.prefix).lower()
             if not content:
                 return
 

@@ -39,11 +39,11 @@ class Links(Cog):
             )
 
         if content.startswith(self.bot.prefix):
-            content = content.lstrip(self.bot.prefix)
+            content = content.lstrip(self.bot.prefix).lower()
             if not content:
                 return
 
-            link = content.split(maxsplit=1)[0].lower()
+            link = content.split(maxsplit=1)[0]
 
             if link := self.get_link_name(message.channel.name, link):
                 if not message.author.is_mod and time.time() < self.cooldowns[message.channel.name].get(link, 0):
@@ -57,11 +57,12 @@ class Links(Cog):
                 text = data["links"][0]["text"]
 
                 if message.author.is_mod or message.author.name == self.bot.admin:
-                    content = " ".join(content.split()[1:3])
-                    announce = ""
+                    content, announce = " ".join(content.split()[1:3]), ""
 
-                    if "a" in content or "а" in content:
-                        content = content.replace("a", " ").replace("а", " ").strip(" ")
+                    if {"а", "a", "ф", "f"} & set(content):
+                        content = (
+                            content.replace("a", " ").replace("а", " ").replace("ф", " ").replace("f", " ").strip(" ")
+                        )
                         announce = data["links"][0].get("announce") or data["announce"]
 
                     num = 1

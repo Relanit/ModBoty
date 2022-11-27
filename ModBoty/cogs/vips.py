@@ -222,8 +222,11 @@ class Vips(Cog):
                 await ctx.reply(f"Анвип {login} не найден")
                 return
 
-            if time.time() > unvip[0]["unvip_time"] and unvip[0]["offline"] and ctx.channel.name in self.bot.streams:
-                await ctx.reply(f"{login} будет анвипнут после окончания стрима")
+            if time.time() > unvip[0]["unvip_time"]:
+                if unvip[0]["offline"] and ctx.channel.name in self.bot.streams:
+                    await ctx.reply(f"{login} будет анвипнут после окончания стрима")
+                else:
+                    await ctx.reply(f"{login} будет анвипнут в ближайшее время")
                 return
 
             unvip_datetime = datetime.fromtimestamp(unvip[0]["unvip_time"], timezone("Europe/Moscow"))

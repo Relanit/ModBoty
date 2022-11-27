@@ -14,7 +14,7 @@ class Polls(Cog):
         name="poll",
         aliases=["delpoll"],
         cooldown={"per": 0, "gen": 3},
-        description="Создание и завершение опросов. Полное описание - https://vk.cc/cj2PKZ",
+        description="Создание и удаление опросов. Полное описание - https://vk.cc/cj2PKZ",
     )
     async def command(self, ctx: Context):
         channel = await ctx.channel.user()

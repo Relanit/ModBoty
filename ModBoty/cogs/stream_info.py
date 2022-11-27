@@ -72,6 +72,14 @@ class StreamInfo(Cog):
         description="Изменение настроек стрима. Полное описание - https://vk.cc/ciaLzx",
     )
     async def command(self, ctx: Context):
+        if not ctx.content:
+            if ctx.command_alias == "t":
+                await self.t(ctx)
+                return
+            elif ctx.command_alias == "g":
+                await self.g(ctx)
+                return
+
         data = await db.config.find_one({"_id": 1, "user_tokens.login": ctx.channel.name}, {"user_tokens.$": 1})
         if not data:
             await ctx.reply("Для работы этой команды стримеру нужно пройти авторизацию - https://vk.cc/chZxeI")
@@ -92,7 +100,7 @@ class StreamInfo(Cog):
         else:
             await self.list_games(ctx)
 
-    async def t(self, ctx: Context, channel: User, token: str):
+    async def t(self, ctx: Context, channel: Optional[User] = None, token: Optional[str] = None):
         if not ctx.content:
             channel_info = await self.bot.fetch_channel(ctx.channel.name)
             await ctx.reply(f"Заголовок стрима - {channel_info.title}")
@@ -106,7 +114,9 @@ class StreamInfo(Cog):
 
         await ctx.reply(f"Установлено название стрима - {ctx.content[:140]}")
 
-    async def g(self, ctx: Context, channel: User, token: str, game: Optional[Game] = None):
+    async def g(
+        self, ctx: Context, channel: Optional[User] = None, token: Optional[str] = None, game: Optional[Game] = None
+    ):
         if not game and not ctx.content:
             channel_info = await self.bot.fetch_channel(ctx.channel.name)
             await ctx.reply(f"Текущая категория - {channel_info.game_name}")

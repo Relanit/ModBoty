@@ -103,7 +103,7 @@ class StreamInfo(Cog):
     async def t(self, ctx: Context, channel: Optional[User] = None, token: Optional[str] = None):
         if not ctx.content:
             channel_info = await self.bot.fetch_channel(ctx.channel.name)
-            await ctx.reply(f"Заголовок стрима - {channel_info.title}")
+            await ctx.reply(f"Название стрима - {channel_info.title}")
             return
 
         try:
@@ -119,7 +119,7 @@ class StreamInfo(Cog):
     ):
         if not game and not ctx.content:
             channel_info = await self.bot.fetch_channel(ctx.channel.name)
-            await ctx.reply(f"Текущая категория - {channel_info.game_name}")
+            await ctx.reply(f"Установленная категория - {channel_info.game_name}")
             return
 
         game = game or await self.bot.fetch_games(names=[ctx.content])

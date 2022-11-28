@@ -36,9 +36,6 @@ class Banwords(Cog):
         if message.echo:
             return
 
-        if message.channel.name == "t2x2" and message.tags["first-msg"] == "1" and "бум" in message.content.lower():
-            await message.channel.send(f"/timeout {message.author.name} 600 {reason}")
-
         if message.channel.name in self.banwords:
             content = message.content.lower()
             for banword in self.banwords[message.channel.name]:

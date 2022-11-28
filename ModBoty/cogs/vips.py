@@ -154,8 +154,8 @@ class Vips(Cog):
                 return
 
             unvip_time = time.time() + t
-            display = display_time(t)
-            message = f"{login} будет анвипнут через {display}{', вне стрима' if offline else ''}"
+            date = datetime.fromtimestamp(unvip_time, timezone("Europe/Moscow"))
+            message = f'{login} будет анвипнут {date:%Y.%m.%d %H:%M} по МСК{", вне стрима" if offline else ""}'
         elif content[1].startswith("on"):
             date = content[1].split(maxsplit=1)[1]
             cal = parsedatetime.Calendar()
@@ -229,9 +229,10 @@ class Vips(Cog):
                     await ctx.reply(f"{login} будет анвипнут в ближайшее время")
                 return
 
-            unvip_datetime = datetime.fromtimestamp(unvip[0]["unvip_time"], timezone("Europe/Moscow"))
-            date = f"{unvip_datetime:%Y.%m.%d %H:%M}"
-            await ctx.reply(f"Дата анвипа {login}: {date} по МСК{', вне стрима' if unvip[0]['offline'] else ''}")
+            date = datetime.fromtimestamp(unvip[0]["unvip_time"], timezone("Europe/Moscow"))
+            await ctx.reply(
+                f"Дата анвипа {login}: {date:%Y.%m.%d %H:%M} по МСК{', вне стрима' if unvip[0]['offline'] else ''}"
+            )
 
     @staticmethod
     async def delunvip(ctx: Context):

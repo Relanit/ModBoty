@@ -216,7 +216,7 @@ class Vips(Cog):
 
             await ctx.reply(f"Отложенные анвипы: {', '.join(unvips)}")
         else:
-            login = ctx.content.lower()
+            login = ctx.content.lower().lstrip("@")
             unvip = [vip for vip in unvips.get("unvips", []) if vip["login"] == login]
             if not unvip:
                 await ctx.reply(f"Анвип {login} не найден")

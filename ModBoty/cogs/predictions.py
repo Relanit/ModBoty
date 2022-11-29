@@ -64,7 +64,8 @@ class Predictions(Cog):
 
     @staticmethod
     async def pred(ctx: Context, channel: User, token: str):
-        content_split = ctx.content.split("/")
+        sep = "\\" if "\\" in ctx.content else "/"
+        content_split = ctx.content.split(sep)
         if len(content_split) < 3:
             await ctx.reply("Неверный ввод команды - https://vk.cc/cj2PKZ")
             return

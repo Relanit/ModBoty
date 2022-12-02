@@ -1,3 +1,4 @@
+import twitchio
 from twitchio.ext.commands import Cog, command, Context
 
 from config import db, config
@@ -9,9 +10,14 @@ class JoinChannel(Cog):
 
     @command(name="mjoin", aliases=["mpart"], flags=["admin"])
     async def join_channel(self, ctx: Context):
-        channel = ctx.content.lower()
+        channel = ctx.content.lstrip("@").lower()
         if ctx.command_alias == "mjoin":
-            user = await self.bot.fetch_users(names=[channel])
+            try:
+                user = await self.bot.fetch_users(names=[channel])
+            except twitchio.HTTPException:
+                await ctx.reply("Некорректный никнейм")
+                return
+
             if not user:
                 await ctx.reply("Канал не найден")
                 return

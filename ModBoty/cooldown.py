@@ -11,12 +11,11 @@ def get_cooldown_end(cooldown: dict[Literal["per", "gen"], int]) -> (float, floa
     return per_end, gen_end
 
 
-cd = dict[str, float | dict[str, float]]
-
-
 class Cooldown:
     def __init__(self, channels: list[str]):
-        self.cooldowns: dict[str, dict[str, cd]] = {channel: {} for channel in channels}
+        self.cooldowns: dict[str, dict[str, dict[str, float | dict[str, float]]]] = {
+            channel: {} for channel in channels
+        }
 
     async def check_command(self, command: str, message: Message, admin: bool = False) -> bool | None:
         """

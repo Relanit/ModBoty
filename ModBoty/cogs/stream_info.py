@@ -1,6 +1,5 @@
 import difflib
 import time
-from typing import Optional
 
 import twitchio
 from twitchio.ext.commands import Cog, command, Context
@@ -100,7 +99,7 @@ class StreamInfo(Cog):
         else:
             await self.list_games(ctx)
 
-    async def t(self, ctx: Context, channel: Optional[User] = None, token: Optional[str] = None):
+    async def t(self, ctx: Context, channel: User | None = None, token: str | None = None):
         if not ctx.content:
             channel_info = await self.bot.fetch_channel(ctx.channel.name)
             await ctx.reply(f"Название стрима - {channel_info.title}")
@@ -114,9 +113,7 @@ class StreamInfo(Cog):
 
         await ctx.reply(f"Установлено название стрима - {ctx.content[:140]}")
 
-    async def g(
-        self, ctx: Context, channel: Optional[User] = None, token: Optional[str] = None, game: Optional[Game] = None
-    ):
+    async def g(self, ctx: Context, channel: User | None = None, token: str | None = None, game: Game | None = None):
         if not game and not ctx.content:
             channel_info = await self.bot.fetch_channel(ctx.channel.name)
             await ctx.reply(f"Установленная категория - {channel_info.game_name}")
@@ -185,7 +182,7 @@ class StreamInfo(Cog):
 
         if (game_id := self.aliases.get(ctx.channel.name, {}).get(alias, game.id)) != game.id:
             await ctx.reply(
-                f"Элиас {self.bot.prefix}{alias} уже занят категорией {self.games[ctx.channel.name][game_id]}"
+                f"Элиас {self.bot.prefix}{alias} уBже занят категорией {self.games[ctx.channel.name][game_id]}"
             )
             return
 

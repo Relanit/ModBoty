@@ -71,13 +71,12 @@ class StreamInfo(Cog):
         description="Изменение настроек стрима. Полное описание - https://vk.cc/ciaLzx",
     )
     async def command(self, ctx: Context):
-        if not ctx.content:
-            if ctx.command_alias == "t":
-                await self.t(ctx)
-                return
-            elif ctx.command_alias == "g":
-                await self.g(ctx)
-                return
+        if not ctx.content and ctx.command_alias == "t":
+            await self.t(ctx)
+            return
+        if (not ctx.content or "@" in ctx.content) and ctx.command_alias == "g":
+            await self.g(ctx)
+            return
 
         data = await db.config.find_one({"_id": 1, "user_tokens.login": ctx.channel.name}, {"user_tokens.$": 1})
         if not data:
@@ -117,6 +116,11 @@ class StreamInfo(Cog):
         if not game and not ctx.content:
             channel_info = await self.bot.fetch_channel(ctx.channel.name)
             await ctx.reply(f"Установленная категория - {channel_info.game_name}")
+            return
+
+        if "@" in ctx.content:
+            channel_info = await self.bot.fetch_channel(ctx.channel.name)
+            await ctx.send(f"{ctx.content} Установленная категория - {channel_info.game_name}")
             return
 
         game = game or await self.bot.fetch_games(names=[ctx.content])

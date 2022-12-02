@@ -120,7 +120,7 @@ class StreamInfo(Cog):
 
         if "@" in ctx.content:
             channel_info = await self.bot.fetch_channel(ctx.channel.name)
-            await ctx.send(f"{ctx.content} Установленная категория - {channel_info.game_name}")
+            await ctx.send(f"{ctx.content} Название игры - {channel_info.game_name}")
             return
 
         game = game or await self.bot.fetch_games(names=[ctx.content])

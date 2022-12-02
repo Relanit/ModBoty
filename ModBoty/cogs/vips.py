@@ -45,7 +45,7 @@ class Vips(Cog):
         description="Управление випами на канале. Полное описание - https://vk.cc/ciufvM",
         flags=["editor"],
     )
-    async def command(self, ctx: Context):
+    async def command(self, ctx: Context, login: str):
         if ctx.command_alias not in ("unvips", "delunvip"):
             channel = await ctx.channel.user()
             if channel.broadcaster_type == BroadcasterTypeEnum.none:
@@ -57,17 +57,17 @@ class Vips(Cog):
                 await ctx.reply("Для работы этой команды стримеру нужно пройти авторизацию - https://vk.cc/chZxeI")
                 return
 
-            if not ctx.content:
+            if not login:
                 await ctx.reply("Недостаточно значений - https://vk.cc/ciufvM")
                 return
 
             token = fernet.decrypt(data["user_tokens"][0]["access_token"].encode()).decode()
 
-            username = ctx.content.split(maxsplit=1)[0].lstrip("@")
-            user = await self.bot.fetch_users(names=[username])
+            login = login.lstrip("@")
+            user = await self.bot.fetch_users(names=[login])
 
             if not user:
-                await ctx.reply(f"Пользователь {username} не найден")
+                await ctx.reply(f"Пользователь {login} не найден")
                 return
 
             try:
@@ -78,17 +78,17 @@ class Vips(Cog):
 
             if ctx.command_alias == "vip":
                 if vip:
-                    await ctx.reply(f"{username} уже VIP")
+                    await ctx.reply(f"{login} уже VIP")
                     return
 
                 mod = await channel.fetch_moderators(token, userids=[user[0].id])
                 if mod:
-                    await ctx.reply(f"{username} уже модератор")
+                    await ctx.reply(f"{login} уже модератор")
                     return
                 await self.vip(ctx, channel, token, user[0].id)
             else:
                 if not vip:
-                    await ctx.reply(f"{username} не VIP")
+                    await ctx.reply(f"{login} не VIP")
                     return
 
                 await self.unvip(ctx, channel, token, user[0].id)

@@ -64,7 +64,11 @@ class Vips(Cog):
             token = fernet.decrypt(data["user_tokens"][0]["access_token"].encode()).decode()
 
             login = ctx.content.split()[0].lstrip("@").lower()
-            user = await self.bot.fetch_users(names=[login])
+            try:
+                user = await self.bot.fetch_users(names=[login])
+            except twitchio.HTTPException:
+                await ctx.reply("Некорректный никнейм")
+                return
 
             if not user:
                 await ctx.reply(f"Пользователь {login} не найден")

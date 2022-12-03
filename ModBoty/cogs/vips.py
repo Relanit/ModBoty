@@ -57,13 +57,13 @@ class Vips(Cog):
                 await ctx.reply("Для работы этой команды стримеру нужно пройти авторизацию - https://vk.cc/chZxeI")
                 return
 
-            if not login:
+            if not ctx.content:
                 await ctx.reply("Недостаточно значений - https://vk.cc/ciufvM")
                 return
 
             token = fernet.decrypt(data["user_tokens"][0]["access_token"].encode()).decode()
 
-            login = login.lstrip("@")
+            login = ctx.content.lstrip("@").lower()
             user = await self.bot.fetch_users(names=[login])
 
             if not user:

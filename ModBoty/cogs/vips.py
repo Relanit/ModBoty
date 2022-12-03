@@ -45,7 +45,7 @@ class Vips(Cog):
         description="Управление випами на канале. Полное описание - https://vk.cc/ciufvM",
         flags=["editor"],
     )
-    async def command(self, ctx: Context, login: str):
+    async def command(self, ctx: Context):
         if ctx.command_alias not in ("unvips", "delunvip"):
             channel = await ctx.channel.user()
             if channel.broadcaster_type == BroadcasterTypeEnum.none:

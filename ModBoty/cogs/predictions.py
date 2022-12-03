@@ -72,17 +72,10 @@ class Predictions(Cog):
 
         try:
             duration, title = content_split[0].split(maxsplit=1)
+            duration = min(max(int(duration), 30), 1800)
         except ValueError:
             duration = 60
             title = content_split[0]
-
-        if isinstance(duration, str):
-            try:
-                duration = int(duration)
-            except ValueError:
-                await ctx.reply("Продолжительность должна быть числом")
-                return
-            duration = min(max(duration, 30), 1800)
 
         title = title[:45]
 

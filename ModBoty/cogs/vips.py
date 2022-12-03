@@ -63,7 +63,7 @@ class Vips(Cog):
 
             token = fernet.decrypt(data["user_tokens"][0]["access_token"].encode()).decode()
 
-            login = ctx.content.lstrip("@").lower()
+            login = ctx.content.split()[0].lstrip("@").lower()
             user = await self.bot.fetch_users(names=[login])
 
             if not user:
@@ -127,7 +127,6 @@ class Vips(Cog):
                 }
             },
         ]
-
         unvips_count = None
         async for data in db.unvips.aggregate(pipeline):
             unvips_count = data

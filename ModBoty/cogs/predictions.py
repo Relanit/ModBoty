@@ -135,7 +135,7 @@ class Predictions(Cog):
 
         outcome_id, title = (
             prediction.outcomes[outcome_number - 1].outcome_id,
-            prediction.outcomes[outcome_number - 1].title
+            prediction.outcomes[outcome_number - 1].title.strip(),
         )
 
         await channel.end_prediction(
@@ -144,7 +144,7 @@ class Predictions(Cog):
             "RESOLVED",
             winning_outcome_id=outcome_id,
         )
-        await ctx.reply(f"Ставка завершена, победил вариант \"{title}\"")
+        await ctx.reply(f'Ставка завершена, победил вариант "{title}"')
 
     @staticmethod
     async def delpred(ctx: Context, channel: User, token: str, prediction: Prediction):

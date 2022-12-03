@@ -124,23 +124,27 @@ class Predictions(Cog):
             return
 
         try:
-            outcome_id = int(ctx.content)
+            outcome_number = int(ctx.content)
         except ValueError:
             await ctx.reply("Номер верного исхода должен быть числом")
             return
 
-        if not 1 <= outcome_id <= len(prediction.outcomes):
+        if not 1 <= outcome_number <= len(prediction.outcomes):
             await ctx.reply("Неверный номер исхода")
             return
 
-        outcome_id = prediction.outcomes[outcome_id - 1].outcome_id
+        outcome_id, title = (
+            prediction.outcomes[outcome_number - 1].outcome_id,
+            prediction.outcomes[outcome_number - 1].title
+        )
+
         await channel.end_prediction(
             token,
             prediction.prediction_id,
             "RESOLVED",
             winning_outcome_id=outcome_id,
         )
-        await ctx.reply("Ставка завершена")
+        await ctx.reply(f"Ставка завершена, победил вариант \"{title}\"")
 
     @staticmethod
     async def delpred(ctx: Context, channel: User, token: str, prediction: Prediction):
@@ -154,6 +158,14 @@ class Predictions(Cog):
 
     @staticmethod
     async def reppred(ctx: Context, channel: User, token: str, prediction: Prediction):
+        duration = prediction.prediction_window
+        if ctx.content:
+            try:
+                duration = min(max(int(ctx.content), 15), 1800)
+            except ValueError:
+                await ctx.reply("Продолжительность должна быть числом")
+                return
+
         async with aiohttp.ClientSession() as session:
             url = "https://api.twitch.tv/helix/predictions"
             headers = {
@@ -166,7 +178,7 @@ class Predictions(Cog):
                 "broadcaster_id": str(channel.id),
                 "title": prediction.title,
                 "outcomes": [{"title": outcome.title} for outcome in prediction.outcomes],
-                "prediction_window": prediction.prediction_window,
+                "prediction_window": duration,
             }
             async with session.post(url, headers=headers, json=json) as response:
                 response = await response.json()

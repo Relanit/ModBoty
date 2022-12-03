@@ -13,20 +13,22 @@ class Spam(Cog):
         description="Спам текстом указанное количество раз (до 15).",
         flags=["bot-vip"],
     )
-    async def spam(self, ctx: Context, *params):
-        if not params:
+    async def spam(self, ctx: Context):
+        if not ctx.content:
             await ctx.reply("Введите текст")
             return
 
+        content_split = ctx.content.split()
+
         try:
-            num = min(int(params[0]), 15)
-            if len(params) < 2:
+            num = min(int(content_split[0]), 15)
+            if len(content_split) < 2:
                 await ctx.reply("Введите текст")
                 return
-            message = " ".join(params[1:])
+            message = " ".join(content_split[1:])
         except ValueError:
             num = 1
-            message = " ".join(params)
+            message = " ".join(content_split)
 
         if not (message.startswith("/a") or message.startswith(".a")):
             for _ in range(num):

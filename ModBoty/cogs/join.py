@@ -9,8 +9,8 @@ class JoinChannel(Cog):
         self.bot = bot
 
     @command(name="mjoin", aliases=["mpart"], flags=["admin"])
-    async def join_channel(self, ctx: Context, channel: str):
-        channel = channel.lstrip("@").lower()
+    async def join_channel(self, ctx: Context):
+        channel = ctx.content.lstrip("@").lower()
         if ctx.command_alias == "mjoin":
             try:
                 user = await self.bot.fetch_users(names=[channel])

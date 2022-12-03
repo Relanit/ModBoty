@@ -82,7 +82,7 @@ class Predictions(Cog):
             except ValueError:
                 await ctx.reply("Продолжительность должна быть числом")
                 return
-            duration = min(max(duration, 15), 1800)
+            duration = min(max(duration, 30), 1800)
 
         title = title[:45]
 

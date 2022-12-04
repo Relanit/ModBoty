@@ -1,6 +1,6 @@
 import asyncio
 import time
-from typing import Generator, TypedDict, Literal
+from typing import Generator, TypedDict
 
 from twitchio.ext.commands import Cog, command, Context
 from twitchio import Message

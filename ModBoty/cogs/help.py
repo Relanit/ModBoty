@@ -11,13 +11,14 @@ class Help(Cog):
         name="help",
         cooldown={"per": 3, "gen": 0},
         description="Эта команда.",
-        flags=["whitelist"],
+        flags=["whitelist", "mention"],
     )
     async def help(self, ctx: Context):
         content = ctx.content.lstrip(self.bot.prefix).lower()
         if not content:
-            message = f"Документация - https://vk.cc/chCevV | Напишите {self.bot.prefix}help [команда], чтобы узнать описание команды"
-            await ctx.reply(message)
+            mention = ctx.message.custom_tags.get("mention") or ctx.author.mention
+            message = f"{mention} Документация - https://vk.cc/chCevV | Напишите {self.bot.prefix}help [команда], чтобы узнать описание команды"
+            await ctx.send(message)
             return
 
         alias = content.split()[0]
@@ -49,12 +50,13 @@ class Help(Cog):
 
         editor = command_name in self.bot.editor_commands.get(ctx.channel.name, []) or "editor" in data.flags
 
+        mention = ctx.message.custom_tags.get("mention") or ctx.author.mention
         message = (
-            f'{self.bot.prefix}{command_name}{f" {aliases}:" if aliases else ":"} '
+            f'{mention} {self.bot.prefix}{command_name}{f" {aliases}:" if aliases else ":"} '
             f"{data.description.format(prefix=self.bot.prefix)} Кд: {cooldown}"
             f'{" Для редакторов бота" if editor else ""}'
         )
-        await ctx.reply(message)
+        await ctx.send(message)
 
     async def link_info(self, ctx: Context, link: str):
         data = await db.links.find_one(
@@ -81,15 +83,19 @@ class Help(Cog):
                 f'{", с announce" if timer.get("announce", False) in timer else ""}'
                 f'{"." if timer.get("offline", offline) else ", только на стриме."}'
             )
+
+        mention = ctx.message.custom_tags.get("mention") or ctx.author.mention
         message = (
-            f'{self.bot.prefix}{link}{f" {aliases}." if aliases else "."} Доступ: '
+            f'{mention} {self.bot.prefix}{link}{f" {aliases}." if aliases else "."} Доступ: '
             f'{"приватный" if private else "публичный"}. Кд: общий 3с. {timer}'
         )
 
-        await ctx.reply(message)
+        await ctx.send(message)
 
     async def game_info(self, ctx: Context, game: str):
         cog = self.bot.get_cog("StreamInfo")
+        mention = ctx.message.custom_tags.get("mention") or ctx.author.mention
+
         if game in cog.aliases.get(ctx.channel.name, []):
             game_id = cog.aliases[ctx.channel.name][game]
             name = cog.games[ctx.channel.name][game_id]
@@ -99,7 +105,7 @@ class Help(Cog):
                 if cog.aliases[ctx.channel.name][alias] == game_id
             ]
             aliases = f'{self.bot.prefix}{str(f" {self.bot.prefix}").join(aliases)}'
-            message = f"{aliases} - элиасы категории {name}. Кд: общий 3с"
+            message = f"{mention} {aliases} - элиасы категории {name}. Кд: общий 3с"
         elif game := [
             game for game in cog.games.get(ctx.channel.name, {}).items() if game[1].lower() == ctx.content.lower()
         ]:
@@ -109,11 +115,11 @@ class Help(Cog):
                 if cog.aliases[ctx.channel.name][alias] == game[0][0]
             ]
             aliases = f'{self.bot.prefix}{str(f" {self.bot.prefix}").join(aliases)}'
-            message = f"{aliases} - элиасы категории {game[0][1]}. Кд: общий 3с"
+            message = f"{mention} {aliases} - элиасы категории {game[0][1]}. Кд: общий 3с"
         else:
-            message = "Команда не найдена. Список команд - https://vk.cc/chCevV"
+            message = f"{ctx.author.mention} Команда не найдена. Список команд - https://vk.cc/chCevV"
 
-        await ctx.reply(message)
+        await ctx.send(message)
 
 
 def prepare(bot):

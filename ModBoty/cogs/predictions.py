@@ -137,7 +137,7 @@ class Predictions(Cog):
             "RESOLVED",
             winning_outcome_id=outcome_id,
         )
-        await ctx.reply(f'Ставка завершена, победил вариант "{title}"')
+        await ctx.reply(f'Выбран вариант "{title}", ставка завершена')
 
     @staticmethod
     async def delpred(ctx: Context, channel: User, token: str, prediction: Prediction):

@@ -41,8 +41,14 @@ class ModBoty(Bot, Cooldown):
         if message.echo:
             return
 
-        if message.content.startswith(self.prefix):
-            content = message.content.lstrip(self.prefix)
+        mention, content = "", message.content
+        if message.content.startswith("@"):
+            mention, content = (
+                message.content.split(maxsplit=1) if len(message.content.split(maxsplit=1)) > 1 else (mention, content)
+            )
+
+        if content.startswith(self.prefix):
+            content = content.lstrip(self.prefix)
             if not content:
                 return
 
@@ -50,7 +56,9 @@ class ModBoty(Bot, Cooldown):
             command_lower = command.lower()
 
             if command_name := self.get_command_name(command_lower):
-                message.content = message.content.replace(command, command_lower)
+                message.content = message.content.replace(command, command_lower, 1)
+                if mention and message.tags:
+                    message._tags["mention"] = mention
                 if await self.check_command(command_name, message, admin=message.author.name == self.admin):
                     await self.handle_commands(message)
 

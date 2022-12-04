@@ -69,8 +69,12 @@ class StreamInfo(Cog):
         aliases=["g", "addg", "delg", "games"],
         cooldown={"per": 0, "gen": 3},
         description="Изменение настроек стрима. Полное описание - https://vk.cc/ciaLzx",
+        flags=["mention"],
     )
     async def command(self, ctx: Context):
+        if ctx.message.tags and ctx.message.tags.get("mention") and ctx.command_alias != "g":
+            return
+
         if not ctx.content and ctx.command_alias == "t":
             await self.t(ctx)
             return
@@ -115,12 +119,10 @@ class StreamInfo(Cog):
     async def g(self, ctx: Context, channel: User | None = None, token: str | None = None, game: Game | None = None):
         if not game and not ctx.content:
             channel_info = await self.bot.fetch_channel(ctx.channel.name)
-            await ctx.reply(f"Установленная категория - {channel_info.game_name}")
-            return
-
-        if "@" in ctx.content:
-            channel_info = await self.bot.fetch_channel(ctx.channel.name)
-            await ctx.send(f"{ctx.content} Название игры - {channel_info.game_name}")
+            if ctx.message.tags and ctx.message.tags.get("mention"):
+                await ctx.send(f"{ctx.message.tags['mention']} Название игры - {channel_info.game_name}")
+            else:
+                await ctx.reply(f"Установленная категория - {channel_info.game_name}")
             return
 
         game = game or await self.bot.fetch_games(names=[ctx.content])

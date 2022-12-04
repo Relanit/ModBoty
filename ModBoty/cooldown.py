@@ -29,7 +29,7 @@ class Cooldown:
             user = message.author.name
             if not message.author.is_mod or "admin" in data.flags:
                 return
-            if message.tags and message.tags.get("mention") and "mention" not in data.flags:
+            if message.custom_tags.get("mention") and "mention" not in data.flags:
                 return
             if (
                 (command in self.editor_commands.get(message.channel.name, []) or "editor" in data.flags)

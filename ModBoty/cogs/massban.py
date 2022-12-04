@@ -9,9 +9,7 @@ from config import config
 
 reason = 'Сообщение, содержащее запрещённую фразу: "%s" (от ModBoty). Начато %s'
 
-LoggedMessage = TypedDict(
-    "LoggedMessage", {"author": str, "content": str, "first-msg": Literal["0", "1"], "time": float}
-)
+LoggedMessage = TypedDict("LoggedMessage", {"author": str, "content": str, "first": bool, "time": float})
 
 
 def most_common_substring(strings: list[str]) -> tuple[str, int]:
@@ -72,7 +70,7 @@ class MassBan(Cog):
             {
                 "author": message.author.name,
                 "content": message.content,
-                "first-msg": message.tags["first-msg"],
+                "first": message.first,
                 "time": time.time(),
             }
         )
@@ -121,9 +119,7 @@ class MassBan(Cog):
         reply = "Запущено"
 
         if not ban_phrase:
-            first_messages = [
-                message for message in self.message_history[ctx.channel.name].copy() if message["first-msg"] == "1"
-            ]
+            first_messages = [message for message in self.message_history[ctx.channel.name].copy() if message["first"]]
 
             if len(first_messages) > 1:  # an attempt to separate users from bots by removing single messages
                 first_messages_copy = first_messages.copy()

@@ -113,17 +113,17 @@ class Predictions(Cog):
     @staticmethod
     async def endpred(ctx: Context, channel: User, token: str, prediction: Prediction):
         if not ctx.content:
-            await ctx.reply("Введите номер верного исхода")
+            await ctx.reply("Введите номер варианта")
             return
 
         try:
             outcome_number = int(ctx.content)
         except ValueError:
-            await ctx.reply("Номер верного исхода должен быть числом")
+            await ctx.reply("Номер варианта должен быть числом")
             return
 
         if not 1 <= outcome_number <= len(prediction.outcomes):
-            await ctx.reply("Неверный номер исхода")
+            await ctx.reply("Неверный номер варианта")
             return
 
         outcome_id, title = (

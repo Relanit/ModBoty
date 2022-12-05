@@ -59,7 +59,7 @@ class ModBoty(Bot, Cooldown):
                 message.content = message.content.replace(command, command_lower, 1)
                 if mention:
                     message.custom_tags["mention"] = mention
-                if await self.check_command(command_name, message, admin=message.author.name == self.admin):
+                if await self.check_command(command_name, message, message.author.name == self.admin):
                     await self.handle_commands(message)
 
     async def event_command_error(self, ctx: Context, error: Exception):

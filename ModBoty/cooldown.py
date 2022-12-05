@@ -17,55 +17,57 @@ class Cooldown:
             channel: {} for channel in channels
         }
 
-    async def check_command(self, command: str, message: Message, admin: bool = False) -> bool | None:
+    async def check_command(self, command_name: str, message: Message, admin: bool = False) -> bool | None:
         """
         Check user access level by command's flags, check cooldown expiration and set new one
         Returns True if successful else None
         """
 
-        data = self.get_command(command)
+        command = self.get_command(command_name)
 
         if not admin:
             user = message.author.name
-            if not message.author.is_mod or "admin" in data.flags:
+            if not message.author.is_mod or "admin" in command.flags:
                 return
-            if message.custom_tags.get("mention") and "mention" not in data.flags:
+            if message.custom_tags.get("mention") and "mention" not in command.flags:
                 return
             if (
-                (command in self.editor_commands.get(message.channel.name, []) or "editor" in data.flags)
+                (command.name in self.editor_commands.get(message.channel.name, []) or "editor" in command.flags)
                 and message.author.name not in self.editors.get(message.channel.name, [])
                 and not message.author.is_broadcaster
             ):
                 return
-            if command in self.cooldowns[message.channel.name]:
+            if command.name in self.cooldowns[message.channel.name]:
                 if (
-                    self.cooldowns[message.channel.name][command]["gen"]
+                    self.cooldowns[message.channel.name][command.name]["gen"]
                     < time.time()
-                    > self.cooldowns[message.channel.name][command]["per"].get(user, 0)
-                ) and await self.check_bot_role(message, data.flags, command):
+                    > self.cooldowns[message.channel.name][command.name]["per"].get(user, 0)
+                ) and await self.check_bot_role(message, command.flags, command.name):
                     (
-                        self.cooldowns[message.channel.name][command]["per"][user],
-                        self.cooldowns[message.channel.name][command]["gen"],
-                    ) = get_cooldown_end(data.cooldown)
+                        self.cooldowns[message.channel.name][command.name]["per"][user],
+                        self.cooldowns[message.channel.name][command.name]["gen"],
+                    ) = get_cooldown_end(command.cooldown)
                     return True
 
                 return
 
-            if await self.check_bot_role(message, data.flags, command):
-                per_end, gen_end = get_cooldown_end(data.cooldown)
-                self.cooldowns[message.channel.name][command] = {"per": {user: per_end}, "gen": gen_end}
+            if await self.check_bot_role(message, command.flags, command.name):
+                per_end, gen_end = get_cooldown_end(command.cooldown)
+                self.cooldowns[message.channel.name][command.name] = {"per": {user: per_end}, "gen": gen_end}
             return True
 
-        if "admin" in data.flags:
+        if "admin" in command.flags:
             return True
 
-        if command in self.cooldowns[message.channel.name] and await self.check_bot_role(message, data.flags, command):
-            _, self.cooldowns[message.channel.name][command]["gen"] = get_cooldown_end(data.cooldown)
+        if command.name in self.cooldowns[message.channel.name] and await self.check_bot_role(
+            message, command.flags, command.name
+        ):
+            _, self.cooldowns[message.channel.name][command.name]["gen"] = get_cooldown_end(command.cooldown)
             return True
 
-        if await self.check_bot_role(message, data.flags, command):
-            _, gen_end = get_cooldown_end(data.cooldown)
-            self.cooldowns[message.channel.name][command] = {"per": {}, "gen": gen_end}
+        if await self.check_bot_role(message, command.flags, command.name):
+            _, gen_end = get_cooldown_end(command.cooldown)
+            self.cooldowns[message.channel.name][command.name] = {"per": {}, "gen": gen_end}
         return True
 
     async def check_bot_role(self, message: Message, flags: list, command: str):

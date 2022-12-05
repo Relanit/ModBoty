@@ -63,7 +63,7 @@ class Vips(Cog):
 
             token = fernet.decrypt(data["user_tokens"][0]["access_token"].encode()).decode()
 
-            login = ctx.content.split()[0].lstrip("@").lower()
+            login = ctx.content.split()[0].lstrip("@").rstrip(",").lower()
             try:
                 user = await self.bot.fetch_users(names=[login])
             except twitchio.HTTPException:
@@ -113,7 +113,7 @@ class Vips(Cog):
 
     async def unvip(self, ctx: Context, channel: User, token: str, user_id: int):
         content = ctx.content.lower().split(maxsplit=1)
-        login = content[0].lstrip("@")
+        login = content[0].lstrip("@").rstrip(",")
         if len(content) == 1:
             await channel.remove_channel_vip(token, user_id)
             await db.unvips.update_one(
@@ -219,7 +219,7 @@ class Vips(Cog):
 
             await ctx.reply(f"Отложенные анвипы: {', '.join(unvips)}")
         else:
-            login = ctx.content.lower().lstrip("@")
+            login = ctx.content.lower().lstrip("@").rstrip(",")
             unvip = [vip for vip in unvips.get("unvips", []) if vip["login"] == login]
             if not unvip:
                 await ctx.reply(f"Анвип {login} не найден")

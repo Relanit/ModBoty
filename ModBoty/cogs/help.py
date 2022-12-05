@@ -30,17 +30,17 @@ class Help(Cog):
             await self.game_info(ctx, alias)
 
     async def command_info(self, ctx: Context, command_name: str):
-        data = self.bot.get_command(command_name)
-        if "admin" in data.flags:
+        command = self.bot.get_command(command_name)
+        if "admin" in command.flags:
             await ctx.reply("Команда не найдена. Список команд - https://vk.cc/chCevV")
             return
 
         aliases = ""
-        if data.aliases:
-            aliases = f'({self.bot.prefix}{str(f", {self.bot.prefix}").join(data.aliases)})'
+        if command.aliases:
+            aliases = f'({self.bot.prefix}{str(f", {self.bot.prefix}").join(command.aliases)})'
 
-        per = data.cooldown["per"]
-        gen = data.cooldown["gen"]
+        per = command.cooldown["per"]
+        gen = command.cooldown["gen"]
         if per and gen:
             cooldown = f"личный {per}с, общий {gen}с."
         elif per:
@@ -48,12 +48,12 @@ class Help(Cog):
         else:
             cooldown = f"общий {gen}с."
 
-        editor = command_name in self.bot.editor_commands.get(ctx.channel.name, []) or "editor" in data.flags
+        editor = command.name in self.bot.editor_commands.get(ctx.channel.name, []) or "editor" in command.flags
 
         mention = ctx.message.custom_tags.get("mention") or ctx.author.mention
         message = (
-            f'{mention} {self.bot.prefix}{command_name}{f" {aliases}:" if aliases else ":"} '
-            f"{data.description.format(prefix=self.bot.prefix)} Кд: {cooldown}"
+            f'{mention} {self.bot.prefix}{command.name}{f" {aliases}:" if aliases else ":"} '
+            f"{command.description.format(prefix=self.bot.prefix)} Кд: {cooldown}"
             f'{" Для редакторов бота" if editor else ""}'
         )
         await ctx.send(message)

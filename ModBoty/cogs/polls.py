@@ -37,7 +37,7 @@ class Polls(Cog):
 
         if ctx.command_alias == "poll":
             if polls[0].status == "ACTIVE":
-                await ctx.reply("На канале уже есть активный вопрос")
+                await ctx.reply("На канале уже есть активный опрос")
                 return
             await self.poll(ctx, channel, token)
         else:

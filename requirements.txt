@@ -1,4 +1,4 @@
-https://github.com/Relanit/TwitchIO/archive/eb631b7.zip
+https://github.com/Relanit/TwitchIO/archive/a69496d.zip
 dnspython==2.2.1
 aiohttp==3.8.3
 motor~=3.1.1

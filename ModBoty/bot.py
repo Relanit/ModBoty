@@ -1,11 +1,13 @@
+import asyncio
 import time
 from pathlib import Path
 import logging
+from typing import Literal
 
 import aiohttp
 from twitchio.ext.commands import Bot, Context, CommandNotFound
 from twitchio.ext.routines import routine
-from twitchio import Message
+from twitchio import Message, Channel
 
 from config import config, db, fernet
 from cooldown import Cooldown
@@ -113,10 +115,12 @@ class ModBoty(Bot, Cooldown):
     async def refresh_tokens(self):
         data = await db.config.find_one({"_id": 1})
 
+        if not self._http.session:
+            self._http.session = aiohttp.ClientSession()
+
         if config["Bot"]["refresh_token"] and data["expire_time"] - time.time() < 900:  # refresh bot user token
             url = f'https://id.twitch.tv/oauth2/token?client_id={config["Twitch"]["client_id"]}&client_secret={config["Twitch"]["client_secret"]}&refresh_token={config["Bot"]["refresh_token"]}&grant_type=refresh_token'
-
-            async with aiohttp.ClientSession() as session:
+            async with self._http.session as session:
                 async with session.post(url, headers={"Content-Type": "application/x-www-form-urlencoded"}) as response:
                     response = await response.json()
 
@@ -141,7 +145,7 @@ class ModBoty(Bot, Cooldown):
                 refresh_token = fernet.decrypt(user["refresh_token"].encode()).decode()
                 url = f'https://id.twitch.tv/oauth2/token?client_id={config["Twitch"]["client_id"]}&client_secret={config["Twitch"]["client_secret"]}&refresh_token={refresh_token}&grant_type=refresh_token'
 
-                async with aiohttp.ClientSession() as session:
+                async with self._http.session as session:
                     async with session.post(
                         url,
                         headers={"Content-Type": "application/x-www-form-urlencoded"},
@@ -162,6 +166,48 @@ class ModBoty(Bot, Cooldown):
                         {"_id": 1, "user_tokens.login": user["login"]},
                         {"$set": {"user_tokens.$": token_data}},
                     )
+
+    def get_command_name(self, name: str) -> str:
+        """Method which retrieves a registered command name"""
+        try:
+            command_name = self.get_command(name).name
+        except AttributeError:
+            command_name = ""
+        return command_name
+
+    async def announce(
+        self,
+        channel: Channel,
+        message: str,
+        color: Literal["blue", "green", "orange", "purple", "primary"] = "primary",
+        number: int = 1,
+    ):
+        """Send announce messages to chat"""
+
+        async def send_announce():
+            await channel.chat_announcement(
+                token=self._http.app_token, moderator_id=self.user_id, message=message, color=color
+            )
+            await asyncio.sleep(0.1)
+
+        sem = asyncio.Semaphore(4)
+
+        async def delayed_announce():
+            async with sem:
+                return await send_announce()
+
+        if message.startswith("/announce") or message.startswith(".announce"):
+            color = message.split(maxsplit=1)[0].replace("/announce", "", 1).replace(".announce", "", 1)
+            color = "primary" if not color or color not in ["blue", "green", "orange", "purple", "primary"] else color
+            message = message.split(maxsplit=1)[1] if len(message.split(maxsplit=1)) > 1 else ""
+
+            if not message or message.startswith(".announce") or message.startswith("/announce"):
+                return
+
+        channel = await channel.user()
+        announcements = [asyncio.ensure_future(delayed_announce()) for _ in range(number)]
+
+        await asyncio.gather(*announcements)
 
 
 bot = ModBoty()

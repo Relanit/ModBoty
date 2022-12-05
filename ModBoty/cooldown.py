@@ -77,9 +77,9 @@ class Cooldown:
         ):
             return True
         if "bot-vip" in flags:
-            text = f"@{message.author.name} Боту необходима випка или модерка для работы этой команды. Если роль выдана, вызовите команду ещё раз"
+            text = f"{message.author.mention} Боту необходима випка или модерка для работы этой команды. Если роль выдана, вызовите команду ещё раз"
         else:
-            text = f"@{message.author.name} Боту необходима модерка для работы этой команды. Если роль выдана, вызовите команду ещё раз"
+            text = f"{message.author.mention} Боту необходима модерка для работы этой команды. Если роль выдана, вызовите команду ещё раз"
         await message.channel.send(text)
         if command in self.cooldowns[message.channel.name]:
             self.cooldowns[message.channel.name][command]["gen"] = time.time() + 1

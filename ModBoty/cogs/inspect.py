@@ -125,7 +125,7 @@ class Inspect(Cog):
     @command(
         name="inspect",
         cooldown={"per": 0, "gen": 3},
-        description="Лимиты на количество отправленных сообщений. Полное описание - https://vk.cc/chCfJI ",
+        description="Мут пользователей, нарушающих указанные лимиты отправки сообщений. Полное описание - https://vk.cc/chCfJI ",
         flags=["bot-mod"],
     )
     async def inspect(self, ctx: Context):

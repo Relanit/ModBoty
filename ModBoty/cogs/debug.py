@@ -26,7 +26,9 @@ class Debug(Cog):
 
     async def debug(self, message: Message):
         try:
-            content = message.content.lstrip(self.bot.prefix).split(maxsplit=1)[1].replace("\\n", "\n")
+            content = (
+                message.content.lstrip(self.bot.prefix).split(maxsplit=1)[1].replace("\\n", "\n").replace("\\t", "    ")
+            )
             if "await" in content or "\n" in content:
                 exec(("async def __ex(self, message): " + "".join(f"\n {l}" for l in content.split("\n"))))
                 result = await locals()["__ex"](self, message)

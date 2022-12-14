@@ -122,7 +122,7 @@ class SevenTV(Cog):
         name="7add",
         cooldown={"per": 0, "gen": 5},
         aliases=["7del", "7alias", "7editor", "7dele"],
-        description="Редактирование 7TV смайлов.",
+        description="Редактирование 7TV смайлов и управление редакторами. Полное описание - https://vk.cc/cjGqPg ",
         flags=["whitelist", "7tv-editor"],
     )
     async def command(self, ctx: Context):

@@ -27,6 +27,7 @@ class ModBoty(Bot, Cooldown):
         self.admin = config["Bot"]["admin"]
         self.editors: dict[str, list[str]] = {}
         self.editor_commands: dict[str, list[str]] = {}
+        self.stv_editors: dict[str, list[str]] = {}
         self.streams: list[str] = []
 
         for cog in [path.stem for path in Path("cogs").glob("*py")]:

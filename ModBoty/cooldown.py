@@ -27,7 +27,15 @@ class Cooldown:
 
         if not admin:
             user = message.author.name
-            if not message.author.is_mod or "admin" in command.flags:
+            if (
+                "7tv-editor" in command.flags
+                and message.author.name not in self.stv_editors.get(message.channel.name, [])
+                and not message.author.is_broadcaster
+            ):
+                return
+            if "7tv-editor" not in command.flags and not message.author.is_mod:
+                return
+            if "admin" in command.flags:
                 return
             if message.custom_tags.get("mention") and "mention" not in command.flags:
                 return

@@ -189,12 +189,11 @@ class SevenTV(Cog):
         else:
             index = content_split.index("as") if "as" in content_split else len(content_split)
             tags = (
-                content_split[1:index]
+                {tag.lower() for tag in content_split[1:index]}
                 if (("as" in content_split and index != 1) or ("as" not in content_split))
                 and (("to" in content_split and index != 1) or ("to" not in content_split))
                 else None
             )
-            tags = {tag.lower() for tag in tags} if tags else None
 
             if "as" in content_split:
                 try:

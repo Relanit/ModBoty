@@ -374,7 +374,9 @@ class SevenTV(Cog):
                     added_emotes.append(emote)
                 else:
                     for error in response["errors"]:
-                        errors.add(error["message"])
+                        errors.add(
+                            "недостаточно слотов" if "No Space Available" in error["message"] else error["message"]
+                        )
 
             requests = [add_emote(emote) for emote in emotes]
             await asyncio.gather(*requests)
@@ -403,10 +405,6 @@ class SevenTV(Cog):
 
             if "Insufficient Privilege" in message:
                 await ctx.reply("Боту нужна редакторка 7TV с правами редактирования смайлов и наборов")
-                return
-
-            if "No Space Available" in message:
-                await ctx.reply("Недостаточно слотов")
                 return
 
             await ctx.reply(message)

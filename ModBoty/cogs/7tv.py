@@ -405,6 +405,10 @@ class SevenTV(Cog):
                 await ctx.reply("Боту нужна редакторка 7TV с правами редактирования смайлов и наборов")
                 return
 
+            if "No Space Available" in message:
+                await ctx.reply("Недостаточно слотов")
+                return
+
             await ctx.reply(message)
 
     async def delete(self, ctx: Context):

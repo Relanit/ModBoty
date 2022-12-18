@@ -111,6 +111,22 @@ async def get_user_emote_sets(session, stv_id: str):
         return await response.json()
 
 
+def conv(n: int) -> str:
+    endings = ["а", "ов", ""]
+    n %= 100
+    if 5 <= n <= 20:
+        s = endings[1]
+    else:
+        i = n % 10
+        if i == 1:
+            s = endings[2]
+        elif i in [2, 3, 4]:
+            s = endings[0]
+        else:
+            s = endings[1]
+    return s
+
+
 class SevenTV(Cog):
     def __init__(self, bot):
         self.bot = bot
@@ -388,7 +404,7 @@ class SevenTV(Cog):
                 message = (
                     f'(7TV) Добавлен смайл "{alias or added_emotes[0]["name"]}"'
                     if len(added_emotes) == 1
-                    else f"(7TV) Добавлено {len(added_emotes)} смайлов"
+                    else f"(7TV) Добавлен{'о' if conv(len(added_emotes)) != '' else ''} {len(added_emotes)} смайл{conv(len(added_emotes))}"
                 )
 
                 message = f"{message} с канала {other_channel.name}" if other_channel else message
@@ -450,7 +466,7 @@ class SevenTV(Cog):
 
         if not deleted:
             if errors:
-                message = f"Не удалось удалить смайл, произошли ошибки : {', '.join(errors)}"
+                message = f"Не удалось выполнить команду, произошли ошибки : {', '.join(errors)}"
                 if "Insufficient Privilege" in message:
                     await ctx.reply("Боту нужна редакторка 7TV с правами редактирования смайлов и наборов")
                     return
@@ -460,7 +476,11 @@ class SevenTV(Cog):
 
             message = f"{'Смайлы не найдены' if len(ctx.content.split()) > 1 else 'Смайл не найден'}"
         else:
-            message = f"(7TV) Удалено {len(deleted)} смайлов" if len(deleted) > 1 else f'Удалён смайл "{deleted[0]}"'
+            message = (
+                f"(7TV) Удал{'ено' if conv(len(deleted)) != '' else 'ён'} {len(deleted)} смайл{conv(len(deleted))}"
+                if len(deleted) > 1
+                else f'Удалён смайл "{deleted[0]}"'
+            )
             message = (
                 f"{message}, {'произошли ошибки' if len(errors) > 1 else 'произошла ошибка'}: {', '.join(errors)}"
                 if errors

@@ -8,10 +8,10 @@ class JoinChannel(Cog):
     def __init__(self, bot):
         self.bot = bot
 
-    @command(name="mjoin", aliases=["mpart"], flags=["admin"])
+    @command(name="join", aliases=["part"], flags=["admin"])
     async def join_channel(self, ctx: Context):
         channel = ctx.content.lstrip("@").rstrip(",").lower()
-        if ctx.command_alias == "mjoin":
+        if ctx.command_alias == "join":
             try:
                 user = await self.bot.fetch_users(names=[channel])
             except twitchio.HTTPException:

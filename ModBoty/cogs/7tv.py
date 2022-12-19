@@ -414,7 +414,7 @@ class SevenTV(Cog):
                     else message
                 )
             message = (
-                f"{message}, {'произошли ошибки' if len(errors) > 1 else 'произошла ошибка'}: {', '.join(errors)}"
+                f"{message}, ошибки: {', '.join(errors)}"
                 if errors
                 else message
             )
@@ -466,14 +466,12 @@ class SevenTV(Cog):
             await asyncio.gather(*requests)
 
         if not deleted:
-            if errors:
-                message = f"Не удалось выполнить команду, произошли ошибки : {', '.join(errors)}"
-                if "Insufficient Privilege" in message:
-                    await ctx.reply("Боту нужна редакторка 7TV с правами редактирования смайлов и наборов")
-                    return
+            message = f"Не удалось выполнить команду, ошибки : {', '.join(errors)}"
+            if "Insufficient Privilege" in message:
+                message = "Боту нужна редакторка 7TV с правами редактирования смайлов и наборов"
 
-                await ctx.reply(message)
-                return
+            await ctx.reply(message)
+            return
         else:
             message = (
                 f"(7TV) Удал{'ено' if conv(len(deleted)) != '' else 'ён'} {len(deleted)} смайл{conv(len(deleted))}"
@@ -486,7 +484,7 @@ class SevenTV(Cog):
                 else message
             )
             message = (
-                f"{message}, {'произошли ошибки' if len(errors) > 1 else 'произошла ошибка'}: {', '.join(errors)}"
+                f"{message}, ошибки: {', '.join(errors)}"
                 if errors
                 else message
             )

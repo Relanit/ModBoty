@@ -413,11 +413,7 @@ class SevenTV(Cog):
                     if emotes_count != len(added_emotes) and emotes_count > 1
                     else message
                 )
-            message = (
-                f"{message}, ошибки: {', '.join(errors)}"
-                if errors
-                else message
-            )
+            message = f"{message}, ошибки: {', '.join(errors)}" if errors else message
 
             if "Insufficient Privilege" in message:
                 await ctx.reply("Боту нужна редакторка 7TV с правами редактирования смайлов и наборов")
@@ -483,11 +479,7 @@ class SevenTV(Cog):
                 if len(ctx.content.split()) != len(deleted)
                 else message
             )
-            message = (
-                f"{message}, ошибки: {', '.join(errors)}"
-                if errors
-                else message
-            )
+            message = f"{message}, ошибки: {', '.join(errors)}" if errors else message
 
         await ctx.reply(message)
 
@@ -551,7 +543,7 @@ class SevenTV(Cog):
                 errors.add(error["message"])
 
         if errors:
-            message = f"Не удалось изменить название, {'произошли ошибки' if len(errors) > 1 else 'произошла ошибка'}: {', '.join(errors)}"
+            message = f"Не удалось изменить название, ошибки: {', '.join(errors)}"
             if "Insufficient Privilege" in message:
                 await ctx.reply("Боту нужна редакторка 7TV с правами редактирования смайлов и наборов")
                 return
@@ -627,7 +619,7 @@ class SevenTV(Cog):
                 else:
                     errors = "; ".join([error["message"] for error in response["errors"]])
                     await ctx.reply(
-                        f"{'произошли ошибки' if len(response['errors']) > 1 else 'произошла ошибка'}: {errors}"
+                        f"{'ошибки' if len(response['errors']) > 1 else 'ошибка'}: {errors}"
                     )
                 return
 

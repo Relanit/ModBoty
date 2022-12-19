@@ -618,7 +618,9 @@ class SevenTV(Cog):
                     await ctx.reply("Боту нужна редакторка 7TV с правами управления редакторами")
                 else:
                     errors = "; ".join([error["message"] for error in response["errors"]])
-                    await ctx.reply(f"{'Произошли ошибки' if len(response['errors']) > 1 else 'Произошла ошибка'}: {errors}")
+                    await ctx.reply(
+                        f"{'Произошли ошибки' if len(response['errors']) > 1 else 'Произошла ошибка'}: {errors}"
+                    )
                 return
 
             if add:

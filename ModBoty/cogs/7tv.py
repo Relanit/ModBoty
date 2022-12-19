@@ -450,6 +450,7 @@ class SevenTV(Cog):
                         origin_id = e.get("origin_id")
 
                 if not emote_id:
+                    errors.add("смайл не найден")
                     return
 
                 resp = await change_emote_in_set(session, origin_id or emote_set_id, emote_id, emote, "REMOVE")
@@ -473,8 +474,6 @@ class SevenTV(Cog):
 
                 await ctx.reply(message)
                 return
-
-            message = f"{'Смайлы не найдены' if len(ctx.content.split()) > 1 else 'Смайл не найден'}"
         else:
             message = (
                 f"(7TV) Удал{'ено' if conv(len(deleted)) != '' else 'ён'} {len(deleted)} смайл{conv(len(deleted))}"

@@ -1,5 +1,6 @@
 import asyncio
 import re
+import traceback
 
 import twitchio
 from twitchio.ext.commands import Cog, command, Context
@@ -178,7 +179,8 @@ class SevenTV(Cog):
         emote_id = content_split[0].split("/")[-1] if "7tv.app/" in content_split[0] else None
 
         other_channel = alias = tags = None
-        emotes = []
+        emote_names = set()
+
         if "from" in content_split:
             if emote_id:
                 await ctx.reply("Укажите названия смайлов с указанного канала")
@@ -189,7 +191,7 @@ class SevenTV(Cog):
                 await ctx.reply('Введите названия смайлов перед "from"')
                 return
 
-            emotes = set(content_split[:index])
+            emote_names = set(content_split[:index])
             try:
                 other_channel = content_split[index + 1]
             except IndexError:
@@ -197,7 +199,7 @@ class SevenTV(Cog):
                 return
 
             if len(content_split) > index + 2 and content_split[index + 2] == "as":
-                if len(emotes) > 1:
+                if len(emote_names) > 1:
                     await ctx.reply("Элиас можно указывать только про копировании одного смайла")
                     return
 
@@ -273,7 +275,7 @@ class SevenTV(Cog):
                     if connection["platform"] == "TWITCH"
                 ][0]
 
-            added_emotes, emotes_count, errors = [], len(emotes), set()
+            added_emotes, errors = [], set()
 
             if other_channel:
                 emote_set, stv_other_channel = await asyncio.gather(
@@ -287,11 +289,14 @@ class SevenTV(Cog):
                 emotes = [
                     {"id": e["id"], "name": e["name"]}
                     for e in stv_other_channel["emote_set"]["emotes"]
-                    if e["name"] in emotes
+                    if e["name"] in emote_names
                 ]
 
-                if emotes_count != len(emotes):
-                    errors.add("смайл не найден")
+                if len(emote_names) != len(emotes):
+                    if len(emote_names) - len(emotes) == 1:
+                        errors.add("смайл не найден")
+                    else:
+                        errors.add("смайлы не найдены")
             else:
                 if emote_id:
 
@@ -387,7 +392,7 @@ class SevenTV(Cog):
                 response = await change_emote_in_set(session, emote_set_id, emote["id"], alias or emote["name"])
 
                 if "errors" not in response:
-                    added_emotes.append(emote)
+                    added_emotes.append(emote["name"])
                 else:
                     for error in response["errors"]:
                         errors.add(
@@ -398,22 +403,22 @@ class SevenTV(Cog):
             await asyncio.gather(*requests)
 
             if not added_emotes:
-                message = f"Не удалось добавить смайл{'ы' if emotes_count > 1 else ''}"
+                message = f"Не удалось добавить смайл{'ы' if len(emote_names) > 1 else ''}"
             else:
 
                 message = (
-                    f'(7TV) Добавлен смайл "{alias or added_emotes[0]["name"]}"'
+                    f'(7TV) Добавлен смайл "{alias or added_emotes[0]}"'
                     if len(added_emotes) == 1
                     else f"(7TV) Добавлен{'о' if conv(len(added_emotes)) != '' else ''} {len(added_emotes)} смайл{conv(len(added_emotes))}"
                 )
 
                 message = f"{message} с канала {other_channel.name}" if other_channel else message
                 message = (
-                    f"{message}, не добавлен{'о' if conv(emotes_count-len(added_emotes)) != '' else ''} {emotes_count - len(added_emotes)} смайл{conv(emotes_count-len(added_emotes))}"
-                    if emotes_count != len(added_emotes) and emotes_count > 1
+                    f"{message}, не удалось добавить {', '.join(emote_names - set(added_emotes))}"
+                    if len(emote_names) != len(added_emotes) and len(emote_names) > 1
                     else message
                 )
-            message = f"{message}: {', '.join(errors)}" if errors else message
+            message = f"{message}: {'; '.join(errors)}" if errors else message
 
             if "Insufficient Privilege" in message:
                 await ctx.reply("Боту нужна редакторка 7TV с правами редактирования смайлов и наборов")
@@ -427,6 +432,7 @@ class SevenTV(Cog):
             return
 
         deleted, errors = [], set()
+        emotes = set(ctx.content.split())
 
         async with aiohttp.ClientSession() as session:
             stv_message_channel = await get_stv_user_gql(session, self.stv_ids[ctx.channel.name])
@@ -446,7 +452,11 @@ class SevenTV(Cog):
                         origin_id = e.get("origin_id")
 
                 if not emote_id:
-                    errors.add("смайл не найден")
+                    if "смайл не найден" not in errors and "смайлы не найдены" not in errors:
+                        errors.add("смайл не найден")
+                    elif "смайлы не найдены" not in errors:
+                        errors.remove("смайл не найден")
+                        errors.add("смайлы не найдены")
                     return
 
                 resp = await change_emote_in_set(session, origin_id or emote_set_id, emote_id, emote, "REMOVE")
@@ -457,12 +467,12 @@ class SevenTV(Cog):
                     for error in resp["errors"]:
                         errors.add(error["message"])
 
-            requests = [delete_emote(emote) for emote in ctx.content.split()]
+            requests = [delete_emote(emote) for emote in emotes]
 
             await asyncio.gather(*requests)
 
         if not deleted:
-            message = f"Не удалось выполнить команду : {', '.join(errors)}"
+            message = f"Не удалось выполнить команду: {'; '.join(errors)}"
             if "Insufficient Privilege" in message:
                 message = "Боту нужна редакторка 7TV с правами редактирования смайлов и наборов"
 
@@ -475,11 +485,12 @@ class SevenTV(Cog):
                 else f'Удалён смайл "{deleted[0]}"'
             )
             message = (
-                f"{message}, не удалось удалить {len(ctx.content.split()) - len(deleted)} смайл{conv(len(ctx.content.split()) - len(deleted))}"
-                if len(ctx.content.split()) != len(deleted)
+                f"{message}, не удалось удалить {', '.join(emotes - set(deleted))}"
+                if len(emotes) != len(deleted)
                 else message
             )
-            message = f"{message}: {', '.join(errors)}" if errors else message
+
+            message = f"{message}: {'; '.join(errors)}" if errors else message
 
         await ctx.reply(message)
 
@@ -543,7 +554,7 @@ class SevenTV(Cog):
                 errors.add(error["message"])
 
         if errors:
-            message = f"Не удалось изменить название: {', '.join(errors)}"
+            message = f"Не удалось изменить название: {'; '.join(errors)}"
             if "Insufficient Privilege" in message:
                 await ctx.reply("Боту нужна редакторка 7TV с правами редактирования смайлов и наборов")
                 return

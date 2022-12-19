@@ -409,7 +409,7 @@ class SevenTV(Cog):
 
                 message = f"{message} с канала {other_channel.name}" if other_channel else message
                 message = (
-                    f"{message}, не добавлено {emotes_count - len(added_emotes)} смайлов"
+                    f"{message}, не добавлен{'о' if conv(emotes_count-len(added_emotes)) != '' else ''} {emotes_count - len(added_emotes)} смайл{conv(emotes_count-len(added_emotes))}"
                     if emotes_count != len(added_emotes) and emotes_count > 1
                     else message
                 )
@@ -480,6 +480,11 @@ class SevenTV(Cog):
                 f"(7TV) Удал{'ено' if conv(len(deleted)) != '' else 'ён'} {len(deleted)} смайл{conv(len(deleted))}"
                 if len(deleted) > 1
                 else f'Удалён смайл "{deleted[0]}"'
+            )
+            message = (
+                f"{message}, не удалось удалить {len(ctx.content.split()) - len(deleted)} смайл{conv(len(ctx.content.split()) - len(deleted))}"
+                if len(ctx.content.split()) != len(deleted)
+                else message
             )
             message = (
                 f"{message}, {'произошли ошибки' if len(errors) > 1 else 'произошла ошибка'}: {', '.join(errors)}"

@@ -56,8 +56,8 @@ class MassBan(Cog):
                 if not content:
                     return
 
-                command = content.split(maxsplit=1)[0].lower()
-                if command == "stop":
+                command_name = content.split(maxsplit=1)[0].lower()
+                if command_name == "stop":
                     self.ban_phrases.pop(message.channel.name, None)
                     self.queue.pop(message.channel.name, None)
                     ctx = await self.bot.get_context(message)

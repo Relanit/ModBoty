@@ -18,7 +18,7 @@ class Mail(Cog):
         announce = bool(ctx.content.startswith("/announce") or ctx.content.startswith(".announce"))
 
         for channel in self.bot.connected_channels:
-            while channel.limited:
+            while 0.0 < channel.limited < 1.0:
                 await asyncio.sleep(0.1)
             if announce:
                 if channel.bot_is_mod:

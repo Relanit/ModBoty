@@ -54,7 +54,7 @@ class Banwords(Cog):
     @command(
         name="bword",
         aliases=["mword", "delb", "delm", "bwords", "mwords"],
-        cooldown={"per": 0, "gen": 3},
+        cooldown={"per": 0, "gen": 5},
         description="Запрещённые слова, за отправку которых пользователь получает бан/мут. Полное описание - https://vk.cc/chCfIC ",
         flags=["bot-mod"],
     )

@@ -15,7 +15,7 @@ class Editors(Cog):
     @command(
         name="editor",
         aliases=["editors", "dele", "unban", "ban"],
-        cooldown={"per": 0, "gen": 3},
+        cooldown={"per": 0, "gen": 5},
         description="Настройка редакторов бота и управление доступом к командам. Полное описание - https://vk.cc/cijFyF ",
         flags=["whitelist"],
     )

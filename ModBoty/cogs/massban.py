@@ -61,7 +61,7 @@ class MassBan(Cog):
                     self.ban_phrases.pop(message.channel.name, None)
                     self.queue.pop(message.channel.name, None)
                     ctx = await self.bot.get_context(message)
-                    while ctx.limited:
+                    while 0.0 < ctx.limited < 1.0:
                         await asyncio.sleep(0.1)
                     await ctx.reply("Остановлено")
             return
@@ -95,6 +95,7 @@ class MassBan(Cog):
 
         if not content and ctx.command_alias in ("mt", "m"):
             await ctx.send("Введите время и мутфразу")
+            self.bot.set_cooldown(ctx, "mb", {"per": 0, "gen": 3})
             return
 
         if ctx.command_alias in ("mt", "m"):
@@ -103,9 +104,11 @@ class MassBan(Cog):
                 timeout = int(content_split[0])
                 if len(content_split) == 1:
                     await ctx.send("Введите мутфразу")
+                    self.bot.set_cooldown(ctx, "mb", {"per": 0, "gen": 3})
                     return
                 if not 1 <= timeout <= 1209600:
                     await ctx.reply("Допустимая длительность мута от 1 до 1209600 секунд")
+                    self.bot.set_cooldown(ctx, "mb", {"per": 0, "gen": 3})
                     return
                 ban_phrase = content_split[1]
             except ValueError:
@@ -157,15 +160,13 @@ class MassBan(Cog):
             found = count > max_count / 100 * 60 if count else False
 
             if not found:
-                while ctx.limited:
+                while 0.0 < ctx.limited < 1.0:
                     await asyncio.sleep(0.1)
 
                 await ctx.reply("Запущено, банфраза не найдена, будут забанены последние новые пользователи")
                 text = f'/ban %s {reason % ("Первое сообщение в чате", ctx.author.name)}'
 
                 for message in first_messages:
-                    while ctx.limited:
-                        await asyncio.sleep(0.1)
                     if ctx.channel.name not in self.queue:
                         return
                     await ctx.send(text % message["author"])
@@ -179,7 +180,7 @@ class MassBan(Cog):
             text = f"/ban %s {reason % (ban_phrase, ctx.author.name)}"
             reply = "Запущено, банфраза найдена"
 
-        while ctx.limited:
+        while 0.0 < ctx.limited < 1.0:
             await asyncio.sleep(0.1)
         await ctx.reply(reply)
 
@@ -188,7 +189,7 @@ class MassBan(Cog):
 
         for message in self.message_history[ctx.channel.name].copy():
             if ban_phrase in message["content"].lower() and message["author"] not in banned_users:
-                while ctx.limited:
+                while 0.0 < ctx.limited < 1.0:
                     await asyncio.sleep(0.1)
                 if ctx.channel.name not in self.ban_phrases:
                     return
@@ -199,7 +200,7 @@ class MassBan(Cog):
         while ctx.channel.name in self.ban_phrases:
             for user in self.queue[ctx.channel.name]:
                 if user not in banned_users:
-                    while ctx.limited:
+                    while 0.0 < ctx.limited < 1.0:
                         await asyncio.sleep(0.1)
                     if ctx.channel.name not in self.ban_phrases:
                         return

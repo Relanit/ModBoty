@@ -2,6 +2,7 @@ import time
 from typing import Literal
 
 from twitchio import Message
+from twitchio.ext.commands import Context
 
 
 def get_cooldown_end(cooldown: dict[Literal["per", "gen"], int]) -> (float, float):
@@ -51,10 +52,7 @@ class Cooldown:
                     < time.time()
                     > self.cooldowns[message.channel.name][command.name]["per"].get(user, 0)
                 ) and await self.check_bot_role(message, command.flags, command.name):
-                    (
-                        self.cooldowns[message.channel.name][command.name]["per"][user],
-                        self.cooldowns[message.channel.name][command.name]["gen"],
-                    ) = get_cooldown_end(command.cooldown)
+                    self.set_cooldown(message, command.name, command.cooldown)
                     return True
 
                 return
@@ -94,3 +92,12 @@ class Cooldown:
         else:
             self.cooldowns[message.channel.name][command] = {"per": {}, "gen": time.time() + 1}
         return
+
+    def set_cooldown(self, message: Context | Message, command_name: str, cd: dict[Literal["per", "gen"], int]):
+        (
+            self.cooldowns[message.channel.name][command_name]["per"][message.author.name],
+            self.cooldowns[message.channel.name][command_name]["gen"],
+        ) = (
+            time.time() + cd["per"],
+            time.time() + cd["gen"],
+        )

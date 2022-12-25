@@ -284,8 +284,8 @@ class Vips(Cog):
                             break
 
                     if unvip["user_id"] in vips:
-                        unvips[unvip["user_id"]] = unvip["login"]
                         await channel.remove_channel_vip(token, unvip["user_id"])
+                        unvips[unvip["user_id"]] = unvip["login"]
                     else:
                         already_unvipped.append(unvip["user_id"])
 

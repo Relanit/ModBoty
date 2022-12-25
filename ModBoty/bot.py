@@ -4,7 +4,7 @@ from pathlib import Path
 import logging
 from typing import Literal
 
-import aiohttp
+from aiohttp import ClientSession
 from twitchio.ext.commands import Bot, Context, CommandNotFound
 from twitchio.ext.routines import routine
 from twitchio import Message, Channel
@@ -29,6 +29,7 @@ class ModBoty(Bot, Cooldown):
         self.editor_commands: dict[str, list[str]] = {}
         self.stv_editors: dict[str, list[str]] = {}
         self.streams: list[str] = []
+        self.session: ClientSession = self._http.session
 
         for cog in [path.stem for path in Path("cogs").glob("*py")]:
             self.load_module(f"cogs.{cog}")
@@ -118,9 +119,10 @@ class ModBoty(Bot, Cooldown):
 
         if config["Bot"]["refresh_token"] and data["expire_time"] - time.time() < 900:  # refresh bot user token
             url = f'https://id.twitch.tv/oauth2/token?client_id={config["Twitch"]["client_id"]}&client_secret={config["Twitch"]["client_secret"]}&refresh_token={config["Bot"]["refresh_token"]}&grant_type=refresh_token'
-            async with aiohttp.ClientSession() as session:
-                async with session.post(url, headers={"Content-Type": "application/x-www-form-urlencoded"}) as response:
-                    response = await response.json()
+            async with self.session.post(
+                url, headers={"Content-Type": "application/x-www-form-urlencoded"}
+            ) as response:
+                response = await response.json()
 
             self._http.token = self._connection._token = config["Bot"]["access_token"] = response["access_token"]
             config["Bot"]["refresh_token"] = response["refresh_token"]
@@ -142,13 +144,11 @@ class ModBoty(Bot, Cooldown):
             if user["expire_time"] - time.time() < 900:
                 refresh_token = fernet.decrypt(user["refresh_token"].encode()).decode()
                 url = f'https://id.twitch.tv/oauth2/token?client_id={config["Twitch"]["client_id"]}&client_secret={config["Twitch"]["client_secret"]}&refresh_token={refresh_token}&grant_type=refresh_token'
-
-                async with aiohttp.ClientSession() as session:
-                    async with session.post(
-                        url,
-                        headers={"Content-Type": "application/x-www-form-urlencoded"},
-                    ) as response:
-                        response = await response.json()
+                async with self.session.post(
+                    url,
+                    headers={"Content-Type": "application/x-www-form-urlencoded"},
+                ) as response:
+                    response = await response.json()
 
                 if response == {"status": 400, "message": "Invalid refresh token"}:
                     await db.config.update_one({"_id": 1}, {"$pull": {"user_tokens": {"login": user["login"]}}})

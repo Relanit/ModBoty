@@ -110,7 +110,7 @@ class Inspect(Cog):
                     ):  # increase timeout if possible
                         self.warned_users[message.channel.name][message.author.name] += 1
 
-                    while 0.0 < message.channel.limited < 1.0:
+                    while 0.0 < message.channel.limited < 2.0:
                         await asyncio.sleep(0.1)
                     await message.channel.send(f"/timeout {message.author.name} {timeout} Спам (от ModBoty)")
                 else:
@@ -118,7 +118,7 @@ class Inspect(Cog):
                     ctx = await self.bot.get_context(message)
                     await ctx.reply("Без спамчика :|")
 
-                    while 0.0 < ctx.limited < 1.0:
+                    while 0.0 < ctx.limited < 2.0:
                         await asyncio.sleep(0.1)
                     await ctx.send(f"/timeout {message.author.name} 10 Спам (от ModBoty)")
 

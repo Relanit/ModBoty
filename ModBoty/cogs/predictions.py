@@ -62,8 +62,7 @@ class Predictions(Cog):
             else:
                 await self.lockpred(ctx, channel, token, predictions[0])
 
-    @staticmethod
-    async def pred(ctx: Context, channel: User, token: str):
+    async def pred(self, ctx: Context, channel: User, token: str):
         sep = "\\" if "\\" in ctx.content else "/"
         content_split = ctx.content.split(sep)
         if len(content_split) < 3:
@@ -87,22 +86,21 @@ class Predictions(Cog):
             await ctx.reply("Максимальное количество исходов - 10")
             return
 
-        async with aiohttp.ClientSession() as session:
-            url = "https://api.twitch.tv/helix/predictions"
-            headers = {
-                "Authorization": f"Bearer {token}",
-                "Client-Id": config["Twitch"]["client_id"],
-                "Content-Type": "application/json",
-            }
+        url = "https://api.twitch.tv/helix/predictions"
+        headers = {
+            "Authorization": f"Bearer {token}",
+            "Client-Id": config["Twitch"]["client_id"],
+            "Content-Type": "application/json",
+        }
 
-            json = {
-                "broadcaster_id": str(channel.id),
-                "title": title,
-                "outcomes": outcomes,
-                "prediction_window": duration,
-            }
-            async with session.post(url, headers=headers, json=json) as response:
-                response = await response.json()
+        json = {
+            "broadcaster_id": str(channel.id),
+            "title": title,
+            "outcomes": outcomes,
+            "prediction_window": duration,
+        }
+        async with self.bot.session.post(url, headers=headers, json=json) as response:
+            response = await response.json()
 
         if response.get("status") == 403:
             await ctx.reply("На вашем канале недоступны баллы канала")
@@ -149,8 +147,7 @@ class Predictions(Cog):
         await channel.end_prediction(token, prediction.prediction_id, "LOCKED")
         await ctx.reply("Ставка заблокирована")
 
-    @staticmethod
-    async def reppred(ctx: Context, channel: User, token: str, prediction: Prediction):
+    async def reppred(self, ctx: Context, channel: User, token: str, prediction: Prediction):
         duration = prediction.prediction_window
         if ctx.content:
             try:
@@ -159,26 +156,25 @@ class Predictions(Cog):
                 await ctx.reply("Продолжительность должна быть числом")
                 return
 
-        async with aiohttp.ClientSession() as session:
-            url = "https://api.twitch.tv/helix/predictions"
-            headers = {
-                "Authorization": f"Bearer {token}",
-                "Client-Id": config["Twitch"]["client_id"],
-                "Content-Type": "application/json",
-            }
+        url = "https://api.twitch.tv/helix/predictions"
+        headers = {
+            "Authorization": f"Bearer {token}",
+            "Client-Id": config["Twitch"]["client_id"],
+            "Content-Type": "application/json",
+        }
 
-            json = {
-                "broadcaster_id": str(channel.id),
-                "title": prediction.title,
-                "outcomes": [{"title": outcome.title} for outcome in prediction.outcomes],
-                "prediction_window": duration,
-            }
-            async with session.post(url, headers=headers, json=json) as response:
-                response = await response.json()
+        json = {
+            "broadcaster_id": str(channel.id),
+            "title": prediction.title,
+            "outcomes": [{"title": outcome.title} for outcome in prediction.outcomes],
+            "prediction_window": duration,
+        }
+        async with self.bot.session.post(url, headers=headers, json=json) as response:
+            response = await response.json()
 
-            if response.get("status") == 403:
-                await ctx.reply("На вашем канале недоступны баллы канала")
-                return
+        if response.get("status") == 403:
+            await ctx.reply("На вашем канале недоступны баллы канала")
+            return
 
         await ctx.reply(f"Создана ставка - {prediction.title}")
 

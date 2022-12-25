@@ -141,29 +141,22 @@ class Links(Cog):
 
         link = found or link
 
-        private = None
-        if content[1].lower() == "private":
-            private = True
-        elif content[1].lower() == "public":
-            private = False
-
         if not found:
             cog = self.bot.get_cog("StreamInfo")
             if link in cog.aliases.get(ctx.channel.name, []):
                 name = cog.games[ctx.channel.name][cog.aliases[ctx.channel.name][link]]
                 await ctx.reply(f"Название {self.bot.prefix}{link} уже занято категорией {name}")
                 return
-            if self.bot.get_command_name(link) or link in ["public", "private"]:
+            if self.bot.get_command_name(link):
                 await ctx.reply(f"Название {self.bot.prefix}{link} уже занято командой бота")
                 return
             elif len(link) > 15:
                 await ctx.reply("Нельзя создать ссылку с названием длиной более 15 символов")
                 return
 
-        offset = 1 if private is not None else 0
-        text = " ".join(content[1 + offset :]) if content[1 + offset :] else ""
+        text = " ".join(content[1:])
 
-        if not (text or found) or ((text.startswith(".") or text.startswith("/")) and len(text.split()) == 1):
+        if not text or ((text.startswith(".") or text.startswith("/")) and len(text.split()) == 1):
             await ctx.reply("Недостаточно значений - https://vk.cc/chCfKt")
             return
 
@@ -172,17 +165,12 @@ class Links(Cog):
             if found:
                 message = f"Изменено {self.bot.prefix}{link}"
                 key["links.name"] = link
-                values = {"$set": {}}
-                if private is not None:
-                    values["$set"]["links.$.private"] = private
-                if text:
-                    values["$set"]["links.$.text"] = text
+                values = {"$set": {"links.$.text": text}}
             else:
                 message = f"Добавлено {self.bot.prefix}{link}"
                 self.links[ctx.channel.name].append(link)
                 values = {"$addToSet": {"links": {"name": link, "text": text}}}
-                if private is not None:
-                    values["$addToSet"]["links"]["private"] = private
+
         else:
             message = f"Добавлено {self.bot.prefix}{link}"
             self.links[ctx.channel.name] = [link]
@@ -196,8 +184,6 @@ class Links(Cog):
                 },
                 "$addToSet": {"links": {"name": link, "text": text}},
             }
-            if private is not None:
-                values["$addToSet"]["links"]["private"] = private
 
         await db.links.update_one(key, values, upsert=True)
         await ctx.reply(message)
@@ -340,24 +326,45 @@ class Links(Cog):
         await db.links.update_one({"channel": ctx.channel.name, "links.name": link}, values)
         await ctx.reply(message)
 
-    @staticmethod
-    async def public(ctx: Context):
-        if (content := ctx.content.lower()) in ("on", "off"):
-            values = {}
-            if content == "on":
-                values["$set"] = {"private": False}
-                message = "Теперь ссылки могут быть вызваны любыми участниками чата"
-            elif content == "off":
-                values["$set"] = {"private": True}
-                message = "Теперь ссылки могут быть вызваны только модераторами"
-            else:
-                await ctx.reply("Ошибка, Напишите on или off, чтобы сделать ссылки публичными или приватными")
-                return
-        else:
-            await ctx.reply("Напишите on или off, чтобы сделать ссылки публичными или приватными")
-            return
+    async def public(self, ctx: Context):
+        try:
+            content_split = ctx.content.lower().lstrip(self.bot.prefix).split()
+            link, action = content_split
 
-        await db.links.update_one({"channel": ctx.channel.name}, values, upsert=True)
+            if not (link := self.get_link_name(ctx.channel.name, link)):
+                await ctx.reply(f"Команда {self.bot.prefix}{content_split[0]} не найдена")
+                return
+
+            if action not in ("on", "off"):
+                await ctx.reply(
+                    "Ошибка, напишите название/элиас команды и on/off, чтобы сделать команду публичной/приватной"
+                )
+                return
+
+            key = {"channel": ctx.channel.name, "links.name": link}
+        except ValueError:
+            action = ctx.content.lower()
+
+            if action not in ("on", "off"):
+                await ctx.reply("Ошибка, напишите on/off, чтобы сделать команды публичными/приватными")
+                return
+
+            link = None
+            key = {"channel": ctx.channel.name}
+
+        if not link:
+            values = {}
+            if action == "on":
+                values["$set"] = {"private": False}
+                message = "Теперь команды могут быть вызваны любыми участниками чата"
+            else:
+                values["$set"] = {"private": True}
+                message = "Теперь команды могут быть вызваны только модераторами"
+        else:
+            values = {"$set": {"links.$.private": action == "off"}}
+            message = f"Теперь команда {self.bot.prefix}{link} может быть вызвана {'только модераторами' if action == 'off' else 'всеми участниками чата'}"
+
+        await db.links.update_one(key, values, upsert=True)
         await ctx.reply(message)
 
     async def announce(self, ctx: Context):

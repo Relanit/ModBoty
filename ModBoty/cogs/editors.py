@@ -1,3 +1,4 @@
+import twitchio
 from twitchio.ext.commands import Cog, command, Context
 
 from config import db
@@ -14,7 +15,7 @@ class Editors(Cog):
 
     @command(
         name="editor",
-        aliases=["editors", "dele", "unban", "ban"],
+        aliases=["editors", "unban", "ban"],
         cooldown={"per": 0, "gen": 5},
         description="Настройка редакторов бота и управление доступом к командам. Полное описание - https://vk.cc/cijFyF ",
         flags=["whitelist"],
@@ -34,33 +35,60 @@ class Editors(Cog):
             await self.editors(ctx)
         elif ctx.command_alias == "ban":
             await self.ban(ctx)
-        elif ctx.command_alias == "unban":
-            await self.unban(ctx)
         else:
-            await self.dele(ctx)
+            await self.unban(ctx)
 
     async def editor(self, ctx: Context):
         if len(self.bot.editors.get(ctx.channel.name, [])) == 10:
             await ctx.reply("На канале может быть не более 10 редакторов")
             return
 
-        login = ctx.content.lstrip("@").rstrip(",").lower()
-        user = await self.bot.fetch_users(names=[login])
+        try:
+            action, login = ctx.content.lower().split()
+        except ValueError:
+            await ctx.reply("Введите действие (add, del) и логин")
+            return
+
+        if action not in ("add", "del"):
+            await ctx.reply("Введите действие (add, del) и логин")
+            return
+
+        login = login.lstrip("@").rstrip(",")
+
+        try:
+            user = await self.bot.fetch_users(names=[login])
+        except twitchio.HTTPException:
+            await ctx.reply(f'Некорректный никнейм - "{login}"')
+            return
+
         if not user:
             await ctx.reply("Пользователь не найден")
             return
 
-        if login in self.bot.editors.get(ctx.channel.name, []):
-            await ctx.reply(f"{login} уже редактор")
-            return
+        if action == "add":
+            if login in self.bot.editors.get(ctx.channel.name, []):
+                await ctx.reply(f"{login} уже редактор")
+                return
 
-        self.bot.editors[ctx.channel.name] = self.bot.editors.get(ctx.channel.name, []) + [login]
-        await db.editors.update_one(
-            {"channel": ctx.channel.name},
-            {"$setOnInsert": {"channel": ctx.channel.name}, "$addToSet": {"editors": login}},
-            upsert=True,
-        )
-        await ctx.reply(f"Добавлен редактор: {login}")
+            self.bot.editors[ctx.channel.name] = self.bot.editors.get(ctx.channel.name, []) + [login]
+            await db.editors.update_one(
+                {"channel": ctx.channel.name},
+                {"$setOnInsert": {"channel": ctx.channel.name}, "$addToSet": {"editors": login}},
+                upsert=True,
+            )
+            await ctx.reply(f"Добавлен редактор: {login}")
+        else:
+            if not self.bot.editors.get(ctx.channel.name):
+                await ctx.reply("На вашем канале нет редакторов")
+                return
+
+            if login not in self.bot.editors[ctx.channel.name]:
+                await ctx.reply("Редактор не найден")
+                return
+
+            self.bot.editors[ctx.channel.name].remove(login)
+            await db.editors.update_one({"channel": ctx.channel.name}, {"$pull": {"editors": login}})
+            await ctx.reply(f"Удалён редактор: {login}")
 
     async def editors(self, ctx: Context):
         editors = ", ".join(self.bot.editors.get(ctx.channel.name, []))
@@ -70,20 +98,6 @@ class Editors(Cog):
             return
 
         await ctx.reply(f"Редакторы бота на канале {ctx.channel.name}: {editors}")
-
-    async def dele(self, ctx: Context):
-        if not self.bot.editors.get(ctx.channel.name):
-            await ctx.reply("На вашем канале нет редакторов")
-            return
-
-        login = ctx.content.lstrip("@").rstrip(",").lower()
-        if login not in self.bot.editors[ctx.channel.name]:
-            await ctx.reply("Редактор не найден")
-            return
-
-        self.bot.editors[ctx.channel.name].remove(login)
-        await db.editors.update_one({"channel": ctx.channel.name}, {"$pull": {"editors": login}})
-        await ctx.reply(f"Удалён редактор: {login}")
 
     async def ban(self, ctx: Context):
         command_name = ctx.content.lower().lstrip(self.bot.prefix)

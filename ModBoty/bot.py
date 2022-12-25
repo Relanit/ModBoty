@@ -4,6 +4,7 @@ from pathlib import Path
 import logging
 from typing import Literal
 
+import aiohttp
 from aiohttp import ClientSession
 from twitchio.ext.commands import Bot, Context, CommandNotFound
 from twitchio.ext.routines import routine
@@ -115,6 +116,7 @@ class ModBoty(Bot, Cooldown):
 
     @routine(minutes=5)
     async def refresh_tokens(self):
+        self.session = self._http.session = self.session or aiohttp.ClientSession()
         data = await db.config.find_one({"_id": 1})
 
         if config["Bot"]["refresh_token"] and data["expire_time"] - time.time() < 900:  # refresh bot user token

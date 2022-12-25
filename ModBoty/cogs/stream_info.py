@@ -60,7 +60,9 @@ class StreamInfo(Cog):
                 channel = await ctx.channel.user()
                 token = fernet.decrypt(data["user_tokens"][0]["access_token"].encode()).decode()
                 game_id = self.aliases[message.channel.name][alias]
-                game = Game({"id": game_id, "name": self.games[ctx.channel.name][game_id], "box_art_url": ""})
+                game = Game(
+                    {"id": game_id, "name": self.games[ctx.channel.name][game_id], "box_art_url": "", "igdb_id": None}
+                )
                 self.cooldowns[message.channel.name] = time.time() + 3
                 await self.g(ctx, channel, token, game)
 

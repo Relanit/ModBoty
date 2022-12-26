@@ -734,7 +734,7 @@ class SevenTV(Cog):
             await ctx.reply(message)
             return
 
-        message = f"{'Добавлен' if action == 'add' else 'Удалён'} источник \"{origin['name']}\""
+        message = f"(7TV) {'Добавлен' if action == 'add' else 'Удалён'} источник \"{origin['name']}\""
         await ctx.reply(message)
 
     async def editor(self, ctx: Context):

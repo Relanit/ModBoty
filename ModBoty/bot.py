@@ -116,10 +116,13 @@ class ModBoty(Bot, Cooldown):
 
     @routine(minutes=5)
     async def refresh_tokens(self):
+        if not self.session:
+            self._http.session = self._http.session or aiohttp.ClientSession()
+            self.session = self._http.session
+
         data = await db.config.find_one({"_id": 1})
 
         if config["Bot"]["refresh_token"] and data["expire_time"] - time.time() < 900:  # refresh bot user token
-            self.session = self._http.session = self.session or aiohttp.ClientSession()
             url = f'https://id.twitch.tv/oauth2/token?client_id={config["Twitch"]["client_id"]}&client_secret={config["Twitch"]["client_secret"]}&refresh_token={config["Bot"]["refresh_token"]}&grant_type=refresh_token'
             async with self.session.post(
                 url, headers={"Content-Type": "application/x-www-form-urlencoded"}
@@ -144,7 +147,6 @@ class ModBoty(Bot, Cooldown):
 
         for user in data.get("user_tokens", []):  # refresh channels' user tokens
             if user["expire_time"] - time.time() < 900:
-                self.session = self._http.session = self.session or aiohttp.ClientSession()
                 refresh_token = fernet.decrypt(user["refresh_token"].encode()).decode()
                 url = f'https://id.twitch.tv/oauth2/token?client_id={config["Twitch"]["client_id"]}&client_secret={config["Twitch"]["client_secret"]}&refresh_token={refresh_token}&grant_type=refresh_token'
                 async with self.session.post(

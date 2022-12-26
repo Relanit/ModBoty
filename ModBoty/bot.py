@@ -117,7 +117,7 @@ class ModBoty(Bot, Cooldown):
     @routine(minutes=5)
     async def refresh_tokens(self):
         if not self.session:
-            logger.info("session is none")
+            logger.info("session is none in refresh tokens")
             self._http.session = self._http.session or aiohttp.ClientSession()
             self.session = self._http.session
 

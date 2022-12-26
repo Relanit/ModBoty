@@ -1,16 +1,12 @@
 import asyncio
-import random
 import re
-import traceback
 
 import twitchio
 from twitchio.ext.commands import Cog, command, Context
 from twitchio.ext.routines import routine
 import aiohttp
 
-from config import config
-
-from ModBoty.config import logger
+from config import config, logger
 
 headers = {"Authorization": f"Bearer {config['Bot']['7tv_token']}"}
 

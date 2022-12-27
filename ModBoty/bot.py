@@ -90,10 +90,6 @@ class ModBoty(Bot, Cooldown):
             elif channel in self.streams:  # check if stream ended
                 self.streams.remove(channel)
 
-                if channel == "t2x2":
-                    messageable = self.get_channel(channel)
-                    await messageable.send("@Relanit запись стрима dinkDonk")
-
                 if (data := await db.inspects.find_one({"channel": channel})) and data["active"] and data["offline"]:
                     await self.cogs["Inspect"].set(channel)
                 elif data and data["active"]:

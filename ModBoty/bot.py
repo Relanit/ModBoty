@@ -100,10 +100,8 @@ class ModBoty(Bot, Cooldown):
         channels = config["Bot"]["channels"].split()
 
         for channel in channels:
-            if channel not in self.streams and channel not in self.cogs["Inspect"].limits:
-                data = await db.inspects.find_one({"channel": channel})
-                if data and data["active"] and data["offline"]:
-                    await self.cogs["Inspect"].set(channel)
+            if channel not in self.streams and channel in self.cogs["Inspect"].limits:
+                await self.cogs["Inspect"].set(channel)
 
             self.cooldowns[channel] = {}
             if channel in self.cogs["Links"].cooldowns:

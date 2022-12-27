@@ -347,6 +347,7 @@ class SevenTV(Cog):
                         "__typename\n  }\n}",
                         "variables": {
                             "query": content_split[0],
+                            "limit": 1000,
                             "sort": {"value": "popularity", "order": "DESCENDING"},
                             "filter": {
                                 "category": "TOP",

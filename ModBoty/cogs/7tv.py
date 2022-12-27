@@ -6,7 +6,7 @@ from twitchio.ext.commands import Cog, command, Context
 from twitchio.ext.routines import routine
 import aiohttp
 
-from config import config, logger
+from config import config
 
 headers = {"Authorization": f"Bearer {config['Bot']['7tv_token']}"}
 
@@ -829,7 +829,6 @@ class SevenTV(Cog):
     @routine(minutes=5)
     async def update_editors(self):
         if not self.bot.session:
-            logger.info("session is none")
             self.bot._http.session = self.bot._http.session or aiohttp.ClientSession()
             self.bot.session = self.bot._http.session
 

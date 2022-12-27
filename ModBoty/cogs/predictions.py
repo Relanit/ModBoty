@@ -106,7 +106,7 @@ class Predictions(Cog):
             await ctx.reply("На вашем канале недоступны баллы канала")
             return
 
-        await ctx.reply(f"Создана ставка - {title}")
+        await ctx.reply(f'Создана ставка "{title}"')
 
     @staticmethod
     async def endpred(ctx: Context, channel: User, token: str, prediction: Prediction):
@@ -176,7 +176,7 @@ class Predictions(Cog):
             await ctx.reply("На вашем канале недоступны баллы канала")
             return
 
-        await ctx.reply(f"Создана ставка - {prediction.title}")
+        await ctx.reply(f'Создана ставка "{prediction.title}"')
 
 
 def prepare(bot):

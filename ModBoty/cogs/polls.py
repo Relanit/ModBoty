@@ -79,7 +79,7 @@ class Polls(Cog):
             return
 
         await channel.create_poll(token, title, choices, duration)
-        await ctx.reply(f"Создан опрос - {title}")
+        await ctx.reply(f'Создан опрос "{title}"')
 
     @staticmethod
     async def delpoll(ctx: Context, channel: User, token: str, poll: Poll):

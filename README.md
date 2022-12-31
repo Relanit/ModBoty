@@ -2,6 +2,7 @@
 Twitch mods bot & 7tv management
 
 Documentation - https://relanit.github.io/modboty-docs/
+
 English translation coming soon
 
 Features:

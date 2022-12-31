@@ -1,4 +1,5 @@
 # ModBoty
-Чат-бот с модераторскими функциями
+Twitch mods bot
 
-Документация - https://relanit.github.io/modboty-docs/
+Documentation - https://relanit.github.io/modboty-docs/
+English translation coming soon

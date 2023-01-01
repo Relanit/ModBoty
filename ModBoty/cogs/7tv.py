@@ -1,4 +1,5 @@
 import asyncio
+import logging
 import re
 
 import twitchio
@@ -7,6 +8,8 @@ from twitchio.ext.routines import routine
 import aiohttp
 
 from config import config
+
+logger = logging.getLogger()
 
 headers = {"Authorization": f"Bearer {config['Bot']['7tv_token']}"}
 
@@ -863,7 +866,11 @@ class SevenTV(Cog):
         ]
 
         for stv_id in stv_ids:
-            response = await get_stv_user_gql(self.bot.session, stv_id)
+            try:
+                response = await get_stv_user_gql(self.bot.session, stv_id)
+            except aiohttp.ContentTypeError:
+                logger.info(response)
+                return
 
             self.stv_ids[response["data"]["user"]["username"]] = stv_id
             self.bot.stv_editors[response["data"]["user"]["username"]] = {

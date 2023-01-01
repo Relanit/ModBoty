@@ -29,6 +29,7 @@ class ModBoty(Bot, Cooldown):
         self.editor_commands: dict[str, list[str]] = {}
         self.stv_editors: dict[str, list[str]] = {}
         self.streams: list[str] = []
+        self.recently_streams: dict[str, float] = {}
         self.session: ClientSession = self._http.session
 
         for cog in [path.stem for path in Path("cogs").glob("*py")]:
@@ -83,17 +84,23 @@ class ModBoty(Bot, Cooldown):
             if next((s for s in streams if s.user.name.lower() == channel), None):  # check if channel is streaming
                 if channel not in self.streams:
                     self.streams.append(channel)
+                    self.recently_streams.pop(channel, None)
 
                     if (data := await db.inspects.find_one({"channel": channel})) and data["active"]:
                         await db.inspects.update_one({"channel": channel}, {"$set": {"stats": {}}})
                         await self.cogs["Inspect"].set(channel)
             elif channel in self.streams:  # check if stream ended
                 self.streams.remove(channel)
+                self.recently_streams[channel] = time.time()
 
                 if (data := await db.inspects.find_one({"channel": channel})) and data["active"] and data["offline"]:
                     await self.cogs["Inspect"].set(channel)
                 elif data and data["active"]:
                     self.cogs["Inspect"].unset(channel)
+
+        for channel, stream_end in self.recently_streams.items():
+            if time.time() - stream_end > 600:
+                del self.recently_streams[channel]
 
     @routine(hours=5)
     async def clear_data(self):

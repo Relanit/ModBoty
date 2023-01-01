@@ -176,8 +176,10 @@ class Vips(Cog):
             message = f'{login} будет анвипнут {date:%Y.%m.%d %H:%M} по МСК{", вне стрима" if offline else ""}'
         elif not content[1] and offline:
             if ctx.channel.name not in self.bot.streams:
-                await ctx.reply("Сейчас нет стрима")
-                return
+                stream = await self.bot.fetch_streams(user_logins=[ctx.channel.name])
+                if not stream:
+                    await ctx.reply("Сейчас нет стрима, повторите попытку позже")
+                    return
 
             unvip_time = time.time()
             message = f"{login} будет анвипнут после окончания стрима"
@@ -259,7 +261,11 @@ class Vips(Cog):
             already_unvipped = []
             for unvip in document["unvips"]:
                 if unvip["unvip_time"] < time.time() and (
-                    (unvip["offline"] and document["channel"] not in self.bot.streams) or not unvip["offline"]
+                    (
+                        unvip["offline"]
+                        and time.time() - self.bot.recently_streams.get(document["channel"], time.time()) > 300
+                    )
+                    or not unvip["offline"]
                 ):
                     if not messageable:
                         if not tokens:

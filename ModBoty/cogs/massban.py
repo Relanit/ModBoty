@@ -1,6 +1,6 @@
 import asyncio
 import time
-from typing import Generator, TypedDict
+from typing import TypedDict
 
 from twitchio.ext.commands import Cog, command, Context
 from twitchio import Message
@@ -18,7 +18,7 @@ def most_common_substring(strings: list[str]) -> tuple[str, int]:
     Returns string and number of matches
     """
 
-    def matches(s1: str, s2: str) -> Generator[str]:
+    def matches(s1: str, s2: str):
         final = {s1[i : b + 1] for i in range(len(s1)) for b in range(len(s1))}
         return (i for i in final if i in s1 and i in s2 and 15 >= len(i) > 2)
 

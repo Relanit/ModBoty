@@ -106,7 +106,7 @@ class Vips(Cog):
         try:
             await channel.add_channel_vip(token, user_id)
         except twitchio.errors.HTTPException:
-            await ctx.reply("Произошла непонятная ошибка (создатель бота не причём) :|")
+            await ctx.reply("Произошла неизвестная ошибка, виноват твич :|")
             return
 
         await ctx.reply(f"Добавлен VIP: {ctx.content.lstrip('@')}")

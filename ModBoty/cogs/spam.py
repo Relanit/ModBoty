@@ -9,7 +9,7 @@ class Spam(Cog):
 
     @command(
         name="spam",
-        cooldown={"per": 0, "gen": 10},
+        cooldown={"per": 0, "gen": 3},
         description="Спам текстом указанное количество раз (до 15).",
         flags=["bot-vip"],
     )

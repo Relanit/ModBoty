@@ -526,9 +526,8 @@ class SevenTV(Cog):
 
         emote_set = await get_emote_set(self.bot.session, emote_set_id)
 
-        emote_id, origin_id, origins = None, None, None
+        emote_id, origin_id = None, None
         for e in emote_set["data"]["emoteSet"]["emotes"]:
-            origins = origins or e.get("origin_id")
             if e["name"] == name:
                 emote_id = e["id"]
                 origin_id = e.get("origin_id")
@@ -538,7 +537,7 @@ class SevenTV(Cog):
             return
 
         for e in emote_set["data"]["emoteSet"]["emotes"]:
-            if e["name"] == alias and (e.get("origin_id") or not origins):
+            if e["name"] == alias and (e.get("origin_id") and origin_id or not e.get("origin_id") and not origin_id):
                 await ctx.reply(f'На канале уже есть смайл с именем "{alias}"')
                 return
 

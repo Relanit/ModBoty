@@ -14,7 +14,7 @@ class Polls(Cog):
         name="poll",
         aliases=["delpoll"],
         cooldown={"per": 0, "gen": 3},
-        description="Создание и удаление опросов. Полное описание - https://vk.cc/cj2PKZ",
+        description="Создание и удаление опросов. Полное описание ‒ https://vk.cc/cj2PKZ",
     )
     async def command(self, ctx: Context):
         channel = await ctx.channel.user()
@@ -24,7 +24,7 @@ class Polls(Cog):
 
         data = await db.config.find_one({"_id": 1, "user_tokens.login": ctx.channel.name}, {"user_tokens.$": 1})
         if not data:
-            await ctx.reply("Для работы этой команды стримеру нужно пройти авторизацию - https://vk.cc/chZxeI")
+            await ctx.reply("Для работы этой команды стримеру нужно пройти авторизацию‒https://vk.cc/chZxeI")
             return
 
         token = fernet.decrypt(data["user_tokens"][0]["access_token"].encode()).decode()
@@ -32,7 +32,7 @@ class Polls(Cog):
         try:
             polls = await channel.fetch_polls(token)
         except twitchio.errors.Unauthorized:
-            await ctx.reply("Для работы этой команды стримеру нужно пройти авторизацию - https://vk.cc/chZxeI")
+            await ctx.reply("Для работы этой команды стримеру нужно пройти авторизацию‒https://vk.cc/chZxeI")
             return
 
         if ctx.command_alias == "poll":
@@ -51,7 +51,7 @@ class Polls(Cog):
         sep = "\\" if "\\" in ctx.content else "/"
         content_split = ctx.content.split(sep)
         if len(content_split) < 3:
-            await ctx.reply("Неверный ввод команды - https://vk.cc/cj2PKZ")
+            await ctx.reply("Неверный ввод команды‒https://vk.cc/cj2PKZ")
             return
 
         try:
@@ -75,7 +75,7 @@ class Polls(Cog):
             await ctx.reply("Недостаточно вариантов для выбора")
             return
         elif len(choices) > 5:
-            await ctx.reply("Максимальное количество вариантов - 5")
+            await ctx.reply("Максимальное количество вариантов‒5")
             return
 
         await channel.create_poll(token, title, choices, duration)

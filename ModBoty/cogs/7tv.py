@@ -140,7 +140,7 @@ class SevenTV(Cog):
         name="7add",
         cooldown={"per": 0, "gen": 5},
         aliases=["7del", "7alias", "7editor", "7set", "7origin"],
-        description="Редактирование 7TV смайлов и управление редакторами. Полное описание - https://vk.cc/cjGqPg ",
+        description="Редактирование 7TV смайлов и управление редакторами. Полное описание ‒ https://vk.cc/cjGqPg ",
         flags=["whitelist", "7tv-editor"],
     )
     async def command(self, ctx: Context):
@@ -253,10 +253,10 @@ class SevenTV(Cog):
                         self.bot.fetch_users(names=[other_channel]),
                     )
             except twitchio.HTTPException:
-                await ctx.reply(f'Некорректный никнейм - "{other_channel}"')
+                await ctx.reply(f'Некорректный никнейм ‒ "{other_channel}"')
                 return
             if not other_channel:
-                await ctx.reply(f'Канал не найден - "{other_channel}"')
+                await ctx.reply(f'Канал не найден‒"{other_channel}"')
                 return
             other_channel = other_channel[0]
         else:
@@ -435,7 +435,7 @@ class SevenTV(Cog):
                 if len(emote_names) != len(added_emotes) and len(emote_names) > 1
                 else message
             )
-        message = f"{message} - {'; '.join(errors)}" if errors else message
+        message = f"{message} ‒ {'; '.join(errors)}" if errors else message
 
         if "Insufficient Privilege" in message:
             await ctx.reply("Боту нужна редакторка 7TV с правами редактирования смайлов и наборов")
@@ -487,7 +487,7 @@ class SevenTV(Cog):
         await asyncio.gather(*requests)
 
         if not deleted:
-            message = f"Не удалось выполнить команду - {'; '.join(errors)}"
+            message = f"Не удалось выполнить команду ‒ {'; '.join(errors)}"
             if "Insufficient Privilege" in message:
                 message = "Боту нужна редакторка 7TV с правами редактирования смайлов и наборов"
 
@@ -505,7 +505,7 @@ class SevenTV(Cog):
                 else message
             )
 
-            message = f"{message} - {'; '.join(errors)}" if errors else message
+            message = f"{message} ‒ {'; '.join(errors)}" if errors else message
 
         await ctx.reply(message)
 
@@ -569,7 +569,7 @@ class SevenTV(Cog):
             errors.add(error["message"])
 
         if errors:
-            message = f"Не удалось изменить название - {'; '.join(errors)}"
+            message = f"Не удалось изменить название ‒ {'; '.join(errors)}"
             if "Insufficient Privilege" in message:
                 await ctx.reply("Боту нужна редакторка 7TV с правами редактирования смайлов и наборов")
                 return
@@ -649,7 +649,7 @@ class SevenTV(Cog):
             else:
                 errors = "; ".join([error["message"] for error in response["errors"]])
                 await ctx.reply(
-                    f"{'Произошли ошибки' if len(response['errors']) > 1 else 'Произошла ошибка'} - {errors}"
+                    f"{'Произошли ошибки' if len(response['errors']) > 1 else 'Произошла ошибка'} ‒ {errors}"
                 )
             return
 
@@ -737,7 +737,7 @@ class SevenTV(Cog):
         response = await update_emote_set(self.bot.session, origins, current_emote_set[0]["id"])
 
         if errors := {error["message"] for error in response.get("errors", [])}:
-            message = f"Не удалось {'добавить' if action == 'add' else 'удалить'} источник - {'; '.join(errors)}"
+            message = f"Не удалось {'добавить' if action == 'add' else 'удалить'} источник ‒ {'; '.join(errors)}"
             if "Insufficient Privilege" in message:
                 await ctx.reply("Боту нужна редакторка 7TV с правами редактирования смайлов и наборов")
                 return
@@ -768,11 +768,11 @@ class SevenTV(Cog):
         try:
             user = await self.bot.fetch_users(names=[login])
         except twitchio.HTTPException:
-            await ctx.reply(f'Некорректный никнейм - "{login}"')
+            await ctx.reply(f'Некорректный никнейм ‒ "{login}"')
             return
 
         if not user:
-            await ctx.reply(f'Пользователь не найден - "{login}"')
+            await ctx.reply(f'Пользователь не найден ‒ "{login}"')
             return
 
         if login == self.bot.nick and action != "add":
@@ -823,7 +823,7 @@ class SevenTV(Cog):
             else:
                 errors = "; ".join([error["message"] for error in response["errors"]])
                 await ctx.reply(
-                    f"{'Произошли ошибки' if len(response['errors']) > 1 else 'Произошла ошибка'} - {errors}"
+                    f"{'Произошли ошибки' if len(response['errors']) > 1 else 'Произошла ошибка'} ‒ {errors}"
                 )
             return
 

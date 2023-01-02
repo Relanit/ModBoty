@@ -87,7 +87,7 @@ class MassBan(Cog):
         name="mb",
         aliases=["mt", "m"],
         cooldown={"per": 0, "gen": 60},
-        description="Бан/мут пользователей, написавших сообщение с указанной фразой. Полное описание - https://vk.cc/chCfLq ",
+        description="Бан/мут пользователей, написавших сообщение с указанной фразой. Полное описание ‒ https://vk.cc/chCfLq ",
         flags=["bot-mod"],
     )
     async def mass_ban(self, ctx: Context):

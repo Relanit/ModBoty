@@ -17,12 +17,12 @@ class Editors(Cog):
         name="editor",
         aliases=["editors", "unban", "ban"],
         cooldown={"per": 0, "gen": 5},
-        description="Настройка редакторов бота и управление доступом к командам. Полное описание - https://vk.cc/cijFyF ",
+        description="Настройка редакторов бота и управление доступом к командам. Полное описание ‒ https://vk.cc/cijFyF ",
         flags=["whitelist"],
     )
     async def command(self, ctx: Context):
         if not ctx.content and ctx.command_alias != "editors":
-            await ctx.reply("Недостаточно значений - https://vk.cc/cijFyF")
+            await ctx.reply("Недостаточно значений‒https://vk.cc/cijFyF")
             return
 
         if ctx.command_alias != "editors" and not ctx.author.is_broadcaster and ctx.author.name != self.bot.admin:
@@ -58,7 +58,7 @@ class Editors(Cog):
         try:
             user = await self.bot.fetch_users(names=[login])
         except twitchio.HTTPException:
-            await ctx.reply(f'Некорректный никнейм - "{login}"')
+            await ctx.reply(f'Некорректный никнейм‒"{login}"')
             return
 
         if not user:

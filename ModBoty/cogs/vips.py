@@ -42,7 +42,7 @@ class Vips(Cog):
         name="vip",
         aliases=["unvip", "unvips", "delunvip"],
         cooldown={"per": 0, "gen": 3},
-        description="Управление випами на канале. Полное описание - https://vk.cc/ciufvM",
+        description="Управление випами на канале. Полное описание ‒ https://vk.cc/ciufvM",
         flags=["editor"],
     )
     async def command(self, ctx: Context):
@@ -54,11 +54,11 @@ class Vips(Cog):
 
             data = await db.config.find_one({"_id": 1, "user_tokens.login": ctx.channel.name}, {"user_tokens.$": 1})
             if not data:
-                await ctx.reply("Для работы этой команды стримеру нужно пройти авторизацию - https://vk.cc/chZxeI")
+                await ctx.reply("Для работы этой команды стримеру нужно пройти авторизацию‒https://vk.cc/chZxeI")
                 return
 
             if not ctx.content:
-                await ctx.reply("Недостаточно значений - https://vk.cc/ciufvM")
+                await ctx.reply("Недостаточно значений‒https://vk.cc/ciufvM")
                 return
 
             token = fernet.decrypt(data["user_tokens"][0]["access_token"].encode()).decode()
@@ -77,7 +77,7 @@ class Vips(Cog):
             try:
                 vip = await channel.fetch_channel_vips(token, user_ids=[user[0].id])
             except twitchio.errors.Unauthorized:
-                await ctx.reply("Для работы этой команды стримеру нужно пройти авторизацию - https://vk.cc/chZxeI")
+                await ctx.reply("Для работы этой команды стримеру нужно пройти авторизацию‒https://vk.cc/chZxeI")
                 return
 
             if ctx.command_alias == "vip":
@@ -147,7 +147,7 @@ class Vips(Cog):
             t = content[1].split(maxsplit=1)[1]
             t = parse(t)
             if t is None:
-                await ctx.reply("Укажите время, через которое произойдёт анвип - https://vk.cc/ciVsiG")
+                await ctx.reply("Укажите время, через которое произойдёт анвип‒https://vk.cc/ciVsiG")
                 return
             if t < 60:
                 await ctx.reply("Нельзя указывать прошедшую дату или близкое будущее (до минуты)")
@@ -184,7 +184,7 @@ class Vips(Cog):
             unvip_time = time.time()
             message = f"{login} будет анвипнут после окончания стрима"
         else:
-            await ctx.reply("Неверный ввод - https://vk.cc/ciVsiG")
+            await ctx.reply("Неверный ввод‒https://vk.cc/ciVsiG")
             return
 
         found = await db.unvips.find_one({"channel": ctx.channel.name, "unvips.user_id": user_id}, {"unvips.$": 1})

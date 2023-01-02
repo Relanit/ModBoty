@@ -54,7 +54,7 @@ class StreamInfo(Cog):
                 ctx = await self.bot.get_context(message)
 
                 if not data:
-                    await ctx.reply("Для работы этой команды стримеру нужно пройти авторизацию - https://vk.cc/chZxeI")
+                    await ctx.reply("Для работы этой команды стримеру нужно пройти авторизацию‒https://vk.cc/chZxeI")
                     return
 
                 channel = await ctx.channel.user()
@@ -70,7 +70,7 @@ class StreamInfo(Cog):
         name="t",
         aliases=["g", "addg", "delg", "games"],
         cooldown={"per": 0, "gen": 3},
-        description="Изменение настроек стрима. Полное описание - https://vk.cc/ciaLzx",
+        description="Изменение настроек стрима. Полное описание ‒ https://vk.cc/ciaLzx",
         flags=["mention"],
     )
     async def command(self, ctx: Context):
@@ -86,7 +86,7 @@ class StreamInfo(Cog):
 
         data = await db.config.find_one({"_id": 1, "user_tokens.login": ctx.channel.name}, {"user_tokens.$": 1})
         if not data:
-            await ctx.reply("Для работы этой команды стримеру нужно пройти авторизацию - https://vk.cc/chZxeI")
+            await ctx.reply("Для работы этой команды стримеру нужно пройти авторизацию‒https://vk.cc/chZxeI")
             return
 
         token = fernet.decrypt(data["user_tokens"][0]["access_token"].encode()).decode()
@@ -107,24 +107,24 @@ class StreamInfo(Cog):
     async def t(self, ctx: Context, channel: User | None = None, token: str | None = None):
         if not ctx.content:
             channel_info = await self.bot.fetch_channel(ctx.channel.name)
-            await ctx.reply(f"Название стрима - {channel_info.title}")
+            await ctx.reply(f"Название стрима‒{channel_info.title}")
             return
 
         try:
             await channel.modify_stream(token, title=ctx.content[:140])
         except twitchio.errors.Unauthorized:
-            await ctx.reply("Для работы этой команды стримеру нужно пройти авторизацию - https://vk.cc/chZxeI")
+            await ctx.reply("Для работы этой команды стримеру нужно пройти авторизацию‒https://vk.cc/chZxeI")
             return
 
-        await ctx.reply(f"Установлено название стрима - {ctx.content[:140]}")
+        await ctx.reply(f"Установлено название стрима‒{ctx.content[:140]}")
 
     async def g(self, ctx: Context, channel: User | None = None, token: str | None = None, game: Game | None = None):
         if not game and not ctx.content:
             channel_info = await self.bot.fetch_channel(ctx.channel.name)
             if ctx.message.custom_tags.get("mention"):
-                await ctx.send(f"{ctx.message.custom_tags['mention']} Название игры - {channel_info.game_name}")
+                await ctx.send(f"{ctx.message.custom_tags['mention']} Название игры‒{channel_info.game_name}")
             else:
-                await ctx.reply(f"Установленная категория - {channel_info.game_name}")
+                await ctx.reply(f"Установленная категория‒{channel_info.game_name}")
             return
 
         game = game or await self.bot.fetch_games(names=[ctx.content])
@@ -161,7 +161,7 @@ class StreamInfo(Cog):
         try:
             await channel.modify_stream(token, game.id)
         except twitchio.errors.Unauthorized:
-            await ctx.reply("Для работы этой команды стримеру нужно пройти авторизацию - https://vk.cc/chZxeI")
+            await ctx.reply("Для работы этой команды стримеру нужно пройти авторизацию‒https://vk.cc/chZxeI")
             return
 
         await ctx.reply(f"Установлена категория {game.name}")
@@ -170,15 +170,15 @@ class StreamInfo(Cog):
         try:
             alias, name = ctx.content.lower().split(maxsplit=1)
         except ValueError:
-            await ctx.reply("Недостаточно значений - https://vk.cc/ciaLzx")
+            await ctx.reply("Недостаточно значений‒https://vk.cc/ciaLzx")
             return
 
         if len(self.aliases.get(ctx.channel.name, {})) == 20:
-            await ctx.reply("Достигнут лимит по количеству элиасов категорий - 20")
+            await ctx.reply("Достигнут лимит по количеству элиасов категорий‒20")
             return
 
         if len(alias) > 15:
-            await ctx.reply("Маскимальная длина элисаса - 15")
+            await ctx.reply("Маскимальная длина элисаса‒15")
             return
 
         games = await self.bot.fetch_games(names=[name])
@@ -247,7 +247,7 @@ class StreamInfo(Cog):
 
     async def delg(self, ctx: Context):
         if not (alias := ctx.content.lower()):
-            await ctx.reply("Недостаточно значений - https://vk.cc/ciaLzx")
+            await ctx.reply("Недостаточно значений‒https://vk.cc/ciaLzx")
             return
 
         if alias not in self.aliases.get(ctx.channel.name, []):
@@ -260,7 +260,7 @@ class StreamInfo(Cog):
             {"channel": ctx.channel.name, "games.id": game},
             {"$pull": {"games.$.aliases": alias}},
         )
-        await ctx.reply(f"Удалено - {self.bot.prefix}{alias}")
+        await ctx.reply(f"Удалено‒{self.bot.prefix}{alias}")
 
     async def list_games(self, ctx: Context):
         if not self.aliases.get(ctx.channel.name):

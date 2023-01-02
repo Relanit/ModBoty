@@ -1,5 +1,4 @@
 import asyncio
-import logging
 import re
 
 import twitchio
@@ -9,7 +8,6 @@ import aiohttp
 
 from config import config
 
-logger = logging.getLogger()
 
 headers = {"Authorization": f"Bearer {config['Bot']['7tv_token']}"}
 
@@ -407,7 +405,16 @@ class SevenTV(Cog):
                 added_emotes.append(emote["name"])
             else:
                 for error in response["errors"]:
-                    errors.add("недостаточно слотов" if "No Space Available" in error["message"] else error["message"])
+                    if "No Space Available" in error["message"]:
+                        errors.add("недостаточно слотов")
+                    elif "Emote Already Enabled" in error["message"]:
+                        if "смайл уже добавлен" not in errors and "смайлы уже добавлены" not in errors:
+                            errors.add("смайл уже добавлен")
+                        elif "смайлы уже добавлены" not in errors:
+                            errors.remove("смайл уже добавлен")
+                            errors.add("смайлы уже добавлены")
+                    else:
+                        errors.add(error["message"])
 
         requests = [add_emote(emote) for emote in emotes]
         await asyncio.gather(*requests)
@@ -869,8 +876,7 @@ class SevenTV(Cog):
             try:
                 response = await get_stv_user_gql(self.bot.session, stv_id)
             except aiohttp.ContentTypeError:
-                logger.info(response)
-                return
+                continue
 
             self.stv_ids[response["data"]["user"]["username"]] = stv_id
             self.bot.stv_editors[response["data"]["user"]["username"]] = {

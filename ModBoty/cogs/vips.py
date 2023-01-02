@@ -1,5 +1,6 @@
 import asyncio
 import time
+import traceback
 from datetime import datetime
 
 import twitchio
@@ -156,7 +157,11 @@ class Vips(Cog):
             elif t < 60:
                 await ctx.reply(f"{login} будет анвипнут через {t}с")
                 await asyncio.sleep(t)
-                await channel.remove_channel_vip(token, user_id)
+                try:
+                    await channel.remove_channel_vip(token, user_id)
+                except:
+                    traceback.print_exc()
+                    return
                 await db.unvips.update_one(
                     {"channel": ctx.channel.name},
                     {"$pull": {"unvips": {"user_id": user_id}}},

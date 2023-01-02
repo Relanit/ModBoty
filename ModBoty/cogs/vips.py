@@ -157,11 +157,12 @@ class Vips(Cog):
             elif t < 60:
                 await ctx.reply(f"{login} будет анвипнут через {t}с")
                 await asyncio.sleep(t)
+
                 try:
                     await channel.remove_channel_vip(token, user_id)
-                except:
-                    traceback.print_exc()
+                except twitchio.errors.HTTPException:
                     return
+
                 await db.unvips.update_one(
                     {"channel": ctx.channel.name},
                     {"$pull": {"unvips": {"user_id": user_id}}},

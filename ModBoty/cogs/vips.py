@@ -1,6 +1,5 @@
 import asyncio
 import time
-import traceback
 from datetime import datetime
 
 import twitchio
@@ -12,27 +11,6 @@ from pytimeparse2 import parse
 import parsedatetime
 
 from config import db, fernet
-
-intervals = (
-    ("y", 31536000),
-    ("mo", 2592000),
-    ("w", 604800),
-    ("d", 86400),
-    ("h", 3600),
-    ("m", 60),
-    ("s", 1),
-)
-
-
-def display_time(seconds: int, granularity: int = 2) -> str:
-    """Returns human-readable time from number of seconds"""
-    result = []
-
-    for name, count in intervals:
-        if value := seconds // count:
-            seconds -= value * count
-            result.append(f"{value}{name}")
-    return ", ".join(result[:granularity])
 
 
 class Vips(Cog):

@@ -1,3 +1,4 @@
+import asyncio
 import time
 from datetime import datetime
 
@@ -149,8 +150,18 @@ class Vips(Cog):
             if t is None:
                 await ctx.reply("Укажите время, через которое произойдёт анвип‒https://vk.cc/ciVsiG")
                 return
-            if t < 60:
-                await ctx.reply("Нельзя указывать прошедшую дату или близкое будущее (до минуты)")
+            if t < 1:
+                await ctx.reply("Нельзя указывать прошлое")
+                return
+            elif t < 60:
+                await ctx.reply(f"{login} будет анвипнут через {t}с")
+                await asyncio.sleep(t)
+                await channel.remove_channel_vip(token, user_id)
+                await db.unvips.update_one(
+                    {"channel": ctx.channel.name},
+                    {"$pull": {"unvips": {"user_id": user_id}}},
+                )
+                await ctx.reply(f"Удалён VIP: {login}")
                 return
             elif t >= 315360000:
                 await ctx.reply(f"{login} будет обязательно анвипнут. Но это не точно")

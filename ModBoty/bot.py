@@ -101,6 +101,7 @@ class ModBoty(Bot, Cooldown):
         for channel, stream_end in self.recently_streams.items():
             if time.time() - stream_end > 900:
                 del self.recently_streams[channel]
+                break
 
     @routine(hours=5)
     async def clear_data(self):

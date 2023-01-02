@@ -99,7 +99,7 @@ class ModBoty(Bot, Cooldown):
                     self.cogs["Inspect"].unset(channel)
 
         for channel, stream_end in self.recently_streams.items():
-            if time.time() - stream_end > 600:
+            if time.time() - stream_end > 900:
                 del self.recently_streams[channel]
 
     @routine(hours=5)
@@ -119,6 +119,7 @@ class ModBoty(Bot, Cooldown):
         data = await db.config.find_one({"_id": 1})
 
         if config["Bot"]["refresh_token"] and data["expire_time"] - time.time() < 900:  # refresh bot user token
+            return
             url = f'https://id.twitch.tv/oauth2/token?client_id={config["Twitch"]["client_id"]}&client_secret={config["Twitch"]["client_secret"]}&refresh_token={config["Bot"]["refresh_token"]}&grant_type=refresh_token'
             async with self.session.post(
                 url, headers={"Content-Type": "application/x-www-form-urlencoded"}

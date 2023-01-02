@@ -263,7 +263,7 @@ class Vips(Cog):
                 if unvip["unvip_time"] < time.time() and (
                     (
                         unvip["offline"]
-                        and time.time() - self.bot.recently_streams.get(document["channel"], time.time()) > 300
+                        and time.time() - self.bot.recently_streams.get(document["channel"], time.time()) > 600
                     )
                     or not unvip["offline"]
                 ):

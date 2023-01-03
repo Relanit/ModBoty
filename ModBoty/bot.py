@@ -40,7 +40,7 @@ class ModBoty(Bot, Cooldown):
         self.refresh_tokens.start(stop_on_error=False)
 
     async def event_ready(self):
-        print(f"Logged in as {self.nick}")
+        logger.info(f"Logged in as {self.nick}")
 
     async def event_message(self, message: Message):
         if message.echo:

@@ -839,10 +839,6 @@ class SevenTV(Cog):
 
     @routine(minutes=5)
     async def update_editors(self):
-        if not self.bot.session:
-            self.bot._http.session = self.bot._http.session or aiohttp.ClientSession()
-            self.bot.session = self.bot._http.session
-
         json = {
             "operationName": "GetCurrentUser",
             "query": "query GetCurrentUser {\n  user: actor {\n    id\n    username\n    display_name\n    "
@@ -883,6 +879,11 @@ class SevenTV(Cog):
                 editor["user"]["username"]: editor["permissions"] for editor in response["data"]["user"]["editors"]
             }
             await asyncio.sleep(2)
+
+    @update_editors.before_routine
+    async def set_session(self):
+        self.bot._http.session = aiohttp.ClientSession()
+        self.bot.session = self.bot._http.session
 
 
 def prepare(bot):

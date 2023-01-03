@@ -86,10 +86,10 @@ class Vips(Cog):
         try:
             await channel.add_channel_vip(token, user_id)
         except twitchio.errors.HTTPException:
-            await ctx.reply("Произошла неизвестная ошибка, виноват твич :|")
+            await ctx.reply("Произошла неизвестная ошибка, виноват твич :P")
             return
 
-        await ctx.reply(f"Добавлен VIP: {ctx.content.lstrip('@')}")
+        await ctx.reply(f"Добавлен VIP: {ctx.content.lstrip('@').rstrip(',')}")
 
     async def unvip(self, ctx: Context, channel: User, token: str, user_id: int):
         content = ctx.content.lower().split(maxsplit=1)

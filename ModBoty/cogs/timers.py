@@ -63,7 +63,7 @@ class Timers(Cog):
             link = content[0].lstrip(self.bot.prefix)
             link = self.bot.cogs["Links"].get_link_name(ctx.channel.name, link)
             if not link:
-                await ctx.reply(f"Ссылка {self.bot.prefix}{link} не найдена")
+                await ctx.reply(f"Команда {self.bot.prefix}{link} не найдена")
                 return
 
         if ctx.command_alias == "timer":

@@ -251,7 +251,7 @@ class Links(Cog):
 
             if link in cog.timers.get(ctx.channel.name, []):
                 await db.timers.update_one({"channel": ctx.channel.name}, {"$pull": {"timers": {"link": link}}})
-                message = f"Удалены ссылка и таймер {self.bot.prefix}{link}"
+                message = f"Удалены команда и таймер {self.bot.prefix}{link}"
                 del cog.timers[ctx.channel.name][link]
             else:
                 message = f"Удалено {self.bot.prefix}{link}"

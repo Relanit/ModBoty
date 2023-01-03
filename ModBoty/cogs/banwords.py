@@ -55,12 +55,12 @@ class Banwords(Cog):
         name="bword",
         aliases=["mword", "delb", "delm", "bwords", "mwords"],
         cooldown={"per": 0, "gen": 5},
-        description="Запрещённые слова, за отправку которых пользователь получает бан/мут. Полное описание ‒ https://vk.cc/chCfIC ",
+        description="Запрещённые слова, за отправку которых пользователь получает бан/мут. Полное описание  ‒  https://vk.cc/chCfIC ",
         flags=["bot-mod"],
     )
     async def command(self, ctx: Context):
         if not ctx.content and ctx.command_alias not in ("bwords", "mwords"):
-            await ctx.reply("Недостаточно значений‒https://vk.cc/chCfIC")
+            await ctx.reply("Недостаточно значений ‒ https://vk.cc/chCfIC")
             return
 
         if ctx.command_alias == "bword":
@@ -78,7 +78,7 @@ class Banwords(Cog):
 
     async def bword(self, ctx: Context):
         if len(self.banwords.get(ctx.channel.name, [])) + len(self.mutewords.get(ctx.channel.name, [])) == 50:
-            await ctx.reply("Достигнут лимит банвордов и мутвордов‒50")
+            await ctx.reply("Достигнут лимит банвордов и мутвордов ‒ 50")
             return
 
         banword = ctx.content.lower()
@@ -92,8 +92,8 @@ class Banwords(Cog):
                 await ctx.reply("Часть фразы уже есть в банвордах канала")
                 return
 
-        if len(banword) > 20:
-            await ctx.reply("Длина банворда не должна превышать 20 символов")
+        if len(banword) > 50:
+            await ctx.reply("Длина банворда не должна превышать 50 символов")
             return
 
         if ctx.channel.name not in self.banwords:
@@ -142,7 +142,7 @@ class Banwords(Cog):
             len(self.banwords.get(ctx.channel.name, [])) + len(self.mutewords.get(ctx.channel.name, [])) == 50
             and not found
         ):
-            await ctx.reply("Достигнут лимит банвордов и мутвордов‒50")
+            await ctx.reply("Достигнут лимит банвордов и мутвордов ‒ 50")
             return
 
         try:
@@ -155,8 +155,8 @@ class Banwords(Cog):
             await ctx.reply("Допустимая длительность мута от 1 до 1209600 секунд")
             return
 
-        if len(muteword) > 20:
-            await ctx.reply("Длина мутворда не должна превышать 20 символов")
+        if len(muteword) > 50:
+            await ctx.reply("Длина мутворда не должна превышать 50 символов")
             return
 
         message = "Добавлено"

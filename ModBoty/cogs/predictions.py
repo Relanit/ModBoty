@@ -15,7 +15,7 @@ class Predictions(Cog):
         name="pred",
         aliases=["endpred", "delpred", "lockpred", "reppred"],
         cooldown={"per": 0, "gen": 3},
-        description="Создание и редактирование ставок. Полное описание ‒ https://vk.cc/chZLJH",
+        description="Создание и редактирование ставок. Полное описание  ‒  https://vk.cc/chZLJH",
     )
     async def command(self, ctx: Context):
         channel = await ctx.channel.user()
@@ -25,7 +25,7 @@ class Predictions(Cog):
 
         data = await db.config.find_one({"_id": 1, "user_tokens.login": ctx.channel.name}, {"user_tokens.$": 1})
         if not data:
-            await ctx.reply("Для работы этой команды стримеру нужно пройти авторизацию‒https://vk.cc/chZxeI")
+            await ctx.reply("Для работы этой команды стримеру нужно пройти авторизацию ‒ https://vk.cc/chZxeI")
             return
 
         token = fernet.decrypt(data["user_tokens"][0]["access_token"].encode()).decode()
@@ -33,7 +33,7 @@ class Predictions(Cog):
         try:
             predictions = await channel.get_predictions(token)
         except twitchio.errors.Unauthorized:
-            await ctx.reply("Для работы этой команды стримеру нужно пройти авторизацию‒https://vk.cc/chZxeI")
+            await ctx.reply("Для работы этой команды стримеру нужно пройти авторизацию ‒ https://vk.cc/chZxeI")
             return
 
         if not predictions and ctx.command_alias in ("reppred", "endpred", "delpred", "lockpred"):
@@ -66,7 +66,7 @@ class Predictions(Cog):
         sep = "\\" if "\\" in ctx.content else "/"
         content_split = ctx.content.split(sep)
         if len(content_split) < 3:
-            await ctx.reply("Неверный ввод команды‒https://vk.cc/cj2PKZ")
+            await ctx.reply("Неверный ввод команды ‒ https://vk.cc/cj2PKZ")
             return
 
         try:
@@ -83,7 +83,7 @@ class Predictions(Cog):
             await ctx.reply("Недостаточное количество исходов")
             return
         elif len(outcomes) > 10:
-            await ctx.reply("Максимальное количество исходов‒10")
+            await ctx.reply("Максимальное количество исходов ‒ 10")
             return
 
         url = "https://api.twitch.tv/helix/predictions"

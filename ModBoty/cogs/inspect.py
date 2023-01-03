@@ -125,7 +125,7 @@ class Inspect(Cog):
     @command(
         name="inspect",
         cooldown={"per": 0, "gen": 5},
-        description="Мут пользователей, нарушающих указанные лимиты отправки сообщений. Полное описание ‒ https://vk.cc/chCfJI ",
+        description="Мут пользователей, нарушающих указанные лимиты отправки сообщений. Полное описание  ‒  https://vk.cc/chCfJI ",
         flags=["bot-mod"],
     )
     async def inspect(self, ctx: Context):
@@ -133,7 +133,7 @@ class Inspect(Cog):
         data = await db.inspects.find_one({"channel": ctx.channel.name}) or {}
 
         if (not content or content in ("on", "off") or content.startswith("stats")) and not data:
-            await ctx.reply("Сначала настройте наблюдение‒https://vk.cc/chCfJI ")
+            await ctx.reply("Сначала настройте наблюдение ‒ https://vk.cc/chCfJI ")
             return
 
         if not content:
@@ -200,7 +200,7 @@ class Inspect(Cog):
             top = []
             for place, user in enumerate(sorted_users[:5], start=1):
                 name = user[0][:1] + "\U000E0000" + user[0][1:]
-                top.append(f'{place}. {name}‒{user[1]}{" отстранений" if place == 1 else ""}')
+                top.append(f'{place}. {name} ‒ {user[1]}{" отстранений" if place == 1 else ""}')
 
             await ctx.reply(f'Всего отстранено: {number}. Топ спамеров за стрим: {", ".join(top)}')
         else:
@@ -234,7 +234,7 @@ class Inspect(Cog):
                         messages = int(messages)
                         time_unit = round(float(time_unit), 1)
                     except ValueError:
-                        await ctx.reply("Неверная запись времени или количества сообщений‒https://vk.cc/chCfJI")
+                        await ctx.reply("Неверная запись времени или количества сообщений ‒ https://vk.cc/chCfJI")
                         return
 
                     if not 1 <= time_unit <= 60:
@@ -268,7 +268,7 @@ class Inspect(Cog):
                     try:
                         percent_limit = int(percent_limit)
                     except ValueError:
-                        await ctx.reply("Неверная запись процентного лимита‒https://vk.cc/ciVrXF")
+                        await ctx.reply("Неверная запись процентного лимита ‒ https://vk.cc/ciVrXF")
                         return
 
                     if not 0 <= percent_limit < 100:
@@ -289,7 +289,7 @@ class Inspect(Cog):
                     values["$set"]["timeouts"] = [] if "timeouts" not in values["$set"] else values["$set"]["timeouts"]
                     values["$set"]["timeouts"].append(timeout)
                 except ValueError:
-                    await ctx.reply("Неверная запись таймаутов или команды‒https://vk.cc/chCfJI")
+                    await ctx.reply("Неверная запись таймаутов или команды ‒ https://vk.cc/chCfJI")
                     return
 
                 if not 1 <= timeout <= 1209600:
@@ -308,7 +308,7 @@ class Inspect(Cog):
         on_insert = {"channel": ctx.channel.name, "active": False}
         if not data:
             if "first_limit" not in values["$set"] and "second_limit" not in values["$set"]:
-                await ctx.reply("Для начала установите сообщения и время‒https://vk.cc/chCfJI")
+                await ctx.reply("Для начала установите сообщения и время ‒ https://vk.cc/chCfJI")
                 return
 
             if "timeouts" not in values["$set"]:

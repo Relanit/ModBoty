@@ -17,7 +17,7 @@ class Help(Cog):
         content = ctx.content.lstrip(self.bot.prefix).lower()
         if not content:
             mention = ctx.message.custom_tags.get("mention") or ctx.author.mention
-            message = f"{mention} Документация‒https://vk.cc/chCevV | Напишите {self.bot.prefix}help [команда], чтобы узнать описание команды"
+            message = f"{mention} Документация ‒ https://vk.cc/chCevV | Напишите {self.bot.prefix}help [команда], чтобы узнать описание команды"
             await ctx.send(message)
             return
 
@@ -32,7 +32,7 @@ class Help(Cog):
     async def command_info(self, ctx: Context, command_name: str):
         command = self.bot.get_command(command_name)
         if "admin" in command.flags:
-            await ctx.reply("Команда не найдена. Список команд‒https://vk.cc/chCevV")
+            await ctx.reply("Команда не найдена. Список команд ‒ https://vk.cc/chCevV")
             return
 
         aliases = ""
@@ -105,7 +105,7 @@ class Help(Cog):
                 if cog.aliases[ctx.channel.name][alias] == game_id
             ]
             aliases = f'{self.bot.prefix}{str(f" {self.bot.prefix}").join(aliases)}'
-            message = f"{mention} {aliases}‒элиасы категории {name}. Кд: общий 3с"
+            message = f"{mention} {aliases} ‒ элиасы категории {name}. Кд: общий 3с"
         elif game := [
             game for game in cog.games.get(ctx.channel.name, {}).items() if game[1].lower() == ctx.content.lower()
         ]:
@@ -115,9 +115,9 @@ class Help(Cog):
                 if cog.aliases[ctx.channel.name][alias] == game[0][0]
             ]
             aliases = f'{self.bot.prefix}{str(f" {self.bot.prefix}").join(aliases)}'
-            message = f"{mention} {aliases}‒элиасы категории {game[0][1]}. Кд: общий 3с"
+            message = f"{mention} {aliases} ‒ элиасы категории {game[0][1]}. Кд: общий 3с"
         else:
-            message = f"{ctx.author.mention} Команда не найдена. Список команд‒https://vk.cc/chCevV"
+            message = f"{ctx.author.mention} Команда не найдена. Список команд ‒ https://vk.cc/chCevV"
 
         await ctx.send(message)
 

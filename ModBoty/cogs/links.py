@@ -109,7 +109,7 @@ class Links(Cog):
         name="link",
         aliases=["links", "del", "aliases", "public", "announce"],
         cooldown={"per": 0, "gen": 3},
-        description="Кастомные команды для спама (от модераторов) или вызова пользователями. Полное описание ‒ https://vk.cc/chCfKt ",
+        description="Кастомные команды для спама (от модераторов) или вызова пользователями. Полное описание  ‒  https://vk.cc/chCfKt ",
         flags=["bot-vip"],
     )
     async def command(self, ctx: Context):
@@ -129,14 +129,14 @@ class Links(Cog):
     async def link(self, ctx: Context):
         content = ctx.content.split()
         if len(content) < 2:
-            await ctx.reply("Недостаточно значений‒https://vk.cc/chCfKt")
+            await ctx.reply("Недостаточно значений ‒ https://vk.cc/chCfKt")
             return
 
         link = content[0].lower().lstrip(self.bot.prefix)
         found = self.get_link_name(ctx.channel.name, link)
 
         if len(self.links.get(ctx.channel.name, [])) == 40 and not found:
-            await ctx.reply("Достигнут лимит количества ссылок‒40")
+            await ctx.reply("Достигнут лимит количества ссылок ‒ 40")
             return
 
         link = found or link
@@ -150,14 +150,14 @@ class Links(Cog):
             if self.bot.get_command_name(link):
                 await ctx.reply(f"Название {self.bot.prefix}{link} уже занято командой бота")
                 return
-            elif len(link) > 15:
-                await ctx.reply("Нельзя создать ссылку с названием длиной более 15 символов")
+            elif len(link) > 30:
+                await ctx.reply("Нельзя создать ссылку с названием длиной более 30 символов")
                 return
 
         text = " ".join(content[1:])
 
         if not text or ((text.startswith(".") or text.startswith("/")) and len(text.split()) == 1):
-            await ctx.reply("Недостаточно значений‒https://vk.cc/chCfKt")
+            await ctx.reply("Недостаточно значений ‒ https://vk.cc/chCfKt")
             return
 
         key = {"channel": ctx.channel.name}
@@ -225,7 +225,7 @@ class Links(Cog):
             )
 
         else:
-            message, message2 = "Неверный ввод‒https://vk.cc/chCfKt", ""
+            message, message2 = "Неверный ввод ‒ https://vk.cc/chCfKt", ""
 
         await ctx.reply(message)
         if message2:
@@ -234,7 +234,7 @@ class Links(Cog):
     async def delete(self, ctx: Context):
         content = ctx.content.split()
         if not content:
-            await ctx.reply("Недостаточно значений‒https://vk.cc/chCfKt")
+            await ctx.reply("Недостаточно значений ‒ https://vk.cc/chCfKt")
             return
 
         link = content[0].lower().lstrip(self.bot.prefix)
@@ -283,13 +283,13 @@ class Links(Cog):
                     await ctx.reply(f"Название {self.bot.prefix}{alias} уже занято категорией {name}")
                     return
                 if alias in self.links.get(ctx.channel.name, []):
-                    await ctx.reply(f"Нельзя указывать названия существующих ссылок‒{self.bot.prefix}{alias}")
+                    await ctx.reply(f"Нельзя указывать названия существующих ссылок ‒ {self.bot.prefix}{alias}")
                     return
                 if self.links_aliases.get(ctx.channel.name, {}).get(alias, link) != link:
-                    await ctx.reply(f"Нельзя указывать элиасы существующих ссылок‒{self.bot.prefix}{alias}")
+                    await ctx.reply(f"Нельзя указывать элиасы существующих ссылок ‒ {self.bot.prefix}{alias}")
                     return
-                if len(alias) > 15:
-                    await ctx.reply(f"Нельзя создать элиас длиной более 15 символов‒{self.bot.prefix}{alias}")
+                if len(alias) > 30:
+                    await ctx.reply(f"Нельзя создать элиас длиной более 30 символов ‒ {self.bot.prefix}{alias}")
                     return
                 aliases.add(alias)
         elif link := self.get_link_name(ctx.channel.name, link):
@@ -300,7 +300,7 @@ class Links(Cog):
             return
 
         if len(aliases) > 5:
-            await ctx.reply("Максимальное количество элиасов к ссылке‒5")
+            await ctx.reply("Максимальное количество элиасов к ссылке  ‒  5")
             return
 
         if aliases:
@@ -373,7 +373,7 @@ class Links(Cog):
             return
 
         if not ctx.content:
-            await ctx.reply("Недостаточно значений‒https://vk.cc/ciVrFK")
+            await ctx.reply("Недостаточно значений  ‒  https://vk.cc/ciVrFK")
             return
 
         content_split = ctx.content.lower().split()

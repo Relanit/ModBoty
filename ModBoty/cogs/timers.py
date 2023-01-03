@@ -76,9 +76,7 @@ class Timers(Cog):
     async def timer(self, ctx: Context, link: str):
         key = {"channel": ctx.channel.name}
         content = ctx.content.lower().split()
-        interval = 0
-        messages = 0
-        timer = {}
+        interval, messages, timer = 0, 0, {}
 
         for value in content[1:]:
             if value == "online":

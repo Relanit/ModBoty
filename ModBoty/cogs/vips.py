@@ -1,5 +1,6 @@
 import asyncio
 import time
+import traceback
 from datetime import datetime
 
 import twitchio
@@ -28,9 +29,6 @@ class Vips(Cog):
     async def command(self, ctx: Context):
         if ctx.command_alias not in ("unvips", "delunvip"):
             channel = await ctx.channel.user()
-            if channel.broadcaster_type == BroadcasterTypeEnum.none:
-                await ctx.reply("Эта команда доступна только компаньонам и партнёрам твича")
-                return
 
             data = await db.config.find_one({"_id": 1, "user_tokens.login": ctx.channel.name}, {"user_tokens.$": 1})
             if not data:
@@ -86,7 +84,9 @@ class Vips(Cog):
         try:
             await channel.add_channel_vip(token, user_id)
         except twitchio.errors.HTTPException:
-            await ctx.reply("Произошла неизвестная ошибка, виноват твич :P")
+            await ctx.reply(
+                f"Произошла неизвестная ошибка{', возможно, у канала нет компаньонки' if channel.broadcaster_type == BroadcasterTypeEnum.none else ''} :P"
+            )
             return
 
         await ctx.reply(f"Добавлен VIP: {ctx.content.lstrip('@').rstrip(',')}")

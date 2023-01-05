@@ -88,11 +88,9 @@ class Cooldown:
             text = f"{message.author.mention} Боту необходима випка или модерка для работы этой команды. Если роль выдана, вызовите команду ещё раз"
         else:
             text = f"{message.author.mention} Боту необходима модерка для работы этой команды. Если роль выдана, вызовите команду ещё раз"
+
+        self.cooldowns[message.channel.name][command] = {"per": {}, "gen": time.time() + 1}
         await message.channel.send(text)
-        if command in self.cooldowns[message.channel.name]:
-            self.cooldowns[message.channel.name][command]["gen"] = time.time() + 1
-        else:
-            self.cooldowns[message.channel.name][command] = {"per": {}, "gen": time.time() + 1}
 
     def set_cooldown(self, message: Context | Message, command_name: str, cd: dict[Literal["per", "gen"], int]):
         (

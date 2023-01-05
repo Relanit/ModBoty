@@ -65,16 +65,15 @@ class Cooldown:
         if "admin" in command.flags:
             return True
 
-        if command.name in self.cooldowns[message.channel.name] and await self.check_bot_role(
-            message, command.flags, command.name
-        ):
-            _, self.cooldowns[message.channel.name][command.name]["gen"] = get_cooldown_end(command.cooldown)
+        if await self.check_bot_role(message, command.flags, command.name):
+            if command.name in self.cooldowns[message.channel.name]:
+                _, self.cooldowns[message.channel.name][command.name]["gen"] = get_cooldown_end(command.cooldown)
+            else:
+                _, gen_end = get_cooldown_end(command.cooldown)
+                self.cooldowns[message.channel.name][command.name] = {"per": {}, "gen": gen_end}
             return True
 
-        if await self.check_bot_role(message, command.flags, command.name):
-            _, gen_end = get_cooldown_end(command.cooldown)
-            self.cooldowns[message.channel.name][command.name] = {"per": {}, "gen": gen_end}
-        return True
+        return
 
     async def check_bot_role(self, message: Message, flags: list, command: str):
         """Check if the bot has the necessary role to execute the command"""

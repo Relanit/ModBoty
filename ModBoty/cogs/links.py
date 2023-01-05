@@ -151,7 +151,7 @@ class Links(Cog):
                 await ctx.reply(f"Название {self.bot.prefix}{link} уже занято командой бота")
                 return
             elif len(link) > 30:
-                await ctx.reply("Нельзя создать ссылку с названием длиной более 30 символов")
+                await ctx.reply("Нельзя создать команду с названием длиной более 30 символов")
                 return
 
         text = " ".join(content[1:])
@@ -205,23 +205,23 @@ class Links(Cog):
         links = await db.links.find_one({"channel": ctx.channel.name}, {"links": 1, "private": 1})
         if not ctx.content:
             message, message2 = truncate(
-                f'Доступные ссылки: {self.bot.prefix}{str(f" {self.bot.prefix}").join(self.links[ctx.channel.name])}'
+                f'Доступные команды: {self.bot.prefix}{str(f" {self.bot.prefix}").join(self.links[ctx.channel.name])}'
             )
 
         elif ctx.content.lower() == "public":
             links = [link["name"] for link in links["links"] if not link.get("private", links["private"])]
             message, message2 = truncate(
-                f'Публичные ссылки: {self.bot.prefix}{str(f" {self.bot.prefix}").join(links)}'
+                f'Публичные команды: {self.bot.prefix}{str(f" {self.bot.prefix}").join(links)}'
                 if links
-                else "Публичные ссылки отсутствуют"
+                else "Публичные команды отсутствуют"
             )
 
         elif ctx.content.lower() == "private":
             links = [link["name"] for link in links["links"] if link.get("private", links["private"])]
             message, message2 = truncate(
-                f'Приватные ссылки: {self.bot.prefix}{str(f" {self.bot.prefix}").join(links)}'
+                f'Приватные команды: {self.bot.prefix}{str(f" {self.bot.prefix}").join(links)}'
                 if links
-                else "Приватные ссылки отсутствуют"
+                else "Приватные команды отсутствуют"
             )
 
         else:
@@ -256,7 +256,7 @@ class Links(Cog):
             else:
                 message = f"Удалено {self.bot.prefix}{link}"
         else:
-            await ctx.reply("Ссылка не найдена")
+            await ctx.reply("Команда не найдена")
             return
 
         await db.links.update_one({"channel": ctx.channel.name}, {"$pull": {"links": {"name": link}}})
@@ -293,14 +293,14 @@ class Links(Cog):
                     return
                 aliases.add(alias)
         elif link := self.get_link_name(ctx.channel.name, link):
-            await ctx.reply(f"Ссылка не найдена, возможно вы имели в виду {self.bot.prefix}{link}")
+            await ctx.reply(f"Команда не найдена, возможно вы имели в виду {self.bot.prefix}{link}")
             return
         else:
-            await ctx.reply("Ссылка не найдена")
+            await ctx.reply("Команда не найдена")
             return
 
         if len(aliases) > 5:
-            await ctx.reply("Максимальное количество элиасов к ссылке  ‒  5")
+            await ctx.reply("Максимальное количество элиасов к команде ‒ 5")
             return
 
         if aliases:

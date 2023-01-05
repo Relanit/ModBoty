@@ -296,7 +296,7 @@ class Links(Cog):
             await ctx.reply(f"Команда не найдена, возможно вы имели в виду {self.bot.prefix}{link}")
             return
         else:
-            await ctx.reply("Команда не найдена")
+            await ctx.reply(f'Команда "{content[0].lower()}" не найдена')
             return
 
         if len(aliases) > 5:

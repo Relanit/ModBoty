@@ -283,7 +283,9 @@ class Links(Cog):
                     await ctx.reply(f"Название {self.bot.prefix}{alias} уже занято категорией {name}")
                     return
                 if alias in self.links.get(ctx.channel.name, []):
-                    await ctx.reply(f"Нельзя указывать названия существующих команд в элиасах ‒ {self.bot.prefix}{alias}")
+                    await ctx.reply(
+                        f"Нельзя указывать названия существующих команд в элиасах ‒ {self.bot.prefix}{alias}"
+                    )
                     return
                 if self.links_aliases.get(ctx.channel.name, {}).get(alias, link) != link:
                     await ctx.reply(f"Нельзя указывать элиасы существующих команд ‒ {self.bot.prefix}{alias}")

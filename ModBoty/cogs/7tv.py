@@ -437,7 +437,6 @@ class SevenTV(Cog):
                 else message
             )
         message = f"{message}  ‒  {'; '.join(errors)}" if errors else message
-        print(message)
 
         if "Insufficient Privilege" in message:
             await ctx.reply("У бота недостаточно прав для выполнения этого действия")

@@ -46,21 +46,24 @@ class Cooldown:
                 and not message.author.is_broadcaster
             ):
                 return
-            if command.name in self.cooldowns[message.channel.name]:
-                if (
-                    self.cooldowns[message.channel.name][command.name]["gen"]
-                    < time.time()
-                    > self.cooldowns[message.channel.name][command.name]["per"].get(user, 0)
-                ) and await self.check_bot_role(message, command.flags, command.name):
-                    self.set_cooldown(message, command.name, command.cooldown)
-                    return True
-
-                return
 
             if await self.check_bot_role(message, command.flags, command.name):
+                if command.name in self.cooldowns[message.channel.name]:
+                    if (
+                        self.cooldowns[message.channel.name][command.name]["gen"]
+                        < time.time()
+                        > self.cooldowns[message.channel.name][command.name]["per"].get(user, 0)
+                    ):
+                        self.set_cooldown(message, command.name, command.cooldown)
+                        return True
+
+                    return
+
                 per_end, gen_end = get_cooldown_end(command.cooldown)
                 self.cooldowns[message.channel.name][command.name] = {"per": {user: per_end}, "gen": gen_end}
-            return True
+                return True
+
+            return
 
         if "admin" in command.flags:
             return True
@@ -90,7 +93,6 @@ class Cooldown:
             self.cooldowns[message.channel.name][command]["gen"] = time.time() + 1
         else:
             self.cooldowns[message.channel.name][command] = {"per": {}, "gen": time.time() + 1}
-        return
 
     def set_cooldown(self, message: Context | Message, command_name: str, cd: dict[Literal["per", "gen"], int]):
         (

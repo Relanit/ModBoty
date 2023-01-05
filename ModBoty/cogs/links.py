@@ -136,7 +136,7 @@ class Links(Cog):
         found = self.get_link_name(ctx.channel.name, link)
 
         if len(self.links.get(ctx.channel.name, [])) == 40 and not found:
-            await ctx.reply("Достигнут лимит количества ссылок ‒ 40")
+            await ctx.reply("Достигнут лимит количества команд ‒ 40")
             return
 
         link = found or link
@@ -190,7 +190,7 @@ class Links(Cog):
 
     async def view_links(self, ctx: Context):
         if not self.links.get(ctx.channel.name, None):
-            await ctx.reply("На вашем канале ещё нет ссылок")
+            await ctx.reply("На вашем канале ещё нет команд")
             return
 
         def truncate(content, length=450, suffix="..."):
@@ -276,24 +276,26 @@ class Links(Cog):
             for alias in content[1:]:
                 alias = alias.lstrip(self.bot.prefix)
                 if self.bot.get_command_name(alias) or alias == "private":
-                    await ctx.reply(f"Название {self.bot.prefix}{alias} уже занято командой")
+                    await ctx.reply(f"Название {self.bot.prefix}{alias} уже занято командой бота")
                     return
                 if alias in cog.aliases.get(ctx.channel.name, []):
                     name = cog.games[ctx.channel.name][cog.aliases[ctx.channel.name][alias]]
                     await ctx.reply(f"Название {self.bot.prefix}{alias} уже занято категорией {name}")
                     return
                 if alias in self.links.get(ctx.channel.name, []):
-                    await ctx.reply(f"Нельзя указывать названия существующих ссылок ‒ {self.bot.prefix}{alias}")
+                    await ctx.reply(f"Нельзя указывать названия существующих команд в элиасах ‒ {self.bot.prefix}{alias}")
                     return
                 if self.links_aliases.get(ctx.channel.name, {}).get(alias, link) != link:
-                    await ctx.reply(f"Нельзя указывать элиасы существующих ссылок ‒ {self.bot.prefix}{alias}")
+                    await ctx.reply(f"Нельзя указывать элиасы существующих команд ‒ {self.bot.prefix}{alias}")
                     return
                 if len(alias) > 30:
                     await ctx.reply(f"Нельзя создать элиас длиной более 30 символов ‒ {self.bot.prefix}{alias}")
                     return
                 aliases.add(alias)
         elif link := self.get_link_name(ctx.channel.name, link):
-            await ctx.reply(f"Команда не найдена, возможно вы имели в виду {self.bot.prefix}{link}")
+            await ctx.reply(
+                f'Команда "{content[0].lower()}" не найдена, возможно вы имели в виду {self.bot.prefix}{link}'
+            )
             return
         else:
             await ctx.reply(f'Команда "{content[0].lower()}" не найдена')
@@ -369,7 +371,7 @@ class Links(Cog):
 
     async def announce(self, ctx: Context):
         if not self.links.get(ctx.channel.name, None):
-            await ctx.reply("На вашем канале ещё нет ссылок")
+            await ctx.reply("На вашем канале ещё нет команд")
             return
 
         if not ctx.content:

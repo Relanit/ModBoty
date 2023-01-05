@@ -404,6 +404,7 @@ class SevenTV(Cog):
             if "errors" not in response:
                 added_emotes.append(emote["name"])
             else:
+                print(response["errors"])
                 for error in response["errors"]:
                     if "No Space Available" in error["message"]:
                         errors.add("недостаточно слотов")
@@ -436,9 +437,10 @@ class SevenTV(Cog):
                 else message
             )
         message = f"{message}  ‒  {'; '.join(errors)}" if errors else message
+        print(message)
 
         if "Insufficient Privilege" in message:
-            await ctx.reply("Боту нужна редакторка 7TV с правами редактирования смайлов и наборов")
+            await ctx.reply("У бота недостаточно прав для выполнения этого действия")
             return
 
         await ctx.reply(message)
@@ -489,7 +491,7 @@ class SevenTV(Cog):
         if not deleted:
             message = f"Не удалось выполнить команду  ‒  {'; '.join(errors)}"
             if "Insufficient Privilege" in message:
-                message = "Боту нужна редакторка 7TV с правами редактирования смайлов и наборов"
+                message = "У бота недостаточно прав для выполнения этого действия"
 
             await ctx.reply(message)
             return
@@ -571,7 +573,7 @@ class SevenTV(Cog):
         if errors:
             message = f"Не удалось изменить название  ‒  {'; '.join(errors)}"
             if "Insufficient Privilege" in message:
-                await ctx.reply("Боту нужна редакторка 7TV с правами редактирования смайлов и наборов")
+                await ctx.reply("У бота недостаточно прав для выполнения этого действия")
                 return
 
             await ctx.reply(message)
@@ -739,7 +741,7 @@ class SevenTV(Cog):
         if errors := {error["message"] for error in response.get("errors", [])}:
             message = f"Не удалось {'добавить' if action == 'add' else 'удалить'} источник  ‒  {'; '.join(errors)}"
             if "Insufficient Privilege" in message:
-                await ctx.reply("Боту нужна редакторка 7TV с правами редактирования смайлов и наборов")
+                await ctx.reply("У бота недостаточно прав для выполнения этого действия")
                 return
 
             await ctx.reply(message)

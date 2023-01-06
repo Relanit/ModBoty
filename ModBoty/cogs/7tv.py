@@ -808,7 +808,7 @@ class SevenTV(Cog):
             "__typename\n  }\n}",
             "variables": {
                 "d": {
-                    "permissions": 17 if action == "add" else 0,
+                    "permissions": 19 if action == "add" else 0,
                 },
                 "editor_id": stv_user["user"]["id"],
                 "id": self.stv_ids[ctx.channel.name],
@@ -830,9 +830,9 @@ class SevenTV(Cog):
 
         if action == "add":
             if ctx.channel.name not in self.bot.stv_editors:
-                self.bot.stv_editors[ctx.channel.name] = {user.name: 17}
+                self.bot.stv_editors[ctx.channel.name] = {user.name: 19}
             elif user.name not in self.bot.stv_editors[ctx.channel.name]:
-                self.bot.stv_editors[ctx.channel.name][user.name] = 17
+                self.bot.stv_editors[ctx.channel.name][user.name] = 19
         else:
             self.bot.stv_editors[ctx.channel.name].pop(user.name, None)
 

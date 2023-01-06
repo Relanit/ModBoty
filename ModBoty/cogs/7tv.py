@@ -404,7 +404,6 @@ class SevenTV(Cog):
             if "errors" not in response:
                 added_emotes.append(emote["name"])
             else:
-                print(response["errors"])
                 for error in response["errors"]:
                     if "No Space Available" in error["message"]:
                         errors.add("недостаточно слотов")

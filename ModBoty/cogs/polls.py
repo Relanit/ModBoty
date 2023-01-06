@@ -68,7 +68,7 @@ class Polls(Cog):
                 return
             duration = min(max(duration, 15), 1800)
 
-        title = title[:60]
+        title = title[:60].rstrip()
 
         choices = [choice[:25] for choice in content_split[1:] if choice != ""]
         if len(choices) < 2:

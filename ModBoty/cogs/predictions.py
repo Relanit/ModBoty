@@ -76,7 +76,7 @@ class Predictions(Cog):
             duration = 60
             title = content_split[0]
 
-        title = title[:45]
+        title = title[:45].rstrip()
 
         outcomes = [{"title": outcome[:25]} for outcome in content_split[1:] if outcome != ""]
         if len(outcomes) < 2:

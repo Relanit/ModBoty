@@ -497,7 +497,7 @@ class SevenTV(Cog):
             message = (
                 f"(7TV) Удал{'ено' if conv(len(deleted)) != '' else 'ён'} {len(deleted)} смайл{conv(len(deleted))}"
                 if len(deleted) > 1
-                else f'Удалён смайл "{deleted[0]}"'
+                else f'(7TV) Удалён смайл "{deleted[0]}"'
             )
             message = (
                 f"{message}, не удалось удалить {', '.join(emotes - set(deleted))}"

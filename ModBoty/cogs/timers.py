@@ -60,10 +60,10 @@ class Timers(Cog):
                 await ctx.reply("Недостаточно значений ‒ https://vk.cc/chCfMF")
                 return
 
-            link = content[0].lstrip(self.bot.prefix)
-            link = self.bot.cogs["Links"].get_link_name(ctx.channel.name, link)
+            link_alias = content[0].lstrip(self.bot.prefix).lower()
+            link = self.bot.cogs["Links"].get_link_name(ctx.channel.name, link_alias)
             if not link:
-                await ctx.reply(f"Команда {self.bot.prefix}{link} не найдена")
+                await ctx.reply(f"Команда {self.bot.prefix}{link_alias} не найдена")
                 return
 
         if ctx.command_alias == "timer":

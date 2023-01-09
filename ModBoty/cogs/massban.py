@@ -129,14 +129,14 @@ class MassBan(Cog):
                 for i, message in enumerate(first_messages_copy):
                     if message != first_messages_copy[-1]:
                         if i == 0:
-                            if first_messages_copy[i + 1]["time"] - message["time"] > 1:
+                            if first_messages_copy[i + 1]["time"] - message["time"] > 1.5:
                                 first_messages.remove(message)
                         elif (
-                            message["time"] - first_messages_copy[i - 1]["time"] > 1
-                            and first_messages_copy[i + 1]["time"] - message["time"] > 1
+                            message["time"] - first_messages_copy[i - 1]["time"] > 1.5
+                            and first_messages_copy[i + 1]["time"] - message["time"] > 1.5
                         ):
                             first_messages.remove(message)
-                    elif message["time"] - first_messages_copy[i - 1]["time"] > 1:
+                    elif message["time"] - first_messages_copy[i - 1]["time"] > 1.5:
                         first_messages.remove(message)
 
             if not first_messages:

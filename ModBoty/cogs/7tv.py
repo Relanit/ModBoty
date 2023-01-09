@@ -150,6 +150,7 @@ class SevenTV(Cog):
             )
             return
 
+        ctx.content = ctx.content.encode("ascii", "ignore").decode()
         if ctx.command_alias == "7add":
             await self.add(ctx)
         elif ctx.command_alias == "7del":

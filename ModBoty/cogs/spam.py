@@ -9,7 +9,7 @@ class Spam(Cog):
 
     @command(
         name="spam",
-        cooldown={"per": 0, "gen": 3},
+        cooldown={"per": 0, "gen": 5},
         description="Спам текстом указанное количество раз (до 15).",
         flags=["bot-vip"],
     )
@@ -21,7 +21,7 @@ class Spam(Cog):
         content_split = ctx.content.split()
 
         try:
-            num = min(int(content_split[0]), 15)
+            num = min(int(content_split[0]), 10)
             if len(content_split) < 2:
                 await ctx.reply("Введите текст")
                 return

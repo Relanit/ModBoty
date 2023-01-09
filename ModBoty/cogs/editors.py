@@ -15,7 +15,7 @@ class Editors(Cog):
 
     @command(
         name="editor",
-        aliases=["editors", "unban", "ban"],
+        aliases=["editors", "bancom", "unbancom"],
         cooldown={"per": 0, "gen": 5},
         description="Настройка редакторов бота и управление доступом к командам. Полное описание  ‒  https://vk.cc/cijFyF ",
         flags=["whitelist"],
@@ -33,7 +33,7 @@ class Editors(Cog):
             await self.editor(ctx)
         elif ctx.command_alias == "editors":
             await self.editors(ctx)
-        elif ctx.command_alias == "ban":
+        elif ctx.command_alias == "bancom":
             await self.ban(ctx)
         else:
             await self.unban(ctx)

@@ -41,7 +41,7 @@ class Cooldown:
             if message.custom_tags.get("mention") and "mention" not in command.flags:
                 return
             if (
-                (command.name in self.editor_commands.get(message.channel.name, []) or "editor" in command.flags)
+                command.name in self.editor_commands.get(message.channel.name, [])
                 and message.author.name not in self.editors.get(message.channel.name, [])
                 and not message.author.is_broadcaster
             ):

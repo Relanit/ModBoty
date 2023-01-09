@@ -64,7 +64,7 @@ class Help(Cog):
             {"links": {"$elemMatch": {"name": link}}, "private": 1},
         )
 
-        aliases = data["links"][0]["aliases"] if "aliases" in data["links"][0] else []
+        aliases = data["links"][0].get("aliases", [])
 
         if aliases:
             aliases = f'({self.bot.prefix}{str(f", {self.bot.prefix}").join(aliases)})'
@@ -84,10 +84,18 @@ class Help(Cog):
                 f'{"." if timer.get("offline", offline) else ", только на стриме."}'
             )
 
+        if cooldown := data["links"][0].get("cooldown", {}):
+            if cooldown["per"] > cooldown["gen"]:
+                cooldown = f"личный {cooldown['per']}с, общий {cooldown['gen']}с."
+            else:
+                cooldown = f"общий {cooldown['gen']}с."
+        else:
+            cooldown = "общий 3с."
+
         mention = ctx.message.custom_tags.get("mention") or ctx.author.mention
         message = (
             f'{mention} {self.bot.prefix}{link}{f" {aliases}." if aliases else "."} Доступ: '
-            f'{"приватный" if private else "публичный"}. Кд: общий 3с. {timer}'
+            f'{"приватный" if private else "публичный"}. Кд: {cooldown} {timer}'
         )
 
         await ctx.send(message)
@@ -105,7 +113,7 @@ class Help(Cog):
                 if cog.aliases[ctx.channel.name][alias] == game_id
             ]
             aliases = f'{self.bot.prefix}{str(f" {self.bot.prefix}").join(aliases)}'
-            message = f"{mention} {aliases} ‒ элиасы категории {name}. Кд: общий 3с"
+            message = f"{mention} {aliases} ‒ элиас{'ы' if len(aliases) > 1 else ''} категории {name}. Кд: общий 3с"
         elif game := [
             game for game in cog.games.get(ctx.channel.name, {}).items() if game[1].lower() == ctx.content.lower()
         ]:
@@ -115,7 +123,9 @@ class Help(Cog):
                 if cog.aliases[ctx.channel.name][alias] == game[0][0]
             ]
             aliases = f'{self.bot.prefix}{str(f" {self.bot.prefix}").join(aliases)}'
-            message = f"{mention} {aliases} ‒ элиасы категории {game[0][1]}. Кд: общий 3с"
+            message = (
+                f"{mention} {aliases} ‒ элиас{'ы' if len(aliases) > 1 else ''} категории {game[0][1]}. Кд: общий 3с"
+            )
         else:
             message = f"{ctx.author.mention} Команда не найдена. Список команд ‒ https://vk.cc/chCevV"
 

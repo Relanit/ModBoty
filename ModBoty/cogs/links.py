@@ -21,7 +21,7 @@ class Links(Cog):
             self.links_aliases[document["channel"]] = {
                 alias: link["name"] for link in document["links"] if "aliases" in link for alias in link["aliases"]
             }
-            self.cooldowns[document["channel"]] = {}
+            self.cooldowns[document["channel"]] = {link["name"]: {"per": {}, "gen": 0} for link in document["links"]}
             self.mod_cooldowns[document["channel"]] = 0
 
     @Cog.event()
@@ -46,7 +46,10 @@ class Links(Cog):
             link = content.split(maxsplit=1)[0]
 
             if link := self.get_link_name(message.channel.name, link):
-                if not message.author.is_mod and time.time() < self.cooldowns[message.channel.name].get(link, 0):
+                if not message.author.is_mod and (
+                    time.time() < self.cooldowns[message.channel.name][link]["gen"]
+                    or time.time() < self.cooldowns[message.channel.name][link]["per"].get(message.author.name, 0)
+                ):
                     return
 
                 data = await db.links.find_one(
@@ -77,11 +80,14 @@ class Links(Cog):
                             return
 
                         self.mod_cooldowns[message.channel.name] = time.time() + 3
-                        self.cooldowns[message.channel.name][link] = time.time() + 5
-                    elif time.time() < self.cooldowns[message.channel.name].get(link, 0) - 1:
+                        cooldown = max(data["links"][0].get("cooldown", {"gen": 5})["gen"], 5)
+                        self.cooldowns[message.channel.name][link]["gen"] = time.time() + cooldown
+                    elif time.time() < self.cooldowns[message.channel.name][link]["gen"] - 1:
                         return
                     else:
-                        self.cooldowns[message.channel.name][link] = time.time() + 3
+                        self.cooldowns[message.channel.name][link]["gen"] = (
+                            time.time() + data["links"][0].get("cooldown", {"gen": 3})["gen"]
+                        )
 
                     if not announce and not text.startswith("/announce") and not text.startswith(".announce"):
                         text = f"{reply} {text}" if reply and num == 1 else text
@@ -93,8 +99,12 @@ class Links(Cog):
                             text = text.split(maxsplit=1)[1]
                         await self.bot.announce(message.channel, text, announce, num)
 
-                elif not private and time.time() > self.cooldowns[message.channel.name].get(link, 0):
-                    self.cooldowns[message.channel.name][link] = time.time() + 3
+                elif not private:
+                    cooldown = data["links"][0].get("cooldown", {"per": 0, "gen": 3})
+                    (
+                        self.cooldowns[message.channel.name][link]["per"][message.author.name],
+                        self.cooldowns[message.channel.name][link]["gen"],
+                    ) = (time.time() + cooldown["per"], time.time() + cooldown["gen"])
 
                     if text.startswith("/announce") or text.startswith(".announce"):
                         text = text.split(maxsplit=1)[1]
@@ -107,7 +117,7 @@ class Links(Cog):
 
     @command(
         name="link",
-        aliases=["links", "del", "aliases", "public", "announce"],
+        aliases=["links", "del", "aliases", "public", "announce", "linkcd"],
         cooldown={"per": 0, "gen": 3},
         description="Кастомные команды для спама (от модераторов) или вызова пользователями. Полное описание  ‒  https://vk.cc/chCfKt ",
         flags=["bot-vip"],
@@ -123,8 +133,10 @@ class Links(Cog):
             await self.aliases(ctx)
         elif ctx.command_alias == "public":
             await self.public(ctx)
-        else:
+        elif ctx.command_alias == "announce":
             await self.announce(ctx)
+        else:
+            await self.linkcd(ctx)
 
     async def link(self, ctx: Context):
         content = ctx.content.split()
@@ -331,6 +343,10 @@ class Links(Cog):
         await ctx.reply(message)
 
     async def public(self, ctx: Context):
+        if not ctx.content:
+            await ctx.reply("Недостаточно значений ‒ https://vk.cc/chCfKt")
+            return
+
         try:
             content_split = ctx.content.lower().lstrip(self.bot.prefix).split()
             link, action = content_split
@@ -414,6 +430,33 @@ class Links(Cog):
 
         await db.links.update_one(key, values)
         await ctx.reply(message)
+
+    async def linkcd(self, ctx: Context):
+        if not ctx.content:
+            await ctx.reply("Недостаточно значений ‒ https://vk.cc/chCfKt")
+            return
+
+        content_split = ctx.content.replace(self.bot.prefix, "").lower().split()
+
+        try:
+            link, per, gen = content_split
+            per, gen = int(per), int(gen)
+        except ValueError:
+            await ctx.reply("Введите название команды, личный и общий кд в виде целого числа")
+            return
+
+        if not (link := self.get_link_name(ctx.channel.name, link)):
+            await ctx.reply(f'Команда "{content_split[0]}" не найдена')
+            return
+
+        if gen < 3:
+            await ctx.reply("Общий кд не может быть меньше 3 секунд")
+            return
+
+        key = {"channel": ctx.channel.name, "links.name": link}
+        values = {"$set": {"links.$.cooldown": {"per": per, "gen": gen}}}
+        await db.links.update_one(key, values)
+        await ctx.reply(f"Изменён кд команды {self.bot.prefix}{link}")
 
     def get_link_name(self, channel: str, alias: str) -> str | None:
         """Retrieves link name if found"""

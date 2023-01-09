@@ -110,7 +110,8 @@ class ModBoty(Bot, Cooldown):
 
             self.cooldowns[channel] = {}
             if channel in self.cogs["Links"].cooldowns:
-                self.cogs["Links"].cooldowns[channel] = {}
+                for command in self.cogs["Links"].cooldowns[channel]:
+                    self.cogs["Links"].cooldowns[channel][command] = {"per": {}, "gen": 0}
 
     @routine(minutes=5)
     async def refresh_tokens(self):

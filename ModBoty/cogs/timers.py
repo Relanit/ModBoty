@@ -55,6 +55,10 @@ class Timers(Cog):
     )
     async def command(self, ctx: Context):
         if ctx.command_alias != "timers":
+            if not self.bot.cogs["Links"].links.get(ctx.channel.name, None):
+                await ctx.reply("На вашем канале ещё нет команд ‒ https://vk.cc/chCfKt")
+                return
+
             content = ctx.content.split(maxsplit=1)
             if not content:
                 await ctx.reply("Недостаточно значений ‒ https://vk.cc/chCfMF")
@@ -62,6 +66,7 @@ class Timers(Cog):
 
             link_alias = content[0].lstrip(self.bot.prefix).lower()
             link = self.bot.cogs["Links"].get_link_name(ctx.channel.name, link_alias)
+
             if not link:
                 await ctx.reply(f"Команда {self.bot.prefix}{link_alias} не найдена")
                 return

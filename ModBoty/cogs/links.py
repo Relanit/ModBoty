@@ -245,6 +245,10 @@ class Links(Cog):
             await ctx.reply(message2)
 
     async def delete(self, ctx: Context):
+        if not self.links.get(ctx.channel.name, None):
+            await ctx.reply("На вашем канале ещё нет команд")
+            return
+
         content = ctx.content.split()
         if not content:
             await ctx.reply("Недостаточно значений ‒ https://vk.cc/chCfKt")
@@ -276,6 +280,10 @@ class Links(Cog):
         await ctx.reply(message)
 
     async def aliases(self, ctx: Context):
+        if not self.links.get(ctx.channel.name, None):
+            await ctx.reply("На вашем канале ещё нет команд")
+            return
+
         content = ctx.content.lower().split()
         if len(content) < 1:
             await ctx.reply("Напишите элиасы к команде через пробел")
@@ -344,6 +352,10 @@ class Links(Cog):
         await ctx.reply(message)
 
     async def public(self, ctx: Context):
+        if not self.links.get(ctx.channel.name, None):
+            await ctx.reply("На вашем канале ещё нет команд")
+            return
+
         if not ctx.content:
             await ctx.reply("Недостаточно значений ‒ https://vk.cc/chCfKt")
             return
@@ -433,6 +445,10 @@ class Links(Cog):
         await ctx.reply(message)
 
     async def linkcd(self, ctx: Context):
+        if not self.links.get(ctx.channel.name, None):
+            await ctx.reply("На вашем канале ещё нет команд")
+            return
+
         if not ctx.content:
             await ctx.reply("Недостаточно значений ‒ https://vk.cc/chCfKt")
             return

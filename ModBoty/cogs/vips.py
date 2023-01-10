@@ -239,7 +239,7 @@ class Vips(Cog):
 
     @staticmethod
     async def delunvip(ctx: Context):
-        login = ctx.content.lower()
+        login = ctx.content.lstrip("@").rstrip(",").lower()
         found = await db.unvips.find_one({"channel": ctx.channel.name, "unvips.login": login}, {"unvips.$": 1})
         if found:
             await db.unvips.update_one(

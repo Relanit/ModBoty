@@ -123,6 +123,10 @@ class Links(Cog):
         flags=["bot-vip"],
     )
     async def command(self, ctx: Context):
+        if ctx.command_alias != "link" and not self.links.get(ctx.channel.name, None):
+            await ctx.reply("На вашем канале ещё нет команд")
+            return
+
         if ctx.command_alias == "link":
             await self.link(ctx)
         elif ctx.command_alias == "links":
@@ -202,10 +206,6 @@ class Links(Cog):
         await ctx.reply(message)
 
     async def view_links(self, ctx: Context):
-        if not self.links.get(ctx.channel.name, None):
-            await ctx.reply("На вашем канале ещё нет команд")
-            return
-
         def truncate(content, length=450, suffix="..."):
             if len(content) <= length:
                 return content, ""
@@ -245,10 +245,6 @@ class Links(Cog):
             await ctx.reply(message2)
 
     async def delete(self, ctx: Context):
-        if not self.links.get(ctx.channel.name, None):
-            await ctx.reply("На вашем канале ещё нет команд")
-            return
-
         content = ctx.content.split()
         if not content:
             await ctx.reply("Недостаточно значений ‒ https://vk.cc/chCfKt")
@@ -280,10 +276,6 @@ class Links(Cog):
         await ctx.reply(message)
 
     async def aliases(self, ctx: Context):
-        if not self.links.get(ctx.channel.name, None):
-            await ctx.reply("На вашем канале ещё нет команд")
-            return
-
         content = ctx.content.lower().split()
         if len(content) < 1:
             await ctx.reply("Напишите элиасы к команде через пробел")
@@ -352,10 +344,6 @@ class Links(Cog):
         await ctx.reply(message)
 
     async def public(self, ctx: Context):
-        if not self.links.get(ctx.channel.name, None):
-            await ctx.reply("На вашем канале ещё нет команд")
-            return
-
         if not ctx.content:
             await ctx.reply("Недостаточно значений ‒ https://vk.cc/chCfKt")
             return
@@ -401,10 +389,6 @@ class Links(Cog):
         await ctx.reply(message)
 
     async def announce(self, ctx: Context):
-        if not self.links.get(ctx.channel.name, None):
-            await ctx.reply("На вашем канале ещё нет команд")
-            return
-
         if not ctx.content:
             await ctx.reply("Недостаточно значений  ‒  https://vk.cc/ciVrFK")
             return
@@ -445,10 +429,6 @@ class Links(Cog):
         await ctx.reply(message)
 
     async def linkcd(self, ctx: Context):
-        if not self.links.get(ctx.channel.name, None):
-            await ctx.reply("На вашем канале ещё нет команд")
-            return
-
         if not ctx.content:
             await ctx.reply("Недостаточно значений ‒ https://vk.cc/chCfKt")
             return

@@ -24,7 +24,7 @@ class Help(Cog):
         alias = content.split()[0]
         if command_name := self.bot.get_command_name(alias):
             await self.command_info(ctx, command_name)
-        elif link := self.bot.get_cog("Links").get_link_name(ctx.channel.name, alias):
+        elif link := self.bot.cogs["Links"].get_link_name(ctx.channel.name, alias):
             await self.link_info(ctx, link)
         else:
             await self.game_info(ctx, alias)
@@ -72,11 +72,11 @@ class Help(Cog):
         private = data["links"][0]["private"] if "private" in data["links"][0] else data["private"]
 
         timer = ""
-        cog = self.bot.get_cog("Timers")
-        if link in cog.timers.get(ctx.channel.name, []):
+        Timers = self.bot.cogs["Timers"]
+        if link in Timers.timers.get(ctx.channel.name, []):
             offline_raw = await db.timers.find_one({"channel": ctx.channel.name}, {"offline": 1})
             offline = offline_raw["offline"]
-            timer = cog.timers[ctx.channel.name][link]
+            timer = Timers.timers[ctx.channel.name][link]
             timer = (
                 f'Установлен {"активный" if timer.get("active", True) else "неактивный"} таймер: '
                 f'{timer["number"]} сообщений раз в {timer["interval"]}м'
@@ -101,26 +101,28 @@ class Help(Cog):
         await ctx.send(message)
 
     async def game_info(self, ctx: Context, game: str):
-        cog = self.bot.get_cog("StreamInfo")
+        StreamInfo = self.bot.cogs["StreamInfo"]
         mention = ctx.message.custom_tags.get("mention") or ctx.author.mention
 
-        if game in cog.aliases.get(ctx.channel.name, []):
-            game_id = cog.aliases[ctx.channel.name][game]
-            name = cog.games[ctx.channel.name][game_id]
+        if game in StreamInfo.aliases.get(ctx.channel.name, []):
+            game_id = StreamInfo.aliases[ctx.channel.name][game]
+            name = StreamInfo.games[ctx.channel.name][game_id]
             aliases = [
                 alias
-                for alias, _ in cog.aliases[ctx.channel.name].items()
-                if cog.aliases[ctx.channel.name][alias] == game_id
+                for alias, _ in StreamInfo.aliases[ctx.channel.name].items()
+                if StreamInfo.aliases[ctx.channel.name][alias] == game_id
             ]
             aliases = f'{self.bot.prefix}{str(f" {self.bot.prefix}").join(aliases)}'
             message = f"{mention} {aliases} ‒ элиас{'ы' if len(aliases) > 1 else ''} категории {name}. Кд: общий 3с"
         elif game := [
-            game for game in cog.games.get(ctx.channel.name, {}).items() if game[1].lower() == ctx.content.lower()
+            game
+            for game in StreamInfo.games.get(ctx.channel.name, {}).items()
+            if game[1].lower() == ctx.content.lower()
         ]:
             aliases = [
                 alias
-                for alias, _ in cog.aliases[ctx.channel.name].items()
-                if cog.aliases[ctx.channel.name][alias] == game[0][0]
+                for alias, _ in StreamInfo.aliases[ctx.channel.name].items()
+                if StreamInfo.aliases[ctx.channel.name][alias] == game[0][0]
             ]
             aliases = f'{self.bot.prefix}{str(f" {self.bot.prefix}").join(aliases)}'
             message = (

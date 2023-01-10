@@ -7,6 +7,23 @@ from twitchio import Message
 from config import db
 
 
+def conv(n: int) -> str:
+    """Converts a number to an ending for the word 'элиас' in Russian"""
+    endings = ["а", "ов", ""]
+    n %= 100
+    if 5 <= n <= 20:
+        s = endings[1]
+    else:
+        i = n % 10
+        if i == 1:
+            s = endings[2]
+        elif i in [2, 3, 4]:
+            s = endings[0]
+        else:
+            s = endings[1]
+    return s
+
+
 class Links(Cog):
     def __init__(self, bot):
         self.bot = bot
@@ -158,9 +175,9 @@ class Links(Cog):
         link = found or link
 
         if not found:
-            cog = self.bot.get_cog("StreamInfo")
-            if link in cog.aliases.get(ctx.channel.name, []):
-                name = cog.games[ctx.channel.name][cog.aliases[ctx.channel.name][link]]
+            StreamInfo = self.bot.cogs["StreamInfo"]
+            if link in StreamInfo.aliases.get(ctx.channel.name, []):
+                name = StreamInfo.games[ctx.channel.name][StreamInfo.aliases[ctx.channel.name][link]]
                 await ctx.reply(f"Название {self.bot.prefix}{link} уже занято категорией {name}")
                 return
             if self.bot.get_command_name(link):
@@ -260,12 +277,12 @@ class Links(Cog):
                 }  # remove aliases of link
 
             self.cooldowns.get(ctx.channel.name, {}).pop(link, None)
-            cog = self.bot.get_cog("Timers")
+            Timers = self.bot.cogs["Timers"]
 
-            if link in cog.timers.get(ctx.channel.name, []):
+            if link in Timers.timers.get(ctx.channel.name, []):
                 await db.timers.update_one({"channel": ctx.channel.name}, {"$pull": {"timers": {"link": link}}})
                 message = f"Удалены команда и таймер {self.bot.prefix}{link}"
-                del cog.timers[ctx.channel.name][link]
+                del Timers.timers[ctx.channel.name][link]
             else:
                 message = f"Удалено {self.bot.prefix}{link}"
         else:
@@ -276,70 +293,121 @@ class Links(Cog):
         await ctx.reply(message)
 
     async def aliases(self, ctx: Context):
-        content = ctx.content.lower().split()
-        if len(content) < 1:
-            await ctx.reply("Напишите элиасы к команде через пробел")
+        content = [word.lstrip(self.bot.prefix) for word in ctx.content.lower().split()]
+        if len(content) == 1:
+            if not (link := self.get_link_name(ctx.channel.name, content[0])):
+                await ctx.reply("Команда не найдена")
+                return
+
+            data = await db.links.find_one(
+                {"channel": ctx.channel.name},
+                {"links": {"$elemMatch": {"name": link}}, "private": 1},
+            )
+
+            aliases = data["links"][0].get("aliases", [])
+
+            if aliases:
+                aliases = f"{', '.join(aliases)}"
+
+            message = f'Название ‒ {link}{f", элиасы ‒ {aliases}" if aliases else ""}'
+            await ctx.reply(message)
             return
 
-        link = content[0].lower().lstrip(self.bot.prefix)
-        aliases = set()
+        if len(content) < 3 and content[1] == "add" or len(content) < 2:
+            await ctx.reply("Напишите название команды, действие (add или del) и элиасы через пробел")
+            return
 
-        if link in self.links.get(ctx.channel.name, []):
-            cog = self.bot.get_cog("StreamInfo")
-            for alias in content[1:]:
-                alias = alias.lstrip(self.bot.prefix)
-                if self.bot.get_command_name(alias) or alias == "private":
-                    await ctx.reply(f"Название {self.bot.prefix}{alias} уже занято командой бота")
+        link, action, aliases = content[0], content[1], set(content[2:]) if len(content) > 2 else []
+
+        if (link := self.get_link_name(ctx.channel.name, link)) and action != "add" and link != content[0]:
+            await ctx.reply(f'Команда "{content[0]}" не найдена, возможно вы имели в виду "{link}"')
+            return
+
+        if not link:
+            await ctx.reply(f'Команда "{content[0]}" не найдена')
+            return
+
+        if action not in ("add", "del"):
+            await ctx.reply("Напишите название команды, действие (add или del) и элиасы через пробел")
+            return
+
+        current_aliases = {
+            alias
+            for alias in self.links_aliases[ctx.channel.name]
+            if self.links_aliases[ctx.channel.name][alias] == link
+        }
+
+        if not current_aliases and action == "del":
+            await ctx.reply(f"У команды {link} нет элиасов")
+            return
+
+        if action == "add":
+            if len(aliases) + len(current_aliases) > 5:
+                await ctx.reply(
+                    f"Максимальное количество элиасов к команде ‒ 5. "
+                    f'У команды "{link}" на данный момент {len(current_aliases)} элиас{conv(len(current_aliases))}: '
+                    f'{", ".join(current_aliases)}'
+                )
+                return
+
+            StreamInfo = self.bot.cogs["StreamInfo"]
+            for alias in aliases:
+                if alias in current_aliases:
+                    await ctx.reply(f'Элиас "{alias}" уже есть у данной команды')
                     return
-                if alias in cog.aliases.get(ctx.channel.name, []):
-                    name = cog.games[ctx.channel.name][cog.aliases[ctx.channel.name][alias]]
-                    await ctx.reply(f"Название {self.bot.prefix}{alias} уже занято категорией {name}")
+                if self.bot.get_command_name(alias):
+                    await ctx.reply(f'Элиас "{alias}" уже занят командой бота')
+                    return
+                if alias in StreamInfo.aliases.get(ctx.channel.name, []):
+                    name = StreamInfo.games[ctx.channel.name][StreamInfo.aliases[ctx.channel.name][alias]]
+                    await ctx.reply(f'Элиас "{alias}" уже занят категорией {name}')
                     return
                 if alias in self.links.get(ctx.channel.name, []):
-                    await ctx.reply(
-                        f"Нельзя указывать названия существующих команд в элиасах ‒ {self.bot.prefix}{alias}"
-                    )
+                    await ctx.reply(f'Элиас "{alias}" уже занят командой с таким названием')
                     return
                 if self.links_aliases.get(ctx.channel.name, {}).get(alias, link) != link:
-                    await ctx.reply(f"Нельзя указывать элиасы существующих команд ‒ {self.bot.prefix}{alias}")
+                    await ctx.reply(f'У другой команды уже есть элиас "{alias}"')
                     return
                 if len(alias) > 30:
                     await ctx.reply(f"Нельзя создать элиас длиной более 30 символов ‒ {self.bot.prefix}{alias}")
                     return
-                aliases.add(alias)
-        elif link := self.get_link_name(ctx.channel.name, link):
-            await ctx.reply(
-                f'Команда "{content[0].lower()}" не найдена, возможно вы имели в виду {self.bot.prefix}{link}'
-            )
-            return
-        else:
-            await ctx.reply(f'Команда "{content[0].lower()}" не найдена')
-            return
 
-        if len(aliases) > 5:
-            await ctx.reply("Максимальное количество элиасов к команде ‒ 5")
-            return
-
-        if aliases:
-            values = {"$set": {"links.$.aliases": list(aliases)}}
+            values = {"$push": {"links.$.aliases": {"$each": list(aliases)}}}
             message = f"Обновлены элиасы {self.bot.prefix}{link}"
 
             if ctx.channel.name not in self.links_aliases:
                 self.links_aliases[ctx.channel.name] = {}
 
-            self.links_aliases[ctx.channel.name] = {
-                alias: name for alias, name in self.links_aliases[ctx.channel.name].items() if name != link
-            }
-
             for alias in aliases:
                 self.links_aliases[ctx.channel.name][alias] = link
+        elif aliases:
+            found, not_found = current_aliases & aliases, aliases - current_aliases
+
+            if not found:
+                await ctx.reply("Указанные элиасы не найдены" if len(aliases) > 1 else "Указанный элиас не найден")
+                return
+
+            join = f", {self.bot.prefix}"
+
+            phrase1 = "Удалены элиасы" if len(found) > 1 else "Удалён элиас"
+            phrase2 = "не найдены элиасы" if len(not_found) > 1 else "не найден элиас"
+
+            message = (
+                f"{phrase1} {self.bot.prefix}{join.join(found)} "
+                f"команды {self.bot.prefix}{link}{f', {phrase2} {self.bot.prefix}{join.join(not_found)}' if not_found else ''} "
+            )
+
+            values = {"$pull": {"links.$.aliases": {"$in": list(found)}}}
+            self.links_aliases[ctx.channel.name] = {
+                alias: name for alias, name in self.links_aliases[ctx.channel.name].items() if alias not in found
+            }
+
         else:
             values = {"$unset": {"links.$.aliases": ""}}
-            message = f"Удалены элиасы {self.bot.prefix}{link}. Если вы хотели просмотреть элиасы, это делается через !help {link}"
+            message = f"Удалены элиасы {self.bot.prefix}{link}"
             self.links_aliases[ctx.channel.name] = {
                 alias: name for alias, name in self.links_aliases[ctx.channel.name].items() if name != link
             }
-
         await db.links.update_one({"channel": ctx.channel.name, "links.name": link}, values)
         await ctx.reply(message)
 

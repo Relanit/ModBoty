@@ -26,8 +26,8 @@ class JoinChannel(Cog):
                 return
 
             self.bot.cooldowns[channel] = {}
-            cog = self.bot.get_cog("MassBan")
-            cog.message_history[channel] = []
+            MassBan = self.bot.cogs["MassBan"]
+            MassBan.message_history[channel] = []
             await db.config.update_one({"_id": 1}, {"$addToSet": {"channels": channel}})
             await self.bot.join_channels([channel])
             config["Bot"]["channels"] = config["Bot"]["channels"] + " " + channel
@@ -43,8 +43,8 @@ class JoinChannel(Cog):
                     return
 
             self.bot.cooldowns.pop(channel)
-            cog = self.bot.get_cog("MassBan")
-            cog.message_history.pop(channel)
+            MassBan = self.bot.cogs["MassBan"]
+            MassBan.message_history.pop(channel)
             await db.config.update_one({"_id": 1}, {"$pull": {"channels": channel}})
             await self.bot.part_channels([channel])
             channels = config["Bot"]["channels"].split()

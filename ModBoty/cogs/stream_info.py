@@ -198,8 +198,8 @@ class StreamInfo(Cog):
             await ctx.reply("Такой элиас уже существует")
             return
 
-        cog = self.bot.get_cog("Links")
-        if cog.get_link_name(ctx.channel.name, alias):
+        Links = self.bot.cogs["Links"]
+        if Links.get_link_name(ctx.channel.name, alias):
             await ctx.reply(f"Элиас {self.bot.prefix}{alias} уже занят ссылкой")
             return
 

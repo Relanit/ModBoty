@@ -258,15 +258,16 @@ class Timers(Cog):
                         time.time() > self.timers[channel][timer]["cooldown"]
                         and self.messages_from_timer[channel] >= self.timers[channel][timer]["number"] + 7
                     ):
-                        cog = self.bot.get_cog("Links")
+                        Links = self.bot.cogs["Links"]
 
                         if (
                             self.timers[channel][timer]["number"] > 2
-                            and time.time() - cog.mod_cooldowns.get(channel, 0) < 3
+                            and time.time() - Links.mod_cooldowns.get(channel, 0) < 3
                         ):
                             continue
                         elif (
-                            self.timers[channel][timer]["number"] < 3 and time.time() - cog.cooldowns.get(timer, 0) < 5
+                            self.timers[channel][timer]["number"] < 3
+                            and time.time() - Links.cooldowns.get(timer, 0) < 5
                         ):
                             continue
 
@@ -282,10 +283,10 @@ class Timers(Cog):
 
                         messageable = self.bot.get_channel(channel)
 
-                        cog.cooldowns[channel][timer] = time.time() + 3
+                        Links.cooldowns[channel][timer] = time.time() + 3
                         if self.timers[channel][timer]["number"] > 2:
-                            cog.mod_cooldowns[channel] = time.time() + 3
-                            cog.cooldowns[channel][timer] = time.time() + 5
+                            Links.mod_cooldowns[channel] = time.time() + 3
+                            Links.cooldowns[channel][timer] = time.time() + 5
 
                         self.timers[channel][timer]["cooldown"] = (
                             time.time() + self.timers[channel][timer]["interval"] * 60

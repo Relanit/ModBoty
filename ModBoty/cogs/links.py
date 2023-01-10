@@ -181,12 +181,13 @@ class Links(Cog):
             else:
                 message = f"Добавлено {self.bot.prefix}{link}"
                 self.links[ctx.channel.name].append(link)
+                self.cooldowns[ctx.channel.name][link] = {"per": {}, "gen": 0}
                 values = {"$addToSet": {"links": {"name": link, "text": text}}}
 
         else:
             message = f"Добавлено {self.bot.prefix}{link}"
             self.links[ctx.channel.name] = [link]
-            self.cooldowns[ctx.channel.name] = {link: 0}
+            self.cooldowns[ctx.channel.name] = {link: {"per": {}, "gen": 0}}
             self.mod_cooldowns[ctx.channel.name] = 0
             values = {
                 "$setOnInsert": {
@@ -334,7 +335,7 @@ class Links(Cog):
                 self.links_aliases[ctx.channel.name][alias] = link
         else:
             values = {"$unset": {"links.$.aliases": ""}}
-            message = f"Удалены элиасы {self.bot.prefix}{link}"
+            message = f"Удалены элиасы {self.bot.prefix}{link}. Если вы хотели просмотреть элиасы, это делается через !help {link}"
             self.links_aliases[ctx.channel.name] = {
                 alias: name for alias, name in self.links_aliases[ctx.channel.name].items() if name != link
             }

@@ -118,10 +118,10 @@ class Timers(Cog):
                     return
 
         if link not in self.timers.get(ctx.channel.name, []) and not interval and not messages:
-            await ctx.reply("Не указан интервал (в минутах) или количество сообщений ‒ https://vk.cc/chCfMF")
+            await ctx.reply("Не указан интервал (в минутах) и количество сообщений ‒ https://vk.cc/chCfMF")
             return
         elif interval and not messages:
-            await ctx.reply("Не указано количество сообщений ‒ https://vk.cc/chCfMF")
+            await ctx.reply("Укажите количество сообщений ‒ https://vk.cc/chCfMF")
             return
         elif interval and interval < 3:
             if messages > 3:

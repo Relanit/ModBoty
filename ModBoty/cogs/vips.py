@@ -26,10 +26,11 @@ class Vips(Cog):
         flags=["editor"],
     )
     async def command(self, ctx: Context):
-        data = await db.config.find_one({"_id": 1, "user_tokens.login": ctx.channel.name}, {"user_tokens.$": 1})
-        if not data:
-            await ctx.reply("Для работы этой команды стримеру нужно пройти авторизацию ‒ https://vk.cc/chZxeI")
-            return
+        if ctx.command_alias in ("unvip", "vip"):
+            data = await db.config.find_one({"_id": 1, "user_tokens.login": ctx.channel.name}, {"user_tokens.$": 1})
+            if not data:
+                await ctx.reply("Для работы этой команды стримеру нужно пройти авторизацию ‒ https://vk.cc/chZxeI")
+                return
 
         if (
             ctx.author.name not in self.bot.stv_editors.get(ctx.channel.name, [])

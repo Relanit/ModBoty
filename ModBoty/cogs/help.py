@@ -107,27 +107,27 @@ class Help(Cog):
         if game in StreamInfo.aliases.get(ctx.channel.name, []):
             game_id = StreamInfo.aliases[ctx.channel.name][game]
             name = StreamInfo.games[ctx.channel.name][game_id]
-            aliases = [
+            aliases_list = [
                 alias
                 for alias, _ in StreamInfo.aliases[ctx.channel.name].items()
                 if StreamInfo.aliases[ctx.channel.name][alias] == game_id
             ]
-            aliases = f'{self.bot.prefix}{str(f" {self.bot.prefix}").join(aliases)}'
-            message = f"{mention} {aliases} ‒ элиас{'ы' if len(aliases) > 1 else ''} категории {name}. Кд: общий 3с"
+            aliases = f'{self.bot.prefix}{str(f" {self.bot.prefix}").join(aliases_list)}'
+            message = (
+                f"{mention} {aliases} ‒ элиас{'ы' if len(aliases_list) > 1 else ''} категории {name}. Кд: общий 3с"
+            )
         elif game := [
             game
             for game in StreamInfo.games.get(ctx.channel.name, {}).items()
             if game[1].lower() == ctx.content.lower()
         ]:
-            aliases = [
+            aliases_list = [
                 alias
                 for alias, _ in StreamInfo.aliases[ctx.channel.name].items()
                 if StreamInfo.aliases[ctx.channel.name][alias] == game[0][0]
             ]
-            aliases = f'{self.bot.prefix}{str(f" {self.bot.prefix}").join(aliases)}'
-            message = (
-                f"{mention} {aliases} ‒ элиас{'ы' if len(aliases) > 1 else ''} категории {game[0][1]}. Кд: общий 3с"
-            )
+            aliases = f'{self.bot.prefix}{str(f" {self.bot.prefix}").join(aliases_list)}'
+            message = f"{mention} {aliases} ‒ элиас{'ы' if len(aliases_list) > 1 else ''} категории {game[0][1]}. Кд: общий 3с"
         else:
             message = f"{ctx.author.mention} Команда не найдена. Список команд ‒ https://vk.cc/chCevV"
 

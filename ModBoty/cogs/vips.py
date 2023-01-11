@@ -26,7 +26,11 @@ class Vips(Cog):
         flags=["editor"],
     )
     async def command(self, ctx: Context):
-        if ctx.author.name not in self.bot.stv_editors.get(ctx.channel.name, []) and not ctx.author.is_broadcaster:
+        if (
+            ctx.author.name not in self.bot.stv_editors.get(ctx.channel.name, [])
+            and not ctx.author.is_broadcaster
+            and not ctx.author.name == self.bot.admin
+        ):
             await ctx.reply("Эта команда доступна только редакторам бота ‒ https://vk.cc/cijFyF")
             return
 

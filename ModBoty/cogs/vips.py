@@ -26,6 +26,11 @@ class Vips(Cog):
         flags=["editor"],
     )
     async def command(self, ctx: Context):
+        data = await db.config.find_one({"_id": 1, "user_tokens.login": ctx.channel.name}, {"user_tokens.$": 1})
+        if not data:
+            await ctx.reply("Для работы этой команды стримеру нужно пройти авторизацию ‒ https://vk.cc/chZxeI")
+            return
+
         if (
             ctx.author.name not in self.bot.stv_editors.get(ctx.channel.name, [])
             and not ctx.author.is_broadcaster
@@ -34,13 +39,8 @@ class Vips(Cog):
             await ctx.reply("Эта команда доступна только редакторам бота ‒ https://vk.cc/cijFyF")
             return
 
-        if ctx.command_alias not in ("unvips", "delunvip"):
+        if ctx.command_alias in ("unvip", "vip"):
             channel = await ctx.channel.user()
-
-            data = await db.config.find_one({"_id": 1, "user_tokens.login": ctx.channel.name}, {"user_tokens.$": 1})
-            if not data:
-                await ctx.reply("Для работы этой команды стримеру нужно пройти авторизацию ‒ https://vk.cc/chZxeI")
-                return
 
             if not ctx.content:
                 await ctx.reply("Недостаточно значений ‒ https://vk.cc/ciufvM")

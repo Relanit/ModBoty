@@ -267,7 +267,7 @@ class Timers(Cog):
                             continue
                         elif (
                             self.timers[channel][timer]["number"] < 3
-                            and time.time() - Links.cooldowns[timer]["gen"] < 3
+                            and time.time() - Links.cooldowns[channel][timer]["gen"] < 3
                         ):
                             continue
 

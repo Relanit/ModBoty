@@ -267,7 +267,7 @@ class Timers(Cog):
                             continue
                         elif (
                             self.timers[channel][timer]["number"] < 3
-                            and time.time() - Links.cooldowns.get(timer, 0) < 5
+                            and time.time() - Links.cooldowns[timer]["gen"] < 3
                         ):
                             continue
 
@@ -282,11 +282,16 @@ class Timers(Cog):
                             announce = data["links"][0].get("announce") or data["announce"]
 
                         messageable = self.bot.get_channel(channel)
+                        if not messageable:
+                            break
 
-                        Links.cooldowns[channel][timer] = time.time() + 3
+                        cooldown = data["links"][0].get("cooldown", {"gen": 3})["gen"]
+                        Links.cooldowns[channel][timer]["gen"] = time.time() + cooldown
+
                         if self.timers[channel][timer]["number"] > 2:
                             Links.mod_cooldowns[channel] = time.time() + 3
-                            Links.cooldowns[channel][timer] = time.time() + 5
+                            cooldown = max(data["links"][0].get("cooldown", {"gen": 5})["gen"], 5)
+                            Links.cooldowns[channel][timer]["gen"] = time.time() + cooldown
 
                         self.timers[channel][timer]["cooldown"] = (
                             time.time() + self.timers[channel][timer]["interval"] * 60

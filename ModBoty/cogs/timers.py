@@ -256,7 +256,7 @@ class Timers(Cog):
                         continue
                     if (
                         time.time() > self.timers[channel][timer]["cooldown"]
-                        and self.messages_from_timer[channel] >= self.timers[channel][timer]["number"] + 7
+                        and self.messages_from_timer[channel] >= self.timers[channel][timer]["number"] + 9
                     ):
                         Links = self.bot.cogs["Links"]
 

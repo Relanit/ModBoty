@@ -134,7 +134,7 @@ class Links(Cog):
 
     @command(
         name="link",
-        aliases=["links", "del", "aliases", "public", "announce", "linkcd"],
+        aliases=["links", "del", "alias", "public", "announce", "linkcd"],
         cooldown={"per": 0, "gen": 3},
         description="Кастомные команды для спама (от модераторов) или вызова пользователями. Полное описание  ‒  https://vk.cc/chCfKt ",
         flags=["bot-vip"],
@@ -150,8 +150,8 @@ class Links(Cog):
             await self.view_links(ctx)
         elif ctx.command_alias == "del":
             await self.delete(ctx)
-        elif ctx.command_alias == "aliases":
-            await self.aliases(ctx)
+        elif ctx.command_alias == "alias":
+            await self.alias(ctx)
         elif ctx.command_alias == "public":
             await self.public(ctx)
         elif ctx.command_alias == "announce":
@@ -292,7 +292,7 @@ class Links(Cog):
         await db.links.update_one({"channel": ctx.channel.name}, {"$pull": {"links": {"name": link}}})
         await ctx.reply(message)
 
-    async def aliases(self, ctx: Context):
+    async def alias(self, ctx: Context):
         content = [word.lstrip(self.bot.prefix) for word in ctx.content.lower().split()]
         if len(content) == 1:
             if not (link := self.get_link_name(ctx.channel.name, content[0])):
